@@ -1,0 +1,11 @@
+{
+  "display_name": "ImmersiveGroups",
+  "loading_order": 5,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "ImmersiveGroups contributors; based on Bronya-Rand / Prometheus and mechamarmot",
+  "version": "0.1.2",
+  "auto_update": false
+}

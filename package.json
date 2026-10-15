@@ -1,0 +1,23 @@
+{
+  "name": "immersivegroups",
+  "version": "0.1.2",
+  "private": true,
+  "type": "module",
+  "description": "Combined character scene controls and image galleries for SillyTavern, based on Prome and LocalImage.",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "node tests/browser/combined.cjs"
+  },
+  "dependencies": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "jquery": "3.7.1",
+    "playwright": "1.62.1"
+  }
+}

@@ -1,81 +1,93 @@
 # ImmersiveGroups
-A light novel style expression extension for SillyTavern which focuses on compatibility with group chats, multiple outfits and mobile UI. Based on Bronya Rand's "Prome-VN-Extension" and mechamarmot's "SillyTavern-LocalImage" with planned LLM/automation for outfit/background changes as well as loading pre-made images from a gallery.
 
-What began as a quick patch for multiple outfits in the PromeVN extension quickly became a larger overhaul, bringing group-chat improvements, outfit management, mobile layouts, and a local image gallery together in one extension for SillyTavern.
-The goal is a more cohesive light novel experience: keep a group of characters on screen, change their outfits, set the scene, and eventually let optional automation handle outfits, backgrounds, and premade images from the gallery.
+A combined SillyTavern extension for character scenes, sprites, outfits and local image galleries.
 
-> [!WARNING]
-> **Beta project with very little testing so far.** For now, it is recommended to back up your SillyTavern `data` folder before installing or updating. Use at your own risk. Features, settings, and migration behavior may change during development.
+Built on **[Prome Visual Novel Extension](https://github.com/Bronya-Rand/Prome-VN-Extension)** by **Bronya-Rand** (whose original UI also credits **Prometheus**) and **[SillyTavern-LocalImage](https://github.com/mechamarmot/SillyTavern-LocalImage)** by **mechamarmot**. This is a modified independent project. See [CREDITS.md](CREDITS.md) and [LICENSE](LICENSE).
 
+## Install or migrate
 
-## Preview
+1. **Disable the old standalone Prome and LocalImage extensions** in SillyTavern, including their separately named forks. Keep their saved settings. Do not enable both old copies alongside this combined extension.
+2. Put this repository's contents in `SillyTavern/public/scripts/extensions/third-party/ImmersiveGroups/`. The file `manifest.json` must be directly inside `ImmersiveGroups`, not another nested folder.
+3. Reload SillyTavern. Open **Extensions → ImmersiveGroups**.
 
-### PC view
+When the new GitHub repository is ready, its URL can be installed using SillyTavern's extension installer instead of copying files manually. The repository should be named **ImmersiveGroups**.
 
-![ImmersiveGroups PC preview](Preview-PC.jpg)
+One manifest starts both subsystems. No separate Gallery extension is required. The committed Gallery bundle is ready to use; **Node/npm is needed only for development**.
 
-### Mobile view
+On first startup, existing preferences are copied into `extension_settings.ImmersiveGroups`; scene preferences stay at that root and Gallery preferences are under `gallery`. The old `Prome-VN-Extension` and `SillyTavern-LocalImage` settings are retained as unchanged backups. A repeat startup does not import those backups over newer combined settings. Existing image folders, names, outfit data, locks and scaling preferences remain available. Chat files are not part of the settings migration.
 
-<img src="Preview-Mobile.gif" alt="ImmersiveGroups mobile preview" width="350">
-
+If an old standalone or another combined copy remains enabled, startup displays a conflict message and avoids starting duplicate handlers. Disable the conflicting copies and reload.
 
 ## Features
 
-Built on Prome-VN's visual novel foundation, ImmersiveGroups adds the following fixes and controls, with a focus on group chats, multiple outfits, and mobile usability.
+- **Characters & controls:** per-character Speak/outfit controls, automatic-change locks, names above selectors, independent placement above chat or below the textbox, colors, sizing and fading.
+- **Outfits & colors:** outfit discovery and a manual library with labels, descriptions, order, visibility, per-character button colors and per-outfit text colors.
+- **Sprites & dimming:** stable outfit swaps, spacing, centimeter-based heights and simple fine tuning, separate PC/mobile fit profiles, multiple mobile sprites, ranked dimming and silhouettes.
+- **Chat layout:** Sheld sizing and Quick Reply row limits, including zero rows.
+- **Backgrounds:** a compact icon opening favorite-background controls, plus a browser with character bindings and saved scene descriptions.
+- **Gallery:** image libraries, descriptions, character/group bindings, exact-command prompt guidance and optional image loading limits.
+- **Prome original:** original scene/tint/letterbox options grouped together.
+- **Context Injection:** a roadmap for Prompt / API modes and all-character / active-character prompt scopes. These automation modes are not implemented yet.
+- **About:** upstream credits, source documentation and licenses.
 
-### Outfits and group chats
+### Layout profiles and preview
 
-- **Multiple-outfit fixes:** resolves issues with outfit switching while Prome is active, including in group chats.
-- **Group-chat message controls:** convenient controls for managing who speaks next.
-- **Outfit selection:** change character outfits directly through the outfit selector.
-- **Smooth outfit changes:** switching through the outfit selector avoids a full sprite reload. Outfit changes triggered through Quick Replies still cause reloads.
+**Use layout** selects **Automatic**, **PC (forced)** or **Mobile (forced)**. Automatic uses the existing **visible viewport height** threshold (default: 1000 px or less selects Mobile). A short PC window can therefore use Mobile. The force setting applies to ImmersiveGroups controls, scaling, spacing, Quick Reply limits and mobile group sprites; it does not change SillyTavern's own responsive interface.
 
-### Sprite customization
+**Edit profile** independently selects which saved PC/mobile preferences you change. Profile-specific fields have a PC/Mobile badge; unmarked preferences apply to both. Editing an inactive profile saves its values without changing the live scene. Force that layout to preview it. The status text shows the live profile and warns when you are editing the other one. Reset appearance affects only the edited profile.
 
-- **Character height scaling:** adjust individual characters' heights relative to one another.
-- **Shadow opacity:** control how strong sprite shadows appear.
-- **Adjustable sprite dimming:** tune how much inactive sprites are darkened.
-- **Sprite spacing:** adjust the distance between characters.
+Feature tabs wrap into rows and can be centered. Common controls stay visible, while detailed size/fading and dimming options use expandable sections. Background scene descriptions are available in the scene-context snapshot; the planned outfit/background automation does not inject them into prompts yet.
 
-### Mobile and interface controls
+### Tune while viewing the chat
 
-- **Multiple sprites on mobile:** display several characters together on smaller screens.
-- **Mobile controls:** access group-chat and outfit controls from the mobile interface.
-- **Adjustable Sheld size:** resize the message box to balance text and sprite visibility.
-- **Limitable, scrollable Quick Reply rows:** cap the space used by Quick Replies and scroll through additional rows.
+Use the **sliders icon beside the character controls** to open the small, non-modal Scene tuning panel. It contains Automatic/PC/Mobile layout, chat-window height, sprite spacing, fit calibration, centering and **Manage outfits**. Changes target the **live** profile even when the main settings editor is showing the other profile. Window height is shared. The background selector now occupies one image icon; its character filter and favorite list open only when needed.
 
-### Images and backgrounds
+Outfit choices use a custom popup with separate hover/focus outlines and a checkmark on the committed selection. Mouse clicks, touch taps and keyboard navigation select a stable folder entry; background discovery cannot replace the row under your pointer. Escape and outside clicks dismiss panels. Changing chats also closes them. Outfit swaps still preload the chosen image and update that character in place. Existing Quick Replies can still trigger SillyTavern's native reload behavior.
 
-- An integrated gallery based on SillyTavern-LocalImage.
-- Image sorting, descriptions, and aliases to make assets easier to organize and identify.
-- Bind gallery images to multiple characters.
-- Gallery prompt settings, cooldown controls, and suppression of blank image results.
+### Character heights
 
+In **Sprites & dimming → Character heights**, enter a height in centimeters and use the one fine-tune slider below it to compensate for inconsistent sprite framing. Heights persist by character and are shared between PC and mobile; fine tuning is stored per layout. The tallest active member supplies the reference height. Use **Fit calibration** in the main settings or live panel to fit that sprite on screen, then adjust individual fine tuning as needed. With equal fine tuning, a 150 cm character is 75% of a 200 cm character's sprite height.
 
-## Planned features
+Old manual/relative/calibration fields are consolidated once. Their original values, including outfit calibrations, are retained in `heightProfilesV1Backup`. Conversion carries over existing visual adjustments for the current group and displayed outfits; calibration of other old outfits is retained in the backup rather than continuing as a hidden multiplier. Reset fine tuning to 100% to return a character to their centimeter-based ratio. This adjusts image frames, so transparent padding or different artwork framing may still need fine tuning.
 
-These are development goals, not a list of working features. Scope and implementation may change.
+Sprite overlap follows brightness first when speaking-order dimming is enabled, then current/recent distinct speakers, with silent members behind them. Native and mobile sprites use the same ranking; native layer updates cannot put a dimmed sprite over a brighter speaker.
 
-- **Automatic outfit changes** based on the scene and character context.
-- **Automatic background changes** using descriptions of available locations.
-- **Context-aware gallery images** so the model can select suitable pre-made images during a conversation.
-- **Scene descriptions and context injection** to explain when backgrounds, outfits, and gallery images should be used instead of relying on filenames alone.
-- **Prompt Mode:** ask the main roleplay model to append automation commands to its reply. Intended to provide strong conversation context with fewer additional calls, but command reliability will depend on the model.
-- **API Mode:** make a separate call dedicated to automation, with support planned for a local model or another API endpoint.
-- Continued improvements to mobile usability, settings organization, and group-chat compatibility.
+### Gallery quick start
 
-## Credits and origins
+Upload or assign images through **Gallery → Open image library → Upload / manage files**. The General command is `::img general image-name::`. Image names contain no spaces or colons. Details & bindings stores scene descriptions and optional character avatar/group IDs. Bound characters automatically make images eligible in groups containing them; an option can require all bound characters.
 
-ImmersiveGroups is a modified project built on the work of:
+**Model prompt and loading limits start off.** Enable them separately in the Gallery tab. The model receives actual commands and eligible scene descriptions; no additional API call is made. Quiet helper generations and impersonation omit Gallery instructions.
 
-- **[Bronya Rand — Prome-VN-Extension](https://github.com/Bronya-Rand/Prome-VN-Extension):** the foundation for the visual novel interface, sprite presentation, and visual customization.
-- **[mechamarmot — SillyTavern-LocalImage](https://github.com/mechamarmot/SillyTavern-LocalImage):** the foundation for local image handling and gallery functionality.
+A round is one user message plus all following character replies. With a cooldown of 3, an image shown in round 1 may return in round 5. Suppressed commands become blank local spans without requesting an image; they do not restart the timer. Message/round caps can also be enabled. Limits are derived from history and the active swipe, so refreshing remains consistent. Image renames retain previous names as aliases.
 
-Much of the underlying functionality comes from these original extensions. Credit for that work belongs to their authors and contributors; ImmersiveGroups adds the integration, modifications, and new features described above. This project is independently maintained and is not an official release of either original extension.
+See [docs/GALLERY.md](docs/GALLERY.md) for detailed behavior.
 
-Thanks also to the [SillyTavern](https://github.com/SillyTavern/SillyTavern) project and its contributors.
+## Develop
 
-## License
+```sh
+npm ci
+npm run build
+npm run check
+npm test
+```
 
-ImmersiveGroups is distributed under the GNU Affero General Public License v3.0; see [LICENSE](LICENSE). Original copyright notices, attribution, and applicable upstream license notices are retained with the corresponding source code.
+`npm run build` rebuilds `gallery/dist/gallery.js` from the included React source. Commit both the source and generated bundle/notices. The scene subsystem uses native ES modules. `style.css` imports the scene and Gallery stylesheets.
 
+Optional integration check (uses simulated SillyTavern APIs and synthetic chat data):
+
+```sh
+npx playwright install chromium
+npm run test:browser
+```
+
+The integration test loads the actual combined entry point and both subsystems. It covers migration, one settings window, fresh install, duplicate-copy blocking, rendering, sprite controls, prompt namespaces, independent profile editing/scaling, forced layouts, live checkboxes, tab wrapping, zero Quick Reply rows, background descriptions, click/touch/keyboard outfit selection, accurate control centering, live tuning and speaker layering. Height tests cover centimeter ratios and preference migration. It writes local screenshots under `tests/artifacts/`, which are ignored by git.
+
+## New GitHub repository
+
+See [docs/REPOSITORY_SETUP.md](docs/REPOSITORY_SETUP.md). Upload the files **inside** the `ImmersiveGroups` folder to the repository root. Keep the license, credits, source, package lock and committed bundle. Do not upload `node_modules`, test artifacts, chat data or `.git` through the website.
+
+The manifest intentionally has no guessed repository URL, and automatic updates start disabled. Set your actual repository URL after creation. The original upstream projects are credited without presenting this repository as their official release.
+
+## License and credits
+
+The combined project is distributed under **GNU AGPL version 3**. Both upstream license files are preserved in `licenses/`; the original license texts are identical. React, ReactDOM and Scheduler notices/licenses are included separately. See [CREDITS.md](CREDITS.md). This software is provided without warranty.

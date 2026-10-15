@@ -1,0 +1,679 @@
+/* Prome UI Settings */
+:root {
+	/* Prome Letterbox */
+	--prome-letterbox-zindex: 29;
+
+	/* Prome Focus/Defocus Mode */
+	--prome-focus-filter-transition: 0.4s ease-in;
+	--prome-focus-scale: 1.05;
+	--prome-defocus-brightness: 0.5;
+
+	/* Prome Sprite Shake */
+	--prome-shake-duration: 0.35s;
+	--prome-shake-duration-reduced: 0.7s;
+	--prome-shake-timing: ease-in-out;
+	--prome-active-shake-duration: var(--prome-shake-duration);
+
+	/* Prome Sprite Shadows */
+	--prome-shadow-color: #111;
+	--prome-shadow-filter: drop-shadow(
+		var(--prome-sprite-shadow-offsetx) var(--prome-sprite-shadow-offsety)
+			var(--prome-sprite-shadow-blur) var(--prome-shadow-color)
+	);
+	--prome-shadow-filter-defocus: var(--prome-shadow-filter)
+		brightness(var(--prome-defocus-brightness));
+
+	/* Prome World/Character Tint */
+	--prome-character-tint-with-shadow: var(--prome-character-tint-filter)
+		var(--prome-shadow-filter);
+	--prome-character-tint-with-defocus: var(--prome-character-tint-filter)
+		var(--prome-shadow-filter-defocus);
+	--prome-character-tint-with-shadow-defocus: var(--prome-character-tint-filter)
+		var(--prome-shadow-filter-defocus) var(--prome-shadow-filter);
+
+	--prome-background-tint-with-shadow: var(--prome-background-tint-filter)
+		var(--prome-shadow-filter);
+	--prome-background-tint-with-defocus: var(--prome-background-tint-filter)
+		var(--prome-shadow-filter-defocus);
+	--prome-background-tint-with-shadow-defocus: var(
+			--prome-background-tint-filter
+		)
+		var(--prome-shadow-filter-defocus) var(--prome-shadow-filter);
+
+	--prome-combined-filter-character: var(--prome-character-tint-filter);
+	--prome-combined-filter-character-shadow: var(
+		--prome-character-tint-with-shadow
+	);
+	--prome-combined-filter-character-defocus: var(
+		--prome-character-tint-with-defocus
+	);
+	--prome-combined-filter-character-shadow-defocus: var(
+		--prome-character-tint-with-shadow-defocus
+	);
+
+	--prome-combined-filter-background: var(--prome-background-tint-filter);
+	--prome-combined-filter-background-shadow: var(
+		--prome-background-tint-with-shadow
+	);
+	--prome-combined-filter-background-defocus: var(
+		--prome-background-tint-with-defocus
+	);
+	--prome-combined-filter-background-shadow-defocus: var(
+		--prome-background-tint-with-shadow-defocus
+	);
+}
+
+.prome-drawer-content {
+	gap: 8px;
+	display: flex;
+	flex-direction: column;
+}
+
+.prome_vn_block {
+	width: 100%;
+}
+
+.prome_details_padding {
+	padding: 5px 5px;
+}
+
+/* Prome Letterbox Settings */
+body.waifuMode.hLetterBox #visual-novel-letterbox-one {
+	width: 100vw;
+	height: var(--prome-letterbox-size);
+	top: 0;
+	position: fixed;
+	background-color: var(--prome-letterbox-color);
+	z-index: var(--prome-letterbox-zindex);
+}
+body.waifuMode.hLetterBox #visual-novel-letterbox-two {
+	width: 100vw;
+	height: var(--prome-letterbox-size);
+	bottom: 0;
+	position: fixed;
+	background-color: var(--prome-letterbox-color);
+	z-index: var(--prome-letterbox-zindex);
+}
+body.waifuMode.vLetterBox #visual-novel-letterbox-one {
+	width: var(--prome-letterbox-size);
+	height: 100vh;
+	top: 0;
+	left: 0;
+	position: fixed;
+	background-color: var(--prome-letterbox-color);
+	z-index: var(--prome-letterbox-zindex);
+}
+body.waifuMode.vLetterBox #visual-novel-letterbox-two {
+	width: var(--prome-letterbox-size);
+	height: 100vh;
+	top: 0;
+	right: 0;
+	position: fixed;
+	background-color: var(--prome-letterbox-color);
+	z-index: var(--prome-letterbox-zindex);
+}
+
+/* 
+ * Prome Sprite Focus (Multiple Characters) 
+ * For shake + focus, see Prome Sprite Shake
+ */
+:is(#visual-novel-wrapper, #ig-mobile-sprites) [id*="expression-"] {
+	will-change: transform, filter;
+	transition: transform var(--prome-sprite-zoom-speed)
+		var(--prome-sprite-zoom-animation), filter
+		var(--prome-focus-filter-transition);
+}
+
+#expression-wrapper > div {
+	will-change: transform, filter;
+	transition: transform var(--prome-sprite-zoom-speed)
+		var(--prome-sprite-zoom-animation), filter
+		var(--prome-focus-filter-transition);
+}
+
+/* Sprite Focus to Last Message Character on 'expression-holder' */
+body.waifuMode.spriteZoom .prome-sprite-focus {
+	transform: scale(var(--prome-focus-scale));
+}
+
+/*
+ * Prome Sprite Defocus
+ */
+
+/* Sprites not in chat are lower contrast to differentiate focused sprite */
+body.waifuMode.spriteDefocusTint .prome-sprite-defocus {
+	filter: brightness(var(--prome-defocus-brightness));
+}
+
+/*
+ * Prome Sprite Scale
+ */
+body.waifuMode.spriteScale .prome-sprite-scale {
+	transform: scale(var(--prome-sprite-scale));
+	transform-origin: bottom;
+}
+
+body.waifuMode.spriteScale.spriteZoom .prome-sprite-scale.prome-sprite-focus {
+	--prome-combined-scale: calc(var(--prome-sprite-scale) * var(--prome-focus-scale));
+	transform: scale(var(--prome-combined-scale));
+}
+
+body.waifuMode.spriteZoom:not(.spriteScale) .prome-sprite-focus {
+	transform: scale(var(--prome-focus-scale));
+}
+
+body.waifuMode.emulateSprites :is(#visual-novel-wrapper, #ig-mobile-sprites) .hidden:not(.displayNone) {
+	display: inherit !important;
+	visibility: visible !important;
+}
+
+/* 
+ * Prome Sprite Shake 
+ */
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--prome-active-shake-duration: var(--prome-shake-duration-reduced);
+	}
+}
+
+@keyframes shake {
+	0% {
+		transform: translate(0px, 0px) rotate(0deg);
+	}
+	25% {
+		transform: translate(1px, 0px) rotate(0.1deg);
+	}
+	50% {
+		transform: translate(0px, 0px) rotate(0.2deg);
+	}
+	75% {
+		transform: translate(-1px, 0px) rotate(0.1deg);
+	}
+	100% {
+		transform: translate(0px, 0px) rotate(0deg);
+	}
+}
+
+@keyframes shakeAndScale {
+	0% {
+		transform: translate(0px, 0px) rotate(0deg) scale(var(--prome-sprite-scale));
+	}
+	25% {
+		transform: translate(1px, 0px) rotate(0.1deg)
+			scale(var(--prome-sprite-scale));
+	}
+	50% {
+		transform: translate(0px, 0px) rotate(0.2deg)
+			scale(var(--prome-sprite-scale));
+	}
+	75% {
+		transform: translate(-1px, 0px) rotate(0.1deg)
+			scale(var(--prome-sprite-scale));
+	}
+	100% {
+		transform: translate(0px, 0px) rotate(0deg) scale(var(--prome-sprite-scale));
+	}
+}
+
+@keyframes shakeAndFocus {
+	0% {
+		transform: translate(0px, 0px) rotate(0deg) scale(var(--prome-focus-scale));
+	}
+	25% {
+		transform: translate(1px, 0px) rotate(0.1deg)
+			scale(var(--prome-focus-scale));
+	}
+	50% {
+		transform: translate(0px, 0px) rotate(0.2deg)
+			scale(var(--prome-focus-scale));
+	}
+	75% {
+		transform: translate(-1px, 0px) rotate(0.1deg)
+			scale(var(--prome-focus-scale));
+	}
+	100% {
+		transform: translate(0px, 0px) rotate(0deg) scale(var(--prome-focus-scale));
+	}
+}
+
+@keyframes shakeFocusAndScale {
+	0% {
+		transform: translate(0px, 0px) rotate(0deg)
+			scale(calc(var(--prome-sprite-scale) * var(--prome-focus-scale)));
+	}
+	25% {
+		transform: translate(1px, 0px) rotate(0.1deg)
+			scale(calc(var(--prome-sprite-scale) * var(--prome-focus-scale)));
+	}
+	50% {
+		transform: translate(0px, 0px) rotate(0.2deg)
+			scale(calc(var(--prome-sprite-scale) * var(--prome-focus-scale)));
+	}
+	75% {
+		transform: translate(-1px, 0px) rotate(0.1deg)
+			scale(calc(var(--prome-sprite-scale) * var(--prome-focus-scale)));
+	}
+	100% {
+		transform: translate(0px, 0px) rotate(0deg)
+			scale(calc(var(--prome-sprite-scale) * var(--prome-focus-scale)));
+	}
+}
+
+body.waifuMode.spriteShake .prome-sprite-shake {
+	transform: translateZ(0);
+	animation: shake var(--prome-active-shake-duration) var(--prome-shake-timing)
+		infinite;
+}
+
+body.waifuMode.spriteShake.spriteZoom .prome-sprite-shake {
+	transform: translateZ(0);
+	animation: shakeAndFocus var(--prome-active-shake-duration) var(--prome-shake-timing)
+		infinite;
+}
+
+body.waifuMode.spriteShake.spriteScale .prome-sprite-shake {
+	transform: translateZ(0);
+	animation: shakeAndScale var(--prome-active-shake-duration) var(--prome-shake-timing)
+		infinite;
+}
+
+body.waifuMode.spriteShake.spriteZoom.spriteScale .prome-sprite-shake {
+	transform: translateZ(0);
+	animation: shakeFocusAndScale var(--prome-active-shake-duration)
+		var(--prome-shake-timing) infinite;
+}
+
+/* 
+ * Prome Sprite Shadows
+ */
+
+body.waifuMode.spriteShadow :is(#visual-novel-wrapper, #ig-mobile-sprites) [id*="expression-"] {
+	filter: var(--prome-shadow-filter);
+}
+
+body.waifuMode.spriteShadow #expression-wrapper .expression-holder {
+	filter: var(--prome-shadow-filter);
+}
+
+body.waifuMode.spriteDefocusTint.spriteShadow
+	:is(#visual-novel-wrapper, #ig-mobile-sprites)
+	[id*="expression-"].prome-sprite-defocus {
+	filter: var(--prome-shadow-filter-defocus);
+}
+
+body.waifuMode.spriteDefocusTint.spriteShadow
+	#expression-wrapper
+	.expression-holder.prome-sprite-defocus {
+	filter: var(--prome-shadow-filter-defocus);
+}
+
+/* 
+ * Prome Background Tint
+ */
+
+body.worldTint.tintWorld #bg1 {
+	filter: var(--prome-background-tint-filter);
+}
+
+body.worldTint.tintCharacter #expression-wrapper .expression-holder {
+	filter: var(--current-char-tint-filter);
+}
+
+body.worldTint.tintCharacter :is(#visual-novel-wrapper, #ig-mobile-sprites) [id*="expression-"] {
+	filter: var(--current-char-tint-filter);
+}
+
+body.worldTint.tintCharacter {
+	--current-char-tint-filter: var(--prome-combined-filter-character);
+}
+
+body.worldTint.tintCharacter.spriteShadow {
+	--current-char-tint-filter: var(--prome-combined-filter-character-shadow);
+}
+
+body.worldTint.tintCharacter.spriteDefocusTint {
+	--current-char-tint-filter: var(--prome-combined-filter-character-defocus);
+}
+
+body.worldTint.tintCharacter.spriteDefocusTint.spriteShadow {
+	--current-char-tint-filter: var(
+		--prome-combined-filter-character-shadow-defocus
+	);
+}
+
+body.worldTint.tintShared {
+	--current-char-tint-filter: var(--prome-combined-filter-background);
+}
+
+body.worldTint.tintShared.spriteShadow {
+	--current-char-tint-filter: var(--prome-combined-filter-background-shadow);
+}
+
+body.worldTint.tintShared.spriteDefocusTint {
+	--current-char-tint-filter: var(--prome-combined-filter-background-defocus);
+}
+
+body.worldTint.tintShared.spriteDefocusTint.spriteShadow {
+	--current-char-tint-filter: var(
+		--prome-combined-filter-background-shadow-defocus
+	);
+}
+
+/* 
+ * Prome User Sprite Overrides
+ * (For ST)
+ */
+body.waifuMode.userSprite:not(.movingUI) #expression-wrapper {
+	position: absolute;
+	height: max-content;
+	bottom: 0;
+}
+
+body.waifuMode.userSprite:not(.movingUI)
+	#expression-wrapper
+	.expression-holder {
+	position: unset;
+}
+
+body #expression-prome-user {
+	display: none;
+}
+
+body.waifuMode.userSprite #expression-prome-user {
+	display: flex;
+	visibility: visible;
+}
+
+:is(#visual-novel-wrapper, #ig-mobile-sprites) {
+	contain: layout style;
+}
+
+/* Keep the inline Quick Reply bar from consuming the VN message panel.
+ * Apply only to Prome's enabled VN layout; leave normal chat and popouts alone. */
+body.waifuMode.prome-limit-quick-replies #qr--bar {
+    box-sizing: border-box;
+    min-height: 0;
+    max-height: var(--prome-quick-replies-height, 80px) !important;
+    max-height: min(var(--prome-quick-replies-height, 80px), 25dvh) !important;
+    flex-shrink: 0;
+    align-items: flex-start;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+    touch-action: pan-x pan-y;
+}
+body.waifuMode.prome-limit-quick-replies #qr--bar > .qr--buttons {
+    flex-shrink: 0;
+    min-width: 0;
+}
+
+.prome-layout-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.prome-layout-controls input[type="range"] {
+    flex: 1 1 120px;
+    min-width: 80px;
+}
+.prome-layout-controls input[type="number"] {
+    flex: 0 0 80px;
+    width: 80px;
+}
+body.waifuMode.prome-custom-sheld-height #sheld {
+    height: var(--prome-sheld-height) !important;
+    max-height: calc(100vh - var(--topBarBlockSize, 0px)) !important;
+    max-height: calc(100dvh - var(--topBarBlockSize, 0px)) !important;
+    min-height: 0 !important;
+}
+body.waifuMode.prome-custom-sheld-height:not(.movingUI) #sheld {
+    top: auto !important;
+    bottom: 0 !important;
+}
+
+/* Prome owns this marker; chat source and message identifiers stay untouched. */
+#chat > .mes.prome-hidden-message { display: none !important; }
+
+/* Center anchors stay independent of sprite dimensions and native left animation. */
+body.waifuMode :is(#visual-novel-wrapper, #ig-mobile-sprites) > .expression-holder.prome-stable-slot {
+    left: var(--prome-slot-center) !important;
+    translate: -50% 0;
+}
+
+/* Scene controls use the current ST theme, with sizes independent of theme
+   button padding. Sprite positioning and the image swap path stay separate. */
+:is(#prome-stage-controls, #ig-stage-bottom) {
+    position: relative; display: flex; align-items: center; gap: var(--prome-control-gap,6px);
+    box-sizing: border-box; flex: 0 0 auto; min-width: 0; max-width: 100%;
+    padding: 6px 8px; border-bottom: 1px solid var(--SmartThemeBorderColor,rgba(255,255,255,.16));
+    font-size: var(--prome-control-font,13px); color: var(--SmartThemeBodyColor,inherit);
+}
+:is(#prome-stage-controls, #ig-stage-bottom)[hidden], :is(#prome-stage-controls, #ig-stage-bottom) [hidden], .prome-outfit-dialog [hidden] { display: none !important; }
+:is(#prome-stage-controls, #ig-stage-bottom) .prome-stage-roster {
+    display: flex; align-items: center; gap: var(--prome-control-gap,6px); flex: 1 1 auto;
+    min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; padding: 1px;
+    overscroll-behavior-x: contain;
+}
+:is(#prome-stage-controls, #ig-stage-bottom) .prome-character-chip {
+    display: inline-flex; align-items: center; flex: 0 0 auto; gap: 3px;
+    padding: 3px; border-radius: 9px;
+    border: 1px solid var(--SmartThemeBorderColor,rgba(255,255,255,.16));
+    background: var(--SmartThemeBlurTintColor,rgba(25,25,25,.65));
+}
+:is(#prome-stage-controls, #ig-stage-bottom) button, :is(#prome-stage-controls, #ig-stage-bottom) select {
+    box-sizing: border-box; margin: 0; min-height: var(--prome-control-height,32px);
+    height: var(--prome-control-height,32px); font-family: inherit;
+    font-size: var(--prome-control-font,13px); line-height: 1.2;
+    color: var(--SmartThemeBodyColor,inherit); border-radius: 6px;
+    border: 1px solid transparent; box-shadow: none; text-shadow: none;
+    background: transparent; padding: 4px 7px;
+}
+:is(#prome-stage-controls, #ig-stage-bottom) button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; flex: 0 0 auto; }
+:is(#prome-stage-controls, #ig-stage-bottom) .prome-stage-outfit { width: var(--prome-outfit-width,130px); max-width: 45vw; cursor: pointer; }
+:is(#prome-stage-controls, #ig-stage-bottom) .prome-stage-shared { max-width: 120px; border-color: var(--SmartThemeBorderColor,rgba(255,255,255,.16)); }
+:is(#prome-stage-controls, #ig-stage-bottom) select option, .prome-outfit-dialog select option {
+    color: var(--SmartThemeBodyColor,#eee); background: var(--SmartThemeChatTintColor,#26272b);
+}
+:is(#prome-stage-controls, #ig-stage-bottom) button:hover, :is(#prome-stage-controls, #ig-stage-bottom) select:hover,
+:is(#prome-stage-controls, #ig-stage-bottom) button:focus-visible, :is(#prome-stage-controls, #ig-stage-bottom) select:focus-visible {
+    background: var(--SmartThemeQuoteColor,rgba(255,255,255,.1));
+    background: color-mix(in srgb, currentColor 10%, transparent);
+    border-color: var(--SmartThemeBorderColor,rgba(255,255,255,.2));
+}
+:is(#prome-stage-controls, #ig-stage-bottom) :focus-visible { outline: 2px solid var(--SmartThemeQuoteColor,#b5a8e3); outline-offset: 1px; }
+:is(#prome-stage-controls, #ig-stage-bottom) button:disabled, :is(#prome-stage-controls, #ig-stage-bottom) select:disabled { cursor: default; opacity: .45; }
+:is(#prome-stage-controls, #ig-stage-bottom) .prome-stage-talk span, :is(#prome-stage-controls, #ig-stage-bottom) .prome-character-label { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:is(#prome-stage-controls, #ig-stage-bottom) .prome-character-label { padding: 0 5px; font-weight: 600; }
+:is(#prome-stage-controls, #ig-stage-bottom) .prome-stage-lock { min-width: 26px; padding-inline: 5px; }
+:is(#prome-stage-controls, #ig-stage-bottom) .prome-stage-lock.is-locked { color: var(--SmartThemeQuoteColor,#c9b8e9); }
+:is(#prome-stage-controls, #ig-stage-bottom) .prome-stage-outfit, :is(#prome-stage-controls, #ig-stage-bottom) .prome-stage-lock, :is(#prome-stage-controls, #ig-stage-bottom) .prome-character-chip {
+    transition: opacity 140ms ease, border-color 140ms ease;
+}
+:is(#prome-stage-controls, #ig-stage-bottom)[data-fade="outfits"] .prome-character-chip:not(:hover):not(:focus-within) :is(.prome-stage-outfit,.prome-stage-lock),
+:is(#prome-stage-controls, #ig-stage-bottom)[data-fade="all"] .prome-character-chip:not(:hover):not(:focus-within) { opacity: var(--prome-control-idle,.75); }
+:is(#prome-stage-controls, #ig-stage-bottom) .prome-outfit-loading { border-color: var(--SmartThemeQuoteColor,#c9b8e9); }
+:is(#prome-stage-controls, #ig-stage-bottom)[data-flow="wrap"] .prome-stage-roster { flex-wrap: wrap; max-height: calc(2 * (var(--prome-control-height,32px) + 10px) + var(--prome-control-gap,6px)); overflow-y: auto; }
+:is(#prome-stage-controls, #ig-stage-bottom)[data-flow="stack"] .prome-stage-roster { flex-direction: column; align-items: flex-start; max-height: 24dvh; overflow-y: auto; }
+#prome-stage-status:not(:empty) {
+    position: absolute; bottom: calc(100% + 5px); right: 8px; z-index: 10;
+    max-width: min(460px,95%); padding: 7px 10px; border-radius: 7px;
+    background: var(--SmartThemeBlurTintColor,#222); border: 1px solid var(--SmartThemeBorderColor,#666);
+    font-size: 12px; pointer-events: none;
+}
+#prome-stage-status:empty { display:none; }
+.prome-help { opacity: .72; font-size: .86em; line-height: 1.5; margin-block: 4px; }
+.prome-character-settings-body { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
+.prome-character-settings-body > details { border: 1px solid var(--SmartThemeBorderColor,rgba(255,255,255,.15)); border-radius: 7px; overflow: hidden; }
+.prome-character-settings-body > details > summary { padding: 9px 10px; cursor: pointer; font-weight: 600; }
+.prome-settings-section { display: flex; flex-direction: column; gap: 12px; padding: 10px; }
+.prome-settings-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 10px; }
+.prome-settings-grid label, .prome-settings-section > label:not(.prome-number-setting) { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.prome-settings-toggles { display: grid; grid-template-columns: repeat(auto-fit,minmax(165px,1fr)); gap: 8px; }
+.prome-settings-toggles label { display: flex; gap: 7px; align-items: center; }
+.prome-number-setting { display: flex; flex-direction: column; gap: 6px; }
+.prome-number-setting small { opacity: .6; margin-left: 5px; }
+.prome-number-pair { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.prome-number-pair input[type="range"] { flex: 1 1 auto; min-width: 60px; }
+.prome-number-pair input[type="number"] { flex: 0 0 68px; width: 68px; margin: 0; }
+.prome-outfit-dialog {
+    width: min(680px,94vw); max-height: 88dvh; padding: 0; border-radius: 12px;
+    border: 1px solid var(--SmartThemeBorderColor,#555); color: var(--SmartThemeBodyColor,#eee);
+    background: var(--SmartThemeBlurTintColor,#25262b); backdrop-filter: blur(18px); box-shadow: 0 18px 70px #0008;
+}
+.prome-outfit-dialog::backdrop { background: #0007; }
+.prome-outfit-dialog-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px; border-bottom: 1px solid var(--SmartThemeBorderColor,#555); }
+.prome-outfit-dialog-header h3 { margin: 0 0 4px; font-size: 1.15em; }
+.prome-outfit-dialog-header small { opacity: .65; }
+.prome-outfit-dialog-body { padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; max-height: calc(88dvh - 90px); }
+.prome-editor-character { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.prome-editor-character select { flex: 1 1 auto; }
+.prome-editor-character small { opacity: .65; font-size: 12px; }
+.prome-outfit-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.prome-outfit-editor-list { display: flex; flex-direction: column; gap: 9px; }
+.prome-outfit-editor-row { padding: 10px; border: 1px solid var(--SmartThemeBorderColor,#555); border-radius: 8px; }
+.prome-outfit-editor-main { display: flex; align-items: center; gap: 8px; }
+.prome-outfit-editor-main > input[type="text"], .prome-outfit-editor-main > input:not([type]) { min-width: 40px; flex: 1 1 auto; width: 100%; margin: 0; }
+.prome-outfit-row-actions { display: flex; gap: 2px; flex: 0 0 auto; }
+.prome-icon-button { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 3px; color: inherit; border: 1px solid transparent; border-radius: 5px; background: transparent; cursor: pointer; }
+.prome-icon-button:hover, .prome-icon-button:focus-visible { background: #8882; border-color: var(--SmartThemeBorderColor,#555); }
+.prome-outfit-path { display: block; font-size: 11px; opacity: .65; overflow-wrap: anywhere; margin: 5px 0 6px 25px; }
+.prome-outfit-note { font-size: 12px; opacity: .85; margin-left: 25px; }
+.prome-outfit-note summary { cursor: pointer; }
+.prome-outfit-note textarea { width: 100%; margin-top: 7px; }
+.prome-outfit-add { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 8px; border-top: 1px solid var(--SmartThemeBorderColor,#555); padding-top: 12px; }
+.prome-outfit-add h4 { grid-column: 1/-1; margin: 0; }
+.prome-outfit-add label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; }
+.prome-outfit-add input { min-width: 0; width: 100%; }
+.prome-editor-status:empty { display: none; }
+.prome-editor-status { font-size: 12px; opacity: .8; margin: 0; }
+@media (max-width: 520px) {
+    :is(#prome-stage-controls, #ig-stage-bottom) { padding: 4px; }
+    .prome-outfit-dialog-body { padding: 10px; }
+    .prome-outfit-dialog-header { padding: 12px; }
+    .prome-outfit-add { grid-template-columns: 1fr; }
+    .prome-outfit-editor-main { gap: 4px; }
+    .prome-icon-button { width: 28px; height: 30px; }
+}
+@media (prefers-reduced-motion: reduce) { :is(#prome-stage-controls, #ig-stage-bottom) * { transition: none !important; } }
+
+/* Compose dimming at the sprite itself: inherited filter variables can resolve
+   brightness at :root before a per-character value is available. */
+body.waifuMode.spriteDefocusTint :is(#visual-novel-wrapper, #ig-mobile-sprites) > .expression-holder.prome-speaker-dimming,
+body.waifuMode.spriteDefocusTint #expression-wrapper .expression-holder.prome-speaker-dimming {
+    --prome-stage-tint-filter: brightness(1);
+    --prome-stage-shadow-filter: brightness(1);
+    filter: var(--prome-stage-tint-filter) var(--prome-stage-shadow-filter) brightness(var(--prome-defocus-brightness,1));
+}
+body.waifuMode.spriteDefocusTint.spriteShadow :is(#visual-novel-wrapper, #ig-mobile-sprites) > .expression-holder.prome-speaker-dimming,
+body.waifuMode.spriteDefocusTint.spriteShadow #expression-wrapper .expression-holder.prome-speaker-dimming {
+    --prome-stage-shadow-filter: var(--prome-shadow-filter);
+    filter: var(--prome-stage-tint-filter) var(--prome-stage-shadow-filter) brightness(var(--prome-defocus-brightness,1));
+}
+body.waifuMode.spriteDefocusTint.worldTint.tintCharacter :is(#visual-novel-wrapper, #ig-mobile-sprites) > .expression-holder.prome-speaker-dimming,
+body.waifuMode.spriteDefocusTint.worldTint.tintCharacter #expression-wrapper .expression-holder.prome-speaker-dimming {
+    --prome-stage-tint-filter: var(--prome-character-tint-filter);
+}
+body.waifuMode.spriteDefocusTint.worldTint.tintCharacter.tintShared :is(#visual-novel-wrapper, #ig-mobile-sprites) > .expression-holder.prome-speaker-dimming,
+body.waifuMode.spriteDefocusTint.worldTint.tintCharacter.tintShared #expression-wrapper .expression-holder.prome-speaker-dimming {
+    --prome-stage-tint-filter: var(--prome-background-tint-filter);
+}
+
+/* Keep Close reachable while the outfit list scrolls, including on phones. */
+.prome-outfit-dialog { overflow: hidden; }
+.prome-outfit-dialog[open] { display: flex; flex-direction: column; }
+.prome-outfit-dialog-header { flex: 0 0 auto; }
+.prome-outfit-dialog-body { flex: 1 1 auto; min-height: 0; max-height: none; }
+
+/* ImmersiveGroups settings shell and compact scene controls. */
+.ig-settings-toolbar { display:flex; flex-direction:column; gap:8px; padding:10px 0; }
+.ig-settings-toolbar label { display:flex; align-items:center; gap:8px; }
+.ig-settings-tabs { display:flex; flex-wrap:wrap; gap:6px; padding:4px 0 8px; }
+.ig-settings-tabs button { flex:0 0 auto; padding:8px 10px; border:1px solid var(--SmartThemeBorderColor); border-radius:8px; color:#202124; background:#e5e5e8; cursor:pointer; max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+.ig-settings-tabs button[aria-selected="true"] { background:#5b5b5b; color:#fff; border-color:#858585; }
+.ig-centered-tabs .ig-settings-tabs { justify-content:safe center; }
+.ig-settings-panes > section { padding:8px 0; }
+.ig-settings-panes [hidden] { display:none !important; }
+.ig-settings-panes section > small, .ig-settings-toolbar small { display:block; opacity:.75; line-height:1.5; }
+:is(#prome-stage-controls,#ig-stage-bottom) .prome-stage-talk { background:var(--ig-speak-color,rgba(210,132,63,.14)); border-color:rgba(219,149,84,.2); color:var(--ig-button-text,var(--SmartThemeBodyColor)); }
+:is(#prome-stage-controls,#ig-stage-bottom) .prome-character-chip { background:var(--ig-card-color,var(--SmartThemeBlurTintColor)); }
+:is(#prome-stage-controls,#ig-stage-bottom) .prome-stage-outfit { color:var(--ig-outfit-text,var(--ig-button-text,var(--SmartThemeBodyColor))); background:var(--ig-card-color,transparent); }
+:is(#prome-stage-controls,#ig-stage-bottom)[data-names="above"] .prome-character-chip { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px; }
+:is(#prome-stage-controls,#ig-stage-bottom)[data-names="above"] .prome-character-chip > :is(.prome-stage-talk,.prome-character-label) { grid-column:1 / -1; width:100%; max-width:none; justify-content:center; text-align:center; }
+:is(#prome-stage-controls,#ig-stage-bottom)[data-center="true"] .prome-stage-roster { justify-content:safe center; }
+#ig-stage-bottom { flex-wrap:wrap; border-top:1px solid var(--SmartThemeBorderColor); border-bottom:0; }
+.ig-bottom-group { display:flex; gap:var(--prome-control-gap,6px); align-items:center; max-width:100%; overflow-x:auto; }
+.ig-bottom-group:empty { display:none; }
+.ig-background-controls { display:flex; align-items:center; gap:4px; max-width:100%; min-width:0; }
+.ig-background-controls select { max-width:160px; min-width:60px; }
+.ig-background-controls[hidden] { display:none !important; }
+.ig-color-field { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:8px 0; }
+.ig-color-field input[type=color] { width:44px; height:30px; padding:2px; border:1px solid var(--SmartThemeBorderColor); }
+.ig-background-row { display:grid; grid-template-columns:68px 36px minmax(0,1fr) auto; gap:8px; align-items:center; padding:10px 0; border-bottom:1px solid var(--SmartThemeBorderColor); }
+.ig-background-row img { width:68px; height:44px; object-fit:cover; border-radius:5px; }
+.ig-background-name { overflow-wrap:anywhere; }
+.ig-background-row details { grid-column:1 / -1; }
+.ig-background-row details label { display:inline-flex; align-items:center; gap:4px; margin:6px; }
+.ig-background-row details small { display:block; opacity:.7; }
+.ig-star[aria-pressed=true] { color:#efb766; }
+body.waifuMode.ig-hide-quick-replies #qr--bar { display:none !important; }
+#ig-mobile-sprites[hidden] { display:none !important; }
+#ig-mobile-sprites { position:fixed; inset:0; width:100%; height:100dvh; pointer-events:none; z-index:1; }
+#ig-mobile-sprites > .expression-holder { position:absolute; bottom:0; top:auto; width:max-content; height:100%; max-width:none; max-height:none; display:flex !important; align-items:flex-end; transform-origin:bottom; }
+#ig-mobile-sprites > .expression-holder img { height:100%; width:auto; max-width:none; max-height:none; object-fit:contain; }
+body.ig-mobile-group #expression-wrapper, body.ig-mobile-group #visual-novel-wrapper { display:none !important; }
+@media (max-width:500px) {
+ .ig-background-controls select { max-width:125px; }
+ :is(#prome-stage-controls,#ig-stage-bottom)[data-names="above"] .prome-stage-outfit { max-width:calc(100vw - 65px); }
+}
+
+.ig-settings-shell, .ig-settings-panes { min-width:0; max-width:100%; }
+.ig-settings-tabs { position:relative; max-width:100%; }
+.prome-settings-grid label { min-width:0; }
+.prome-settings-grid select { min-width:0; max-width:100%; width:100%; }
+.ig-settings-panes > section > details { border:1px solid var(--SmartThemeBorderColor,rgba(255,255,255,.15)); border-radius:7px; margin-bottom:8px; }
+.ig-settings-panes > section > details > summary { padding:9px 10px; cursor:pointer; font-weight:600; }
+
+/* Profile scope stays visible when editing the profile that is not live. */
+.ig-start-help { font-size:.9em; line-height:1.5; margin:4px 0; opacity:.85; }
+.ig-profile-badge { display:inline-block; flex:none; font-size:10px; font-weight:600; border:1px solid currentColor; border-radius:4px; padding:1px 4px; margin-inline-start:6px; opacity:.75; }
+.ig-profile-mismatch { border-inline-start:3px solid #c49053; padding-inline-start:8px; }
+.ig-settings-tabs button:focus-visible { outline:2px solid var(--SmartThemeQuoteColor,#e4c184); outline-offset:2px; }
+.ig-settings-tabs button:hover:not([aria-selected=true]) { background:#f7f7f8; }
+.ig-advanced { margin:10px 0; }
+.ig-advanced summary { cursor:pointer; padding:8px 0; }
+.ig-roadmap dt { font-weight:600; margin-top:14px; }
+.ig-roadmap dd { margin:5px 0 10px 12px; line-height:1.5; opacity:.85; }
+.ig-settings-shell:is([data-active-tab=gallery],[data-active-tab=context],[data-active-tab=about]) > .ig-settings-toolbar { display:none; }
+#ig-stage-bottom[data-center=true] { justify-content:safe center; }
+#ig-stage-bottom[data-center=true] .ig-bottom-group { justify-content:safe center; }
+.ig-background-description { grid-column:1 / -1; display:flex; flex-direction:column; gap:5px; }
+.ig-background-description textarea { width:100%; min-height:70px; resize:vertical; }
+
+/* Compact, non-modal scene tools. Fixed panels avoid native popup hit testing
+   inside transformed/zoomed chat controls. */
+.ig-floating-panel { position:fixed; z-index:10050; box-sizing:border-box; width:310px; overflow:auto; overscroll-behavior:contain; padding:12px; border:1px solid var(--SmartThemeBorderColor,#777); border-radius:10px; background:var(--SmartThemeBlurTintColor,#25262b); color:var(--SmartThemeBodyColor,#eee); backdrop-filter:blur(20px); box-shadow:0 8px 30px #0009; font-size:14px; }
+.ig-floating-panel[hidden] { display:none !important; }
+.ig-floating-panel label { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:10px 0; }
+.ig-floating-panel select { width:100%; min-width:0; }
+.ig-floating-panel button,.ig-floating-panel input,.ig-floating-panel select { font:inherit; }
+.ig-floating-panel header { display:flex; align-items:center; justify-content:space-between; }
+.ig-floating-panel header button { width:28px; height:28px; border:0; border-radius:4px; color:inherit; background:#8882; cursor:pointer; }
+.ig-floating-panel small { display:block; font-size:12px; opacity:.8; line-height:1.4; margin-top:6px; }
+.ig-live-slider { flex-direction:column; align-items:stretch !important; }
+.ig-live-slider .prome-number-pair { width:100%; }
+.ig-background-popover { width:280px; }
+#ig-stage-tools { display:flex; align-items:center; gap:var(--prome-control-gap,6px); flex:0 0 auto; }
+:is(#prome-stage-controls,#ig-stage-bottom) .ig-background-controls > button { width:var(--prome-control-height,32px); padding:4px; }
+:is(#prome-stage-controls,#ig-stage-bottom) .prome-stage-manager { width:var(--prome-control-height,32px); padding:4px; }
+:is(#prome-stage-controls,#ig-stage-bottom) .prome-stage-outfit { justify-content:space-between; gap:6px; text-align:start; }
+:is(#prome-stage-controls,#ig-stage-bottom) .prome-stage-outfit > span { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+:is(#prome-stage-controls,#ig-stage-bottom) .prome-stage-outfit > i { font-size:.65em; flex:none; }
+.ig-outfit-options { width:230px; padding:5px; background:#e5e5e8; color:#202124; }
+.ig-outfit-options [role=option] { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px; margin:2px 0; border:2px solid transparent; border-radius:5px; min-height:42px; cursor:pointer; overflow-wrap:anywhere; }
+.ig-outfit-options [role=option][aria-selected=true] { background:#5b5b5b; color:#fff; }
+.ig-outfit-options [role=option].ig-option-active { border-color:#b97628; box-shadow:inset 0 0 0 1px #b97628; }
+.ig-outfit-options [role=option].ig-option-active:not([aria-selected=true]) { background:#f7f7f8; }
+/* The same prominence order controls both native and mobile sprite stacks. */
+body.waifuMode :is(#visual-novel-wrapper,#ig-mobile-sprites) > .ig-layered-sprite { z-index:var(--ig-sprite-layer,1) !important; }

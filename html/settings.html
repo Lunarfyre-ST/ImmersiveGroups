@@ -1,0 +1,532 @@
+<!-- Prome Visual Novel Extension Settings -->
+<!-- This is the settings for the Prome Visual Novel Extension. -->
+<!-- Brought to you by Bronya Rand herself. Bronya: :BronyaUhhhhh: -->
+<div class="prome-vn-settings">
+<div class="inline-drawer">
+<div class="inline-drawer-toggle inline-drawer-header">
+<b>ImmersiveGroups</b>
+<div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+</div>
+<div class="inline-drawer-content">
+<div class="prome-drawer-content">
+<small class="flex-container justifyCenter">Character scenes, sprites &amp; galleries · Combined project based on Prome and LocalImage.</small>
+<div class="prome_vn_block flex-container flexFlowColumn">
+<label class="checkbox_label" for="prome-enable-vn" title="Enable character scene controls and VN mode. Gallery has its own toggle.">
+<input id="prome-enable-vn" type="checkbox"/>
+<span>Enable character scene (VN mode)</span>
+</label>
+</div>
+<!-- Sheld Configuration -->
+<div class="ig-settings-shell">
+<p class="ig-start-help">Start with character controls and outfits. Use Sprites for scale and dimming, Chat layout for space, and Gallery for images. Changes save automatically.</p>
+<div class="ig-settings-toolbar">
+<label>Use layout <select id="ig-layout-mode"><option value="auto">Automatic</option><option value="desktop">PC (forced)</option><option value="mobile">Mobile (forced)</option></select></label>
+<label>Edit profile <select id="ig-edit-layout"><option value="desktop">PC</option><option value="mobile">Mobile</option></select></label>
+<small>Profile settings have a PC / Mobile badge. Other settings apply to both. Selecting an edit profile does not switch the live layout; use “Use layout” to preview it.</small>
+<label><input data-prome-stage-setting="settingsTabsCentered" type="checkbox"/> Center settings tabs</label>
+</div>
+<div aria-label="ImmersiveGroups features" class="ig-settings-tabs" role="tablist"><button aria-controls="ig-pane-controls" data-ig-tab="controls" id="ig-tab-controls" role="tab" type="button">Characters &amp; controls</button><button aria-controls="ig-pane-outfits" data-ig-tab="outfits" id="ig-tab-outfits" role="tab" type="button">Outfits &amp; colors</button><button aria-controls="ig-pane-sprites" data-ig-tab="sprites" id="ig-tab-sprites" role="tab" type="button">Sprites &amp; dimming</button><button aria-controls="ig-pane-chat" data-ig-tab="chat" id="ig-tab-chat" role="tab" type="button">Chat layout</button><button aria-controls="ig-pane-backgrounds" data-ig-tab="backgrounds" id="ig-tab-backgrounds" role="tab" type="button">Backgrounds</button><button aria-controls="ig-pane-original" data-ig-tab="original" id="ig-tab-original" role="tab" type="button">Prome original</button><button aria-controls="ig-pane-context" data-ig-tab="context" id="ig-tab-context" role="tab" type="button">Context Injection</button><button aria-controls="ig-pane-about" data-ig-tab="about" id="ig-tab-about" role="tab" type="button">About</button></div><div class="ig-settings-panes"><section aria-labelledby="ig-tab-controls" data-ig-pane="controls" id="ig-pane-controls" role="tabpanel" tabindex="0"><div class="prome-settings-section"><h4>Placement &amp; alignment</h4><div class="prome-settings-grid">
+<label>Speak buttons<select data-prome-stage-setting="stageSpeakPlacement"><option value="top">Above chat</option><option value="bottom">Below textbox</option></select></label>
+<label>Outfit selectors<select data-prome-stage-setting="stageOutfitPlacement"><option value="top">Above chat</option><option value="bottom">Below textbox</option></select></label></div>
+<label><input data-prome-stage-setting="stageNamesAbove" type="checkbox"/> Put character names / Speak above outfit selectors</label>
+<label><input data-prome-stage-setting="stageCenterCards" type="checkbox"/> Center character controls when they fit</label>
+<small>Names above creates compact columns. Each control can be placed independently; hidden buttons keep their settings.</small></div><details open=""><summary>Sheld controls</summary><div class="prome-settings-section">
+<label class="checkbox_label"><input id="prome-stage-enabled" type="checkbox"/> Show controls on the Sheld</label>
+<div class="prome-settings-grid">
+<label>Control layout<select data-prome-stage-setting="stageLayout"><option value="characters">One set per character</option><option value="shared">One shared set</option></select></label>
+<label>When space runs out<select data-prome-stage-setting="stageFlow"><option value="scroll">Scroll horizontally</option><option value="wrap">Wrap (up to two rows)</option><option value="stack">Stack characters</option></select></label>
+</div>
+<div class="prome-settings-toggles">
+<label><input data-prome-stage-setting="stageShowSpeak" type="checkbox"/> Talk buttons</label>
+<label><input data-prome-stage-setting="stageShowOutfits" type="checkbox"/> Outfit selectors</label>
+<label><input data-prome-stage-setting="stageShowNames" type="checkbox"/> Character names</label>
+<label><input data-prome-stage-setting="stageShowLocks" type="checkbox"/> Automatic-change locks</label>
+<label><input data-prome-stage-setting="stageShowManager" type="checkbox"/> Outfit manager button</label>
+</div>
+<details class="ig-advanced"><summary>Size &amp; idle appearance</summary><label class="prome-number-setting"><span>Button height (px) <small>default 32</small></span><span class="prome-number-pair"><input aria-label="Button height (px)" data-prome-stage-setting="stageControlHeight" max="56" min="24" step="1" type="range"/><input aria-label="Button height (px) value" class="text_pole" data-prome-stage-setting="stageControlHeight" max="56" min="24" step="1" type="number"/></span></label>
+<label class="prome-number-setting"><span>Text size (px) <small>default 13</small></span><span class="prome-number-pair"><input aria-label="Text size (px)" data-prome-stage-setting="stageFontSize" max="22" min="10" step="1" type="range"/><input aria-label="Text size (px) value" class="text_pole" data-prome-stage-setting="stageFontSize" max="22" min="10" step="1" type="number"/></span></label>
+<label class="prome-number-setting"><span>Outfit selector width (px) <small>default 130</small></span><span class="prome-number-pair"><input aria-label="Outfit selector width (px)" data-prome-stage-setting="stageOutfitWidth" max="260" min="80" step="1" type="range"/><input aria-label="Outfit selector width (px) value" class="text_pole" data-prome-stage-setting="stageOutfitWidth" max="260" min="80" step="1" type="number"/></span></label>
+<label class="prome-number-setting"><span>Gap between controls (px) <small>default 6</small></span><span class="prome-number-pair"><input aria-label="Gap between controls (px)" data-prome-stage-setting="stageGap" max="16" min="2" step="1" type="range"/><input aria-label="Gap between controls (px) value" class="text_pole" data-prome-stage-setting="stageGap" max="16" min="2" step="1" type="number"/></span></label>
+<label class="prome-number-setting"><span>Idle opacity (%) <small>default 75</small></span><span class="prome-number-pair"><input aria-label="Idle opacity (%)" data-prome-stage-setting="stageIdleOpacity" max="100" min="20" step="1" type="range"/><input aria-label="Idle opacity (%) value" class="text_pole" data-prome-stage-setting="stageIdleOpacity" max="100" min="20" step="1" type="number"/></span></label>
+<label>Fade when idle<select data-prome-stage-setting="stageFadeTarget"><option value="outfits">Outfit selectors and locks</option><option value="all">All character controls</option></select></label>
+<small class="prome-help">Hovered, focused and open controls return to full opacity. Set opacity to 100% to turn fading off. Manual outfit selections apply immediately.</small>
+</details><button class="menu_button" id="prome-stage-style-reset" type="button">Reset appearance for this profile</button>
+</div></details></section><section aria-labelledby="ig-tab-outfits" data-ig-pane="outfits" id="ig-pane-outfits" role="tabpanel" tabindex="0"><details open=""><summary>Outfit library</summary><div class="prome-settings-section">
+<label><input data-prome-stage-setting="autoDiscoverOutfits" type="checkbox"/> Find common outfit folders when opening a chat</label>
+<label><input data-prome-stage-setting="hideBasicOutfit" type="checkbox"/> Hide Basic automatically when outfit1 exists</label>
+<button class="menu_button" id="prome-open-outfit-editor" type="button">Manage outfits</button>
+<small class="prome-help">Rename display labels, show/hide and reorder outfits, add custom folder names, or import names from your character’s sprite folder. Existing Quick Reply outfit changes are remembered as they appear.</small>
+</div></details><p class="prome-help">The outfit library includes per-character button backgrounds, Speak colors and text colors, plus per-outfit font colors and scene descriptions. Descriptions are saved for future context injection; no automatic model changes run yet.</p></section><section aria-labelledby="ig-tab-sprites" data-ig-pane="sprites" id="ig-pane-sprites" role="tabpanel" tabindex="0"><label class="checkbox_label"><input data-prome-stage-setting="mobileGroupSprites" type="checkbox"/> Show multiple group sprites on mobile</label><small>Uses your active group members and current outfit folders. Character Expressions must be enabled.</small><label class="prome-number-setting"><span>Fit calibration (%) <small>default 100</small></span><span class="prome-number-pair"><input aria-label="Fit calibration (%)" data-prome-stage-setting="layoutSpriteScale" max="600" min="1" type="range"/><input aria-label="Fit calibration (%) value" class="text_pole" data-prome-stage-setting="layoutSpriteScale" max="600" min="1" type="number"/></span></label><details open=""><summary>Sprite spacing</summary><div class="prome-settings-section">
+<label><input id="prome-stable-slots" type="checkbox"/> Keep group sprites in stable slots</label>
+<label>Spacing (%) <small>default 100</small></label>
+<div class="prome-number-pair"><input aria-label="Sprite spacing" id="prome-sprite-spacing" max="160" min="20" type="range" value="100"/><input aria-label="Sprite spacing value" class="text_pole" id="prome-sprite-spacing-number" max="160" min="20" type="number" value="100"/><button class="menu_button" id="prome-sprite-spacing-reset" type="button">Reset</button></div>
+<small class="prome-help">Smaller values bring characters closer together. Saved manual positions take precedence.</small>
+</div></details><details id="prome-height-profile-editor" open=""><summary>Character heights</summary>
+<div class="prome-drawer-content prome_details_padding">
+<label><input id="prome-profiles-enabled" type="checkbox"/> Use character heights</label>
+<p class="prome-help">The tallest active character is the reference. Set heights in centimeters, adjust Fit calibration above until that character fits the screen, then fine tune individual sprites below. Changing a value enables height scaling.</p>
+<label>Character <select id="prome-profile-character"></select></label>
+<fieldset class="prome-drawer-content" id="prome-profile-fields">
+<label>Character height (cm)<input class="text_pole" id="prome-profile-cm" min="30" max="300" type="number" value="180"/></label>
+<label class="prome-number-setting"><span>Fine tune (%) <small>default 100</small></span><span class="prome-number-pair"><input aria-label="Character fine tuning" id="prome-profile-fine-slider" type="range" min="25" max="200" step="1"/><input class="text_pole" aria-label="Character fine tuning value" id="prome-profile-fine" type="number" min="1" max="8000" step="0.1"/></span></label>
+<button class="menu_button" id="prome-profile-reset" type="button">Reset fine tuning</button>
+</fieldset><output id="prome-profile-preview"></output>
+<small>Height is shared across PC and mobile. Fine tuning and Fit calibration are saved separately for each profile. Previous height settings are kept in a migration backup.</small>
+</div></details><details><summary>Speaker dimming</summary><div class="prome-settings-section">
+<label class="checkbox_label"><input id="prome-sprite-defocus-tint" type="checkbox"/> Darken character sprites by speaking order</label>
+<label class="prome-number-setting"><span>Current speaker darkening (%) <small>default 0</small></span><span class="prome-number-pair"><input aria-label="Current speaker darkening (%)" data-prome-stage-setting="speakerDimCurrent" max="100" min="0" step="1" type="range"/><input aria-label="Current speaker darkening (%) value" class="text_pole" data-prome-stage-setting="speakerDimCurrent" max="100" min="0" step="1" type="number"/></span></label>
+<label class="prome-number-setting"><span>Previous speaker darkening (%) <small>default 25</small></span><span class="prome-number-pair"><input aria-label="Previous speaker darkening (%)" data-prome-stage-setting="speakerDimPrevious" max="100" min="0" step="1" type="range"/><input aria-label="Previous speaker darkening (%) value" class="text_pole" data-prome-stage-setting="speakerDimPrevious" max="100" min="0" step="1" type="number"/></span></label>
+<label class="prome-number-setting"><span>Third most recent speaker darkening (%) <small>default 50</small></span><span class="prome-number-pair"><input aria-label="Third most recent speaker darkening (%)" data-prome-stage-setting="speakerDimThird" max="100" min="0" type="range"/><input aria-label="Third most recent speaker darkening (%) value" class="text_pole" data-prome-stage-setting="speakerDimThird" max="100" min="0" type="number"/></span></label>
+<small class="prome-help">0% keeps a sprite fully lit; 100% makes it black. Order follows distinct character speakers and ignores user/system messages. Shadow opacity remains separate.</small><label class="prome-number-setting"><span>Fourth most recent speaker darkening (%) <small>default 75</small></span><span class="prome-number-pair"><input aria-label="Fourth most recent speaker darkening (%)" data-prome-stage-setting="speakerDimFourth" max="100" min="0" type="range"/><input aria-label="Fourth most recent speaker darkening (%) value" class="text_pole" data-prome-stage-setting="speakerDimFourth" max="100" min="0" type="number"/></span></label><label class="prome-number-setting"><span>Fifth, older &amp; silent members darkening (%) <small>default 100</small></span><span class="prome-number-pair"><input aria-label="Fifth, older &amp; silent members darkening (%)" data-prome-stage-setting="speakerDimFifth" max="100" min="0" type="range"/><input aria-label="Fifth, older &amp; silent members darkening (%) value" class="text_pole" data-prome-stage-setting="speakerDimFifth" max="100" min="0" type="number"/></span></label>
+</div></details></section><section aria-labelledby="ig-tab-chat" data-ig-pane="chat" id="ig-pane-chat" role="tabpanel" tabindex="0"><hr/>
+<label class="checkbox_label" for="prome-limit-quick-replies">
+<input id="prome-limit-quick-replies" type="checkbox"/>
+<span>Limit Quick Reply rows in VN mode</span>
+</label>
+<small>Extra replies scroll inside the bar instead of shrinking the chat. Set rows to 0 to hide the inline bar. The popup is unaffected.</small>
+<label for="prome-quick-reply-desktop">Desktop rows: <output id="prome-quick-reply-desktop-value">2</output></label>
+<input id="prome-quick-reply-desktop" max="6" min="0" step="1" type="range" value="2"/>
+<label for="prome-quick-reply-mobile">Mobile rows: <output id="prome-quick-reply-mobile-value">1</output></label>
+<input id="prome-quick-reply-mobile" max="6" min="0" step="1" type="range" value="1"/>
+<label for="prome-mobile-layout-height-number">Apply mobile layout at height (px)</label>
+<div class="prome-layout-controls">
+<input aria-label="Mobile layout height threshold" id="prome-mobile-layout-height-slider" max="3000" min="100" step="1" type="range" value="1000"/>
+<input class="text_pole" id="prome-mobile-layout-height-number" max="3000" min="100" step="1" type="number" value="1000"/>
+<button class="menu_button" id="prome-mobile-layout-height-reset" title="Restore 1000 px" type="button">Reset</button>
+</div>
+<small>Default: 1000 px. Mobile rows apply when the visible window height is at or below this value.</small>
+<hr/>
+<label for="prome-sheld-height-number">Sheld window height (%)</label>
+<div class="prome-layout-controls">
+<input aria-label="Sheld window height" id="prome-sheld-height-slider" max="100" min="0" step="1" type="range" value="0"/>
+<input class="text_pole" id="prome-sheld-height-number" max="100" min="0" step="1" type="number" value="0"/>
+<button class="menu_button" id="prome-sheld-height-reset" title="Restore automatic height" type="button">Reset</button>
+</div>
+<output id="prome-sheld-height-status">Automatic (default)</output>
+<small>Default: 0 = automatic (original SillyTavern/theme height). Set 1–100 for a percentage of the visible window. Applies in VN mode.</small>
+</section><section aria-labelledby="ig-tab-backgrounds" data-ig-pane="backgrounds" id="ig-pane-backgrounds" role="tabpanel" tabindex="0"><div class="prome-settings-section"><h4>Scene backgrounds</h4><label><input data-prome-stage-setting="stageShowBackground" type="checkbox"/> Show background selector</label><label>Background selector placement<select data-prome-stage-setting="stageBackgroundPlacement"><option value="top">Above chat</option><option value="bottom">Below textbox</option></select></label><button class="menu_button" id="ig-open-backgrounds" type="button">Manage backgrounds &amp; favorites</button><p class="prome-help">Browse the full background list and star your favorites. The normal selector shows only starred entries. Scene descriptions are saved with each background for future context injection. Optional character bindings filter favorites by character; they do not change backgrounds automatically. Native background locks are respected.</p></div></section><section aria-labelledby="ig-tab-original" data-ig-pane="original" id="ig-pane-original" role="tabpanel" tabindex="0"><details>
+<summary data-i18n="Sheld Configuration">
+                        Sheld Configuration
+                    </summary>
+<div class="prome_vn_block flex-container flexFlowColumn prome_details_padding">
+<label class="checkbox_label" data-i18n="[title]Hide the message box (sheld) in the ST UI." for="prome-hide-sheld" title="Hide the message box (sheld) in the ST UI.">
+<input id="prome-hide-sheld" type="checkbox"/>
+<div class="flex-container flexFlowRow alignitemscenter">
+<span data-i18n="Hide Sheld">Hide Sheld</span>
+<small data-i18n="(Message Box)">(Message Box)</small>
+</div>
+</label>
+<label class="checkbox_label" data-i18n="[title]Only Show Last Message in Chat (Requires Prome to be enabled)." for="prome-sheld-last_mes" title="Only Show Last Message in Chat (Requires Prome to be enabled).">
+<input id="prome-sheld-last_mes" type="checkbox"/>
+<div class="flex-container flexFlowRow alignitemscenter">
+<span data-i18n="Enable Traditional VN Mode">Enable Traditional VN Mode</span>
+<small data-i18n="(Requires Prome to be enabled)">(Requires Prome to be enabled)</small>
+</div>
+</label>
+</div>
+</details><details>
+<summary data-i18n="Letterbox Configuration">
+                        Letterbox Configuration
+                        <small data-i18n="(Requires Prome to be enabled)">(Requires Prome to be enabled)</small>
+</summary>
+<div class="prome_vn_block flex-container flexFlowColumn prome_details_padding">
+<div class="prome_vn_block flex-container flexFlowColumn">
+<label data-i18n="Letterbox Mode" for="prome-letterbox-mode">Letterbox Mode</label>
+<small data-i18n="Select the letterbox mode for the Prome VN UI.">Select the letterbox mode
+                                for the Prome
+                                VN UI.</small>
+<select id="prome-letterbox-mode">
+<option data-i18n="None" value="0">None</option>
+<option data-i18n="Horizontal Letterbox" value="1">
+                                    Horizontal Letterbox
+                                </option>
+<option data-i18n="Vertical Letterbox" value="2">
+                                    Vertical Letterbox
+                                </option>
+</select>
+</div>
+<div class="prome_vn_block flex-container flexFlowRow">
+<div class="prome_vn_block flex-container flexFlowColumn">
+<label class="title_restorable" for="prome-letterbox-color">
+<span data-i18n="Letterbox Color">Letterbox Color</span>
+<div class="right_menu_button" id="prome-letterbox-color-restore" title="Restore default value">
+<i class="fa-solid fa-clock-rotate-left fa-sm"></i>
+</div>
+</label>
+<small data-i18n="Select the color of the letterbox.">Select the color of the
+                                    letterbox.</small>
+<div class="flex-container flexFlowRow">
+<toolcool-color-picker id="prome-letterbox-color-picker"></toolcool-color-picker>
+</div>
+</div>
+<div class="prome_vn_block flex-container flexFlowColumn">
+<label class="title_restorable" for="prome-letterbox-size">
+<span data-i18n="Letterbox Size">Letterbox Size</span>
+<div class="right_menu_button" id="prome-letterbox-size-restore" title="Restore default value">
+<i class="fa-solid fa-clock-rotate-left fa-sm"></i>
+</div>
+</label>
+<small data-i18n="Set the size of the letterbox.">Set the size of the letterbox.</small>
+<input class="neo-range-slider" id="prome-letterbox-size" max="50" min="1" step="1" type="range"/>
+<input class="neo-range-input" data-for="prome-letterbox-size" id="prome-letterbox-size-counter" max="50" min="1" step="1" type="number"/>
+</div>
+</div>
+</div>
+</details><details>
+<summary data-i18n="Sprite Configuration">
+                        Sprite Configuration
+                        <small data-i18n="(Requires Prome to be enabled)">(Requires Prome to be enabled)</small>
+</summary>
+<div class="prome_vn_block flex-container flexFlowColumn prome_details_padding">
+<h4 data-i18n="General Sprite Settings">General Sprite Settings</h4>
+<div class="prome_vn_block flex-container flexFlowColumn prome_details_padding">
+<label class="checkbox_label" data-i18n="[title]Emulates the character card of a character to be a sprite. (Requires Prome to be enabled)." for="prome-emulate-sprites" title="Emulates the character card of a character to be a sprite. (Requires Prome to be enabled).">
+<input id="prome-emulate-sprites" type="checkbox"/>
+<span data-i18n="Emulate Character Card as Sprite">Emulate Character Card as
+                                    Sprite</span>
+</label>
+<label class="checkbox_label" data-i18n="[title]Shakes the character sprite when the character is speaking (Only works if Streaming is enabled in Preset Settings)." for="prome-sprite-shake" title="Shakes the character sprite when the character is speaking (Only works if Streaming is enabled in Preset Settings).">
+<input id="prome-sprite-shake" type="checkbox"/>
+<span data-i18n="Enable Sprite Shake">[BETA] Enable Sprite Shake</span>
+</label>
+<label class="checkbox_label" data-i18n="[title]Toggles sprite scaling for character sprites." for="prome-sprite-sprite-scale" title="Toggles sprite scaling for character sprites.">
+<input id="prome-sprite-scale" type="checkbox"/>
+<span data-i18n="Enable Sprite Scale">Enable Sprite Scale</span>
+</label>
+<div class="prome_vn_block flex-container flexFlowRow">
+<div class="prome_vn_block flex-container flexFlowColumn">
+<label class="title_restorable" for="prome-sprite-scale-size">
+<span data-i18n="Sprite Scale">Sprite Scale</span>
+<div class="right_menu_button" id="prome-sprite-scale-size-restore" title="Restore default value">
+<i class="fa-solid fa-clock-rotate-left fa-sm"></i>
+</div>
+</label>
+<small data-i18n="Set the size scale of the character sprites.">Set the size
+                                        scale of the character
+                                        sprite.</small>
+<input class="neo-range-slider" id="prome-sprite-scale-size" max="2.0" min=".1" step=".01" type="range"/>
+<input class="neo-range-input" data-for="prome-sprite-scale-size" id="prome-sprite-scale-size-counter" max="2.0" min=".1" step=".01" type="number"/>
+</div>
+</div>
+</div>
+<hr/>
+<!-- Focus/Defocus Mode -->
+<h4 data-i18n="Focus Settings">Focus Settings</h4>
+<div class="prome_vn_block flex-container flexFlowColumn prome_details_padding">
+<div class="flex-container flexFlowRow">
+<label class="checkbox_label" data-i18n="[title]Focuses the current speaking character in chat. (Requires Prome to be enabled)." for="prome-sprite-zoom" title="Focuses the current speaking character in chat. (Requires Prome to be enabled).">
+<input id="prome-sprite-zoom" type="checkbox"/>
+<span data-i18n="Enable Focus Mode">Enable Focus Mode</span>
+</label>
+</div>
+<div class="prome_vn_block flex-container flexFlowColumn">
+<div class="prome_vn_block flex-container flexFlowColumn">
+<label data-i18n="Focus Mode Animation" for="prome-sprite-zoom-animation">Focus Mode
+                                        Animation</label>
+<small data-i18n="Select the animation for focus mode.">Select the animation for
+                                        focus mode.</small>
+<select id="prome-sprite-zoom-animation">
+<option data-i18n="Ease" value="ease">Ease</option>
+<option data-i18n="Ease-In" value="ease-in">Ease-In</option>
+<option data-i18n="Ease-Out" value="ease-out">
+                                            Ease-Out
+                                        </option>
+<option data-i18n="Ease-In-Out" value="ease-in-out">
+                                            Ease-In-Out
+                                        </option>
+<option data-i18n="Linear" value="linear">Linear</option>
+</select>
+</div>
+<div class="prome_vn_block flex-container flexFlowColumn">
+<label class="title_restorable" for="prome-sprite-zoom-speed">
+<span data-i18n="Focus Mode Animation Speed">Focus Mode Animation Speed</span>
+<div class="right_menu_button" id="prome-sprite-zoom-speed-restore" title="Restore default value">
+<i class="fa-solid fa-clock-rotate-left fa-sm"></i>
+</div>
+</label>
+<small data-i18n="Set the speed of the focus animation.">Set the speed of the focus
+                                        animation.</small>
+<input class="neo-range-slider" id="prome-sprite-zoom-speed" max="1.0" min=".1" step=".01" type="range"/>
+<input class="neo-range-input" data-for="prome-sprite-zoom-speed" id="prome-sprite-zoom-speed-counter" max="1.0" min=".01" step=".01" type="number"/>
+</div>
+</div>
+</div>
+<hr/>
+<!-- Sprite Shadows -->
+<h4 data-i18n="Sprite Shadow Settings">Sprite Shadow Settings</h4>
+<div class="prome_vn_block flex-container flexFlowColumn prome_details_padding">
+<label class="checkbox_label" data-i18n="[title]Adds a shadow to the character sprite." for="prome-sprite-shadow" title="Adds a shadow to the character sprite.">
+<input id="prome-sprite-shadow" type="checkbox"/>
+<span data-i18n="Enable Sprite Shadow">Enable Sprite Shadow</span>
+</label>
+<div class="flex-container flexFlowRow">
+<div class="prome_vn_block flex-container flexFlowColumn">
+<label class="title_restorable" for="prome-sprite-shadow-offsetx">
+<span data-i18n="Shadow X Offset">Shadow X Offset</span>
+<div class="right_menu_button" id="prome-sprite-shadow-offsetx-restore" title="Restore default value">
+<i class="fa-solid fa-clock-rotate-left fa-sm"></i>
+</div>
+</label>
+<small data-i18n="Set the X offset of the character shadow.">Set the X offset of
+                                        the character
+                                        shadow.</small>
+<input class="neo-range-slider" id="prome-sprite-shadow-offsetx" max="20" min="1" step="1" type="range"/>
+<input class="neo-range-input" data-for="prome-sprite-shadow-offsetx" id="prome-sprite-shadow-offsetx-counter" max="20" min="1" step="1" type="number"/>
+</div>
+<div class="prome_vn_block flex-container flexFlowColumn">
+<label class="title_restorable" for="prome-sprite-shadow-offsety">
+<span data-i18n="Shadow Y Offset">Shadow Y Offset</span>
+<div class="right_menu_button" id="prome-sprite-shadow-offsety-restore" title="Restore default value">
+<i class="fa-solid fa-clock-rotate-left fa-sm"></i>
+</div>
+</label>
+<small data-i18n="Set the Y offset of the character shadow.">Set the Y offset of
+                                        the character
+                                        shadow.</small>
+<input class="neo-range-slider" id="prome-sprite-shadow-offsety" max="20" min="1" step="1" type="range"/>
+<input class="neo-range-input" data-for="prome-sprite-shadow-offsety" id="prome-sprite-shadow-offsety-counter" max="20" min="1" step="1" type="number"/>
+</div>
+<div class="prome_vn_block flex-container flexFlowColumn">
+<label class="title_restorable" for="prome-sprite-shadow-blur">
+<span data-i18n="Shadow Blur">Shadow Blur</span>
+<div class="right_menu_button" id="prome-sprite-shadow-blur-restore" title="Restore default value">
+<i class="fa-solid fa-clock-rotate-left fa-sm"></i>
+</div>
+</label>
+<small data-i18n="Set the blur of the character shadow.">Set the blur of the
+                                        character
+                                        shadow.</small>
+<input class="neo-range-slider" id="prome-sprite-shadow-blur" max="20" min="1" step="1" type="range"/>
+<input class="neo-range-input" data-for="prome-sprite-shadow-blur" id="prome-sprite-shadow-blur-counter" max="20" min="1" step="1" type="number"/>
+</div>
+</div>
+</div>
+<hr/>
+<h4>Shadow opacity</h4>
+<div class="prome-layout-controls">
+<input aria-label="Shadow opacity percent" id="prome-shadow-opacity" max="100" min="0" step="1" type="range" value="100"/>
+<input aria-label="Shadow opacity percent" class="text_pole" id="prome-shadow-opacity-number" max="100" min="0" step="1" type="number" value="100"/>
+<button class="menu_button" id="prome-shadow-opacity-reset" type="button">Reset</button>
+</div>
+<small>Default: 100%. Changes the shadow only, not the sprite.</small>
+<hr/>
+<hr/>
+<!-- Auto-Hide Sprites -->
+<h4 data-i18n="Auto-Hide Sprite Settings">Auto-Hide Sprite Settings</h4>
+<div class="prome_vn_block flex-container flexFlowColumn prome_details_padding">
+<label class="checkbox_label" data-i18n="[title]Auto-hides characters from the screen that haven't been in the conversation for a while up to X characters. (Requires Prome to be enabled)." for="prome-auto-hide-sprites" title="Auto-hides characters from the screen that haven't been in the conversation for a while up to X characters. (Requires Prome to be enabled).">
+<input id="prome-auto-hide-sprites" type="checkbox"/>
+<span data-i18n="Auto-Hide Sprites">Auto-Hide Sprites</span>
+</label>
+<div class="flex-container flexFlowColumn">
+<label class="title_restorable" for="prome-sprite-max-visible">
+<span data-i18n="Max Visible Sprites">Max Visible Sprites</span>
+<div class="right_menu_button" id="prome-sprite-max-visible-restore" title="Restore default value">
+<i class="fa-solid fa-clock-rotate-left fa-sm"></i>
+</div>
+</label>
+<small data-i18n="Set the maximum number of visible sprites that appears in the VN screen.">Set
+                                    the maximum number of visible sprites that appears in the VN screen.</small>
+<input class="neo-range-input" data-for="prome-sprite-max-visible" id="prome-sprite-max-visible" max="8" min="1" step="1" type="number"/>
+</div>
+</div>
+<hr/>
+<h4 data-i18n="User Sprite Settings">[BETA] User Sprite Settings</h4>
+<div class="prome_vn_block flex-container flexFlowColumn prome_details_padding">
+<label class="checkbox_label" data-i18n="[title]Enables the ability to use a user sprite for your persona." for="prome-user-sprite" title="Enables the ability to use a user sprite for your persona.">
+<input id="prome-user-sprite" type="checkbox"/>
+<span data-i18n="Enable User Sprite">Enable User Sprite</span>
+</label>
+<label data-i18n="Sprite List" for="prome-user-sprites">Sprite Set</label>
+<small data-i18n="Type the name of the sprite set to use for your persona. (Place your sprites in the 'characters' folder in SillyTavern).">Type
+                                the name of the sprite set to use for your persona.
+                                (Place your sprites in the 'characters' folder in
+                                SillyTavern).</small>
+<textarea class="text_pole textarea_compact" data-i18n="[placeholder]Enter the name of your sprite" id="prome-user-sprite-input" placeholder="Enter the name of your sprite" type="text"></textarea>
+<p>
+<small data-i18n="Note: Create a sprite folder in the ">Note: Create a sprite
+                                    folder in the
+                                </small>
+<b>characters</b>
+<small data-i18n=" folder of your user directory (typically 'data/default-user'). Place your expressions there.">
+                                    folder of your user directory (typically
+                                    'data/default-user'). Place your expressions there.</small>
+</p>
+</div>
+</div>
+</details><details>
+<summary data-i18n="Tint Configuration">Tint Configuration</summary>
+<div class="prome_vn_block flex-container flexFlowColumn prome_details_padding">
+<small data-i18n="Character Tint/Share World Tint With Characters requires Prome to be enabled.">Character
+                            Tint/Share World Tint With Characters requires Prome to be enabled.</small>
+<div class="prome_vn_block flex-container flexFlowRow">
+<label class="checkbox_label" data-i18n="[title]Tints the chat background and/or character sprites." for="prome-tint-chat" title="Tints the chat background and/or character sprites.">
+<input id="prome-tint-enable" type="checkbox"/>
+<span data-i18n="Enable Chat Tint">Enable Chat Tint</span>
+</label>
+<label class="checkbox_label" data-i18n="[title]Applies the world tint to character sprites (Requires Prome to be enabled. This will override your character tint settings)." for="prome-world-tint-share" title="Applies the world tint to character sprites (Requires Prome to be enabled. This will override your character tint settings).">
+<input id="prome-tint-share" type="checkbox"/>
+<span data-i18n="Share World Tint With Characters">Share World Tint With
+                                    Characters</span>
+</label>
+</div>
+<div class="prome_vn_block flex-container flexFlowColumn">
+<label data-i18n="Tint Presets" for="prome-tint-preset">Tint Presets</label>
+<small data-i18n="Select the tint preset to use for the Prome VN UI.">Select the tint preset
+                                to use for
+                                the Prome VN UI.</small>
+<div class="flex-container flexFlowRow">
+<select id="prome-tint-preset"></select>
+<div class="menu_button" data-i18n="[title]Save tint" id="prome-tint-save" title="Save tint">
+<i class="fa-solid fa-save"></i>
+</div>
+<div class="menu_button" data-i18n="[title]Delete tint" id="prome-tint-delete" title="Delete tint">
+<i class="fa-solid fa-trash-can"></i>
+</div>
+</div>
+</div>
+<div class="prome_vn_block flex-container flexFlowRow">
+<!-- World Tint Settings -->
+<div class="prome_vn_block flex-container flexFlowColumn">
+<span data-i18n="World Tint Settings">World Tint Settings</span>
+<label class="checkbox_label" data-i18n="[title]Tints the world background." for="prome-world-tint" title="Tints the world background.">
+<input id="prome-world-tint" type="checkbox"/>
+<span data-i18n="Enable World Tint">Enable World Tint</span>
+</label>
+<label class="title_restorable" for="prome-world-blur">
+<span data-i18n="Blur Strength">Blur Strength</span>
+</label>
+<small data-i18n="Set the strength of the world blur.">Set the strength of the world
+                                    blur.</small>
+<input class="neo-range-input" data-for="prome-world-blur" id="prome-world-blur" max="999" min="0" step="1" type="number"/>
+<label class="title_restorable" for="prome-world-brightness">
+<span data-i18n="Brightness">Brightness</span>
+</label>
+<small data-i18n="Set the brightness of the world.">Set the brightness of the
+                                    world.</small>
+<input class="neo-range-input" data-for="prome-world-brightness" id="prome-world-brightness" max="999" min="0" step="1" type="number"/>
+<label class="title_restorable" for="prome-world-contrast">
+<span data-i18n="Contrast">Contrast</span>
+</label>
+<small data-i18n="Set the contrast of the world.">Set the contrast of the world.</small>
+<input class="neo-range-input" data-for="prome-world-contrast" id="prome-world-contrast" max="999" min="0" step="1" type="number"/>
+<label class="title_restorable" for="prome-world-grayscale">
+<span data-i18n="Grayscale">Grayscale</span>
+</label>
+<small data-i18n="Makes the world black and white.">Makes the world black and
+                                    white.</small>
+<input class="neo-range-input" data-for="prome-world-grayscale" id="prome-world-grayscale" max="999" min="0" step="1" type="number"/>
+<label class="title_restorable" for="prome-world-hue">
+<span data-i18n="Hue">Hue</span>
+</label>
+<small data-i18n="Set the hue of the world.">Set the hue of the world.</small>
+<input class="neo-range-input" data-for="prome-world-hue" id="prome-world-hue" max="999" min="0" step="1" type="number"/>
+<label class="title_restorable" for="prome-world-invert">
+<span data-i18n="Invert">Invert</span>
+</label>
+<small data-i18n="Inverts the world colors.">Inverts the world colors.</small>
+<input class="neo-range-input" data-for="prome-world-invert" id="prome-world-invert" max="999" min="0" step="1" type="number"/>
+<label class="title_restorable" for="prome-world-saturate">
+<span data-i18n="Saturate">Saturate</span>
+</label>
+<small data-i18n="Saturates the world colors.">Saturates the world colors.</small>
+<input class="neo-range-input" data-for="prome-world-saturate" id="prome-world-saturate" max="999" min="0" step="1" type="number"/>
+<label class="title_restorable" for="sepia">
+<span data-i18n="Sepia">Sepia</span>
+</label>
+<small data-i18n="Makes the world warmer in color.">Makes the world warmer in
+                                    color.</small>
+<input class="neo-range-input" data-for="prome-world-sepia" id="prome-world-sepia" max="999" min="0" step="1" type="number"/>
+</div>
+<!-- Character Tint Settings -->
+<div class="prome_vn_block flex-container flexFlowColumn">
+<span data-i18n="Character Tint Settings">Character Tint Settings</span>
+<label class="checkbox_label" data-i18n="[title]Tints the character sprites." for="prome-character-tint" title="Tints the character sprites.">
+<input id="prome-character-tint" type="checkbox"/>
+<span data-i18n="Enable Character Tint (Requires Prome to be enabled)">Enable
+                                        Character Tint</span>
+</label>
+<label class="title_restorable" for="prome-character-blur">
+<span data-i18n="Blur Strength">Blur Strength</span>
+</label>
+<small data-i18n="Set the strength of the character blur.">Set the strength of the
+                                    character
+                                    blur.</small>
+<input class="neo-range-input" data-for="prome-character-blur" id="prome-character-blur" max="999" min="0" step="1" type="number"/>
+<label class="title_restorable" for="prome-character-brightness">
+<span data-i18n="Brightness">Brightness</span>
+</label>
+<small data-i18n="Set the brightness of the character.">Set the brightness of the
+                                    character.</small>
+<input class="neo-range-input" data-for="prome-character-brightness" id="prome-character-brightness" max="999" min="0" step="1" type="number"/>
+<label class="title_restorable" for="prome-character-contrast">
+<span data-i18n="Contrast">Contrast</span>
+</label>
+<small data-i18n="Set the contrast of the character.">Set the contrast of the
+                                    character.</small>
+<input class="neo-range-input" data-for="prome-character-contrast" id="prome-character-contrast" max="999" min="0" step="1" type="number"/>
+<label class="title_restorable" for="prome-character-grayscale">
+<span data-i18n="Grayscale">Grayscale</span>
+</label>
+<small data-i18n="Makes the character black and white.">Makes the character black and
+                                    white.</small>
+<input class="neo-range-input" data-for="prome-character-grayscale" id="prome-character-grayscale" max="999" min="0" step="1" type="number"/>
+<label class="title_restorable" for="prome-character-hue">
+<span data-i18n="Hue">Hue</span>
+</label>
+<small data-i18n="Set the hue of the character.">Set the hue of the character.</small>
+<input class="neo-range-input" data-for="prome-character-hue" id="prome-character-hue" max="999" min="0" step="1" type="number"/>
+<label class="title_restorable" for="prome-character-invert">
+<span data-i18n="Invert">Invert</span>
+</label>
+<small data-i18n="Inverts the character colors.">Inverts the character colors.</small>
+<input class="neo-range-input" data-for="prome-character-invert" id="prome-character-invert" max="999" min="0" step="1" type="number"/>
+<label class="title_restorable" for="prome-character-saturate">
+<span data-i18n="Saturate">Saturate</span>
+</label>
+<small data-i18n="Saturates the character colors.">Saturates the character
+                                    colors.</small>
+<input class="neo-range-input" data-for="prome-character-saturate" id="prome-character-saturate" max="999" min="0" step="1" type="number"/>
+<label class="title_restorable" for="sepia">
+<span data-i18n="Sepia">Sepia</span>
+</label>
+<small data-i18n="Makes the character warmer in color.">Makes the character warmer in
+                                    color.</small>
+<input class="neo-range-input" data-for="prome-character-sepia" id="prome-character-sepia" max="999" min="0" step="1" type="number"/>
+</div>
+</div>
+</div>
+</details></section><section aria-labelledby="ig-tab-context" data-ig-pane="context" id="ig-pane-context" role="tabpanel" tabindex="0">
+<h4>Work in progress — planned features</h4>
+<p>Outfit, background and image descriptions are being prepared for scene context. The automation modes below are planned; choosing outfits and backgrounds still uses manual controls. Gallery’s existing optional image prompt is configured in its own tab.</p>
+<h4>Automation modes</h4>
+<dl class="ig-roadmap"><dt>Prompt Mode</dt><dd>Generate automation commands at the end of the RP message. Intended to offer strong context, speed and lower cost, with the highest risk of malformed or incorrect commands.</dd>
+<dt>API Mode</dt><dd>Make a second call just for automation, using the main API, another connection profile, or a local / OpenAI-compatible server.</dd></dl>
+<h4>Prompt character scope</h4>
+<dl class="ig-roadmap"><dt>All active characters</dt><dd>Largest prompt, with support for changing several outfits at once. A stable prompt may improve speed and cost when the provider supports effective caching.</dd>
+<dt>Active character only</dt><dd>Fewest prompt tokens overall. The prompt changes with each speaker, which may reduce cache reuse. A smaller character list may reduce character confusion and unintended changes.</dd></dl>
+<p class="prome-help">Actual cost, speed, caching and reliability depend on the model, provider and implementation. No additional API call is made by this roadmap.</p>
+</section><section aria-labelledby="ig-tab-about" data-ig-pane="about" id="ig-pane-about" role="tabpanel" tabindex="0"><div class="prome-settings-section"><h3>ImmersiveGroups 0.1.2</h3><p>An independent combined extension with character scene controls and image galleries.</p><h4>Original projects</h4><p><a href="https://github.com/Bronya-Rand/Prome-VN-Extension" rel="noopener noreferrer" target="_blank">Prome Visual Novel Extension 1.2.4</a> — by Bronya-Rand, with the original UI credit also naming Prometheus.</p><p><a href="https://github.com/mechamarmot/SillyTavern-LocalImage" rel="noopener noreferrer" target="_blank">SillyTavern-LocalImage 1.6.0</a> — by mechamarmot.</p><p>ImmersiveGroups modifies and combines both projects. The original authors are credited for their work; this release does not imply their endorsement.</p><p>Distributed under GNU AGPL version 3, without warranty. Original license texts, dependency notices and modified source are included.</p><div class="local-image-panel-toolbar"><a data-ig-document="CREDITS.md" target="_blank">Credits &amp; changes</a><a data-ig-document="LICENSE" target="_blank">License</a><a data-ig-document="README.md" target="_blank">Source &amp; documentation</a></div></div></section></div></div>
+<!-- Letterbox Configuration -->
+<!-- Sprite Configuration -->
+<!-- Tint Configuration -->
+<div class="prome_vn_block flex-container flexFlowColumn">
+<small class="flex-container justifyCenter alignitemscenter">
+<span>ImmersiveGroups 0.1.2 · Credits in About</span>
+</small>
+<small class="flex-container justifyCenter alignitemscenter flexFlowRow">
+<small class="menu_button menu_button_icon" id="prome-keybinds">
+<i class="fa-solid fa-keyboard"></i>
+<span data-i18n="Keybinds">Keybinds</span>
+</small>
+<span> | </span>
+<small class="menu_button menu_button_icon" id="prome-commands">
+<i class="fa-solid fa-terminal"></i>
+<span data-i18n="Commands">Commands</span>
+</small>
+</small>
+</div>
+</div>
+</div>
+</div>
+</div>
