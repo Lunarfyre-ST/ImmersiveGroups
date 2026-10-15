@@ -7,6 +7,26 @@ The goal is a more cohesive light novel experience: keep a group of characters o
 > [!WARNING]
 > **Beta project with very little testing so far.** For now, it is recommended to back up your SillyTavern `data` folder before installing or updating. Use at your own risk. Features, settings, and migration behavior may change during development.
 
+
+## Preview
+
+### PC view
+
+*PC example image coming soon.*
+
+<!-- Add your screenshot at docs/images/pc-view.png, then uncomment:
+![ImmersiveGroups PC view](docs/images/pc-view.png)
+-->
+
+### Mobile view
+
+*Mobile example image coming soon.*
+
+<!-- Add your screenshot at docs/images/mobile-view.png, then uncomment:
+![ImmersiveGroups mobile view](docs/images/mobile-view.png)
+-->
+
+
 ## Features
 
 Built on Prome-VN's visual novel foundation, ImmersiveGroups adds the following fixes and controls, with a focus on group chats, multiple outfits, and mobile usability.
@@ -39,26 +59,6 @@ Built on Prome-VN's visual novel foundation, ImmersiveGroups adds the following 
 - Bind gallery images to multiple characters.
 - Gallery prompt settings, cooldown controls, and suppression of blank image results.
 
-
-## Preview
-
-### PC view
-
-*PC example image coming soon.*
-
-<!-- Add your screenshot at docs/images/pc-view.png, then uncomment:
-![ImmersiveGroups PC view](docs/images/pc-view.png)
--->
-
-### Mobile view
-
-*Mobile example image coming soon.*
-
-<!-- Add your screenshot at docs/images/mobile-view.png, then uncomment:
-![ImmersiveGroups mobile view](docs/images/mobile-view.png)
--->
-
-  
 
 ## Planned features
 
