@@ -177,6 +177,8 @@ export function refreshStageControls() {
     applyScale();
     const settings=layoutSettings();bar.hidden=!settings.enableVN_UI||settings.sheldCharacterControls===false;
     const appearance={
+        '--ig-controls-x':`${Number(settings.stageOffsetX)||0}px`,
+        '--ig-controls-y':`${Number(settings.stageOffsetY)||0}px`,
         '--prome-control-height':`${bounded(settings.stageControlHeight,24,56,32)}px`,
         '--prome-control-font':`${bounded(settings.stageFontSize,10,22,13)}px`,
         '--prome-outfit-width':`${bounded(settings.stageOutfitWidth,80,260,130)}px`,
@@ -222,7 +224,7 @@ export function refreshStageControls() {
                 if(/^#[a-f0-9]{6}$/i.test(value||''))node.style.setProperty(property,value);else node.style.removeProperty(property);
             }
         }
-        card.outfit.title=`${c.name}: ${options.find(o=>o.folder===current)?.label||'current outfit hidden'}\n${current}`;
+        card.outfit.title=`${c.name}: ${options.find(o=>o.folder===current)?.label||'current outfit hidden'}\n${current}\nScroll over this button to cycle outfits.`;
     }
     // Move existing controls; keep each character's picker and handlers together.
     for(const card of cards.values()){
@@ -271,12 +273,12 @@ function bindSettings() {
     const settings=layoutSettings(editingLayout());
     for(const control of document.querySelectorAll('[data-prome-stage-setting]')){
         const key=control.dataset.promeStageSetting;
-        control.checked=Boolean(settings[key]);if(control.type!=='checkbox')control.value=settings[key];
+        control.checked=Boolean(settings[key]);if(control.type!=='checkbox')control.value=Number.isFinite(Number(settings[key]))?Number(settings[key])-(Number(control.dataset.promeOffset)||0):settings[key];
         control.addEventListener(control.type==='range'?'input':'change',()=>{
-            const value=control.type==='checkbox'?control.checked:control.type==='range'||control.type==='number'?bounded(control.value,Number(control.min),Number(control.max),defaultSettings[key]):control.value;
+            const value=control.type==='checkbox'?control.checked:control.type==='range'||control.type==='number'?bounded(control.value,Number(control.min),Number(control.max),defaultSettings[key]-(Number(control.dataset.promeOffset)||0))+(Number(control.dataset.promeOffset)||0):control.value;
             writeLayoutSetting(key,value);
             // Keep slider / typed pairs synchronized.
-            for(const pair of document.querySelectorAll('[data-prome-stage-setting]'))if(pair!==control&&pair.dataset.promeStageSetting===key){if(pair.type==='checkbox')pair.checked=Boolean(value);else pair.value=value;}
+            for(const pair of document.querySelectorAll('[data-prome-stage-setting]'))if(pair!==control&&pair.dataset.promeStageSetting===key){if(pair.type==='checkbox')pair.checked=Boolean(value);else pair.value=Number.isFinite(Number(value))?Number(value)-(Number(pair.dataset.promeOffset)||0):value;}
             schedule();
         });
     }
@@ -292,7 +294,7 @@ function bindSettings() {
         window.dispatchEvent(new Event('ig-editor-layout-change'));
         saveSettingsDebounced();schedule();
     });
-    const syncEditor=()=>{const selected=layoutSettings(editingLayout());for(const control of document.querySelectorAll('[data-prome-stage-setting]')){const key=control.dataset.promeStageSetting;if(control.type==='checkbox')control.checked=Boolean(selected[key]);else control.value=selected[key];}get('prome-sprite-spacing').value=get('prome-sprite-spacing-number').value=selected.spriteSpacingPercent;};
+    const syncEditor=()=>{const selected=layoutSettings(editingLayout());for(const control of document.querySelectorAll('[data-prome-stage-setting]')){const key=control.dataset.promeStageSetting;if(control.type==='checkbox')control.checked=Boolean(selected[key]);else control.value=Number.isFinite(Number(selected[key]))?Number(selected[key])-(Number(control.dataset.promeOffset)||0):selected[key];}get('prome-sprite-spacing').value=get('prome-sprite-spacing-number').value=selected.spriteSpacingPercent;};
     window.addEventListener('ig-editor-layout-change',syncEditor);
     window.addEventListener('ig-layout-change',()=>{syncEditor();applyScale();schedule();});
     get('prome-open-outfit-editor')?.addEventListener('click',()=>openOutfitEditor());

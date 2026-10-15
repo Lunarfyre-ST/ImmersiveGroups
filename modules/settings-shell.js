@@ -12,7 +12,7 @@ export function setupSettingsShell() {
         const s=extension_settings[extensionName], active=mobileLayout()?'mobile':'desktop';
         const forced=s.layoutMode==='desktop'||s.layoutMode==='mobile';
         const mismatch=editingLayout()!==active;
-        live.textContent=`Live: ${active==='mobile'?'Mobile':'PC'} (${forced?'forced':`automatic · height ${Math.round(window.visualViewport?.height||window.innerHeight)} px ≤ ${s.mobileLayoutHeight||1000} px selects Mobile`}). ${mismatch?'You are editing the other profile. Force that layout above to preview changes.':'Editing the live profile.'}`;
+        live.textContent=`Live: ${active==='mobile'?'Mobile':'PC'} (${forced?'forced':`automatic · width ${Math.round(window.innerWidth)} CSS px ≤ ${s.mobileLayoutWidth||1000} px selects Mobile`}). ${mismatch?'You are editing the other profile. Force that layout above to preview changes.':'Editing the live profile.'}`;
         live.classList.toggle('ig-profile-mismatch',mismatch);
         for(const badge of document.querySelectorAll('[data-ig-profile-badge]'))badge.textContent=editingLayout()==='mobile'?'Mobile':'PC';
     };

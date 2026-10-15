@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Small non-modal panels stay outside transformed chat containers.
 let nextId = 0;
-export function floatingPanel(anchor, panel, { onClose = () => {} } = {}) {
+export function floatingPanel(anchor, panel, { onClose = () => {}, maxHeight = () => Infinity, offset = () => ({}), lockSide = false } = {}) {
+    let side;
     panel.id ||= `ig-floating-${++nextId}`;
     panel.classList.add('ig-floating-panel');panel.hidden = true;
     anchor.setAttribute('aria-controls', panel.id);anchor.setAttribute('aria-expanded', 'false');
@@ -12,18 +13,19 @@ export function floatingPanel(anchor, panel, { onClose = () => {} } = {}) {
         const viewport=window.visualViewport, left=viewport?.offsetLeft||0, top=viewport?.offsetTop||0;
         const width=viewport?.width||innerWidth, height=viewport?.height||innerHeight;
         panel.style.maxWidth=`${Math.max(0,width-16)}px`;
-        panel.style.maxHeight=`${Math.max(0,height-24)}px`;
+        panel.style.maxHeight=`${Math.max(0,Math.min(height-24,maxHeight()))}px`;
         const rect=anchor.getBoundingClientRect(), box=panel.getBoundingClientRect();
         const above=rect.top-top-8, below=top+height-rect.bottom-8;
-        const useAbove=box.height>below&&above>below;
-        panel.style.maxHeight=`${Math.max(40,Math.min(height-24,useAbove?above:below))}px`;
+        const useAbove=lockSide?(side??=(below<100&&above>below)):box.height>below&&above>below;
+        panel.style.maxHeight=`${Math.max(40,Math.min(height-24,maxHeight(),useAbove?above:below))}px`;
         const size=panel.getBoundingClientRect();
-        panel.style.left=`${Math.max(left+8,Math.min(rect.right-size.width,left+width-size.width-8))}px`;
-        panel.style.top=`${Math.max(top+8,Math.min(useAbove?rect.top-size.height-6:rect.bottom+6,top+height-size.height-8))}px`;
+        const adjustment=offset();
+        panel.style.left=`${Math.max(left+8,Math.min(rect.right-size.width+(Number(adjustment.x)||0),left+width-size.width-8))}px`;
+        panel.style.top=`${Math.max(top+8,Math.min((useAbove?rect.top-size.height-6:rect.bottom+6)+(Number(adjustment.y)||0),top+height-size.height-8))}px`;
     }
     function close(focus=false) {
         if(panel.hidden)return;
-        panel.hidden=true;anchor.setAttribute('aria-expanded','false');onClose();
+        panel.hidden=true;side=undefined;anchor.setAttribute('aria-expanded','false');onClose();
         if(focus&&anchor.isConnected)anchor.focus({preventScroll:true});
     }
     function open() {

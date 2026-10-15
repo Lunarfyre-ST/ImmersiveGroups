@@ -28,6 +28,10 @@ Original storage folders and command conventions are retained. The combined entr
 - A reproducible source build, pinned package lock, migration/policy tests and browser fixture.
 - New repository documentation and CI setup.
 
+## 0.1.4 additions — 2026-10-15
+
+Outfit wheel cycling and bounded searchable menus; separate PC/Mobile offsets and visual presets; tallest-character height reference with signed Fit adjustment and scale diagnostics; width-based mobile detection; shared background filtering and opt-in ordered chat-load defaults with manual-choice cancellation. These changes are authored for ImmersiveGroups; the upstream credits and license notices above remain unchanged.
+
 These modifications are part of ImmersiveGroups, not claims about upstream functionality or upstream authorship.
 
 ## Licenses and dependency notices

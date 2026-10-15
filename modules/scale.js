@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
 import { layoutSettings } from './responsive.js';
-import { spriteProfileFactor } from './height-profiles.js';
+import { spriteProfileFactor, spriteProfileOffset } from './height-profiles.js';
 import { extensionName, defaultSettings } from "../constants.js";
 import { extension_settings } from "../../../../extensions.js";
 import { saveSettingsDebounced } from "../../../../../script.js";
@@ -72,13 +72,17 @@ export function applyScale(target = null) {
 		sprites = document.querySelectorAll("#expression-wrapper .expression-holder");
 	}
 
-    const layoutScale = Math.min(600, Math.max(1, Number(layoutSettings().layoutSpriteScale) || 100)) / 100;
+    const layout=layoutSettings();
+    const layoutScale = Math.min(600, Math.max(1, Number(layout.layoutSpriteScale) || 100)) / 100;
     const enabled = Boolean(extension_settings[extensionName].enableVN_UI && (extension_settings[extensionName].scaleSprites || extension_settings[extensionName].enableHeightProfiles || layoutScale !== 1));
     document.body.classList.toggle('spriteScale', enabled);
 	// loop through all divs
 	for (const d of sprites) {
         const base = extension_settings[extensionName].scaleSprites ? extension_settings[extensionName].maxSpriteScale : 1;
         const value = String(base * layoutScale * spriteProfileFactor(d));
+        const y=extension_settings[extensionName].enableVN_UI?(Number(layout.spriteOffsetY)||0)+spriteProfileOffset(d):0;
+        d.classList.toggle('ig-sprite-position',Boolean(extension_settings[extensionName].enableVN_UI));
+        if(d.style.getPropertyValue('--ig-sprite-y')!==`${y}px`)d.style.setProperty('--ig-sprite-y',`${y}px`);
         if (d.style.getPropertyValue('--prome-sprite-scale') !== value) d.style.setProperty('--prome-sprite-scale', value);
 		if (enabled) {
 			// apply scale

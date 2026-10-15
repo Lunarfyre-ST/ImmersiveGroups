@@ -144,7 +144,7 @@ export function setupQuickReplyLayout() {
         });
     }
     for (const [prefix, key, min, max, fallback] of [
-        ['prome-mobile-layout-height', 'mobileLayoutHeight', 100, 3000, 1000],
+        ['prome-mobile-layout-width', 'mobileLayoutWidth', 100, 3000, 1000],
         ['prome-sheld-height', 'sheldHeightPercent', 0, 100, 0],
     ]) {
         const slider = document.getElementById(`${prefix}-slider`);

@@ -118,7 +118,7 @@ async function loadSettings() {
 	for (const key in defaultSettings) {
 		if (extension_settings[extensionName][key] === undefined) {
 			console.debug(`[${extensionName}] New setting added: ${key}`);
-			extension_settings[extensionName][key] = defaultSettings[key];
+			extension_settings[extensionName][key] = structuredClone(defaultSettings[key]);
 		}
 	}
 

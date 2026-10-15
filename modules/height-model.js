@@ -4,8 +4,11 @@ export function bounded(value,min,max,fallback) {
     const n=Number(value);return Number.isFinite(n)?Math.min(max,Math.max(min,n)):fallback;
 }
 const own=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k);
-export function heightFactor(profile={},tallestCm=180) {
-    return Math.min(8,Math.max(.01,bounded(profile.heightCm,30,300,180)/bounded(tallestCm,30,300,180)*bounded(profile.fineTunePercent,1,8000,100)/100));
+export const REFERENCE_HEIGHT_CM=180;
+export function heightFactor(profile={},reference=REFERENCE_HEIGHT_CM) {
+    const fine=bounded(profile.fineTuneOffset,-99,7900,0);
+    // The caller supplies the tallest active character as the reference.
+    return Math.min(8,Math.max(.01,bounded(profile.heightCm,30,300,REFERENCE_HEIGHT_CM)/bounded(reference,30,300,REFERENCE_HEIGHT_CM)*(1+fine/100)));
 }
 export function tallestHeight(profiles,avatars) {
     return avatars.length?Math.max(30,...avatars.map(avatar=>bounded(own(profiles,avatar)?profiles[avatar]?.heightCm:null,30,300,180))):180;
@@ -39,5 +42,17 @@ export function migrateHeightSettings(settings,avatars=[],folders={}) {
     settings.layoutSpriteScale=bounded(settings.layoutSpriteScale,10,300,100)*base;
     (settings.mobileLayoutSettings||={}).layoutSpriteScale=bounded(settings.mobileLayoutSettings.layoutSpriteScale,10,300,100)*base;
     settings.scaleSprites=false;settings.heightMode='cm';settings.heightSchemaVersion=2;
+    return true;
+}
+export function migrateFineTuning(settings) {
+    if(settings.heightSchemaVersion>=3)return false;
+    settings.heightProfilesV2Backup ||= structuredClone({heightProfiles:settings.heightProfiles||{},mobileHeightProfiles:settings.mobileHeightProfiles||{}});
+    for(const key of ['heightProfiles','mobileHeightProfiles'])for(const profile of Object.values(settings[key]||{})){
+        if(!profile||typeof profile!=='object')continue;
+        const offset=own(profile,'fineTuneOffset')?bounded(profile.fineTuneOffset,-99,7900,0):bounded(profile.fineTunePercent,1,8000,100)-100;
+        profile.fineTuneOffset=Math.round(offset*1000000)/1000000;
+        delete profile.fineTunePercent;
+    }
+    settings.heightSchemaVersion=3;
     return true;
 }

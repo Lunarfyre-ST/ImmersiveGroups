@@ -6,7 +6,7 @@ import { migrateSettings, findLegacyConflicts } from './modules/migration.js';
 const runtimeKey=Symbol.for('ImmersiveGroups.runtime');
 const rootUrl=new URL('.',import.meta.url);
 const current='third-party/'+decodeURIComponent(rootUrl.pathname.split('/').filter(Boolean).pop());
-const runtime=globalThis[runtimeKey] ||= {version:'0.1.2',status:'idle',components:{},errors:[]};
+const runtime=globalThis[runtimeKey] ||= {version:'0.1.4',status:'idle',components:{},errors:[]};
 
 function showProblem(text) {
     console.error('[ImmersiveGroups]',text);
