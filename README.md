@@ -12,19 +12,11 @@ The goal is a more cohesive light novel experience: keep a group of characters o
 
 ### PC view
 
-*PC example image coming soon.*
-
-<!-- Add your screenshot at docs/images/pc-view.png, then uncomment:
-![ImmersiveGroups PC view](docs/images/pc-view.png)
--->
+![ImmersiveGroups PC preview](Preview-PC.jpg)
 
 ### Mobile view
 
-*Mobile example image coming soon.*
-
-<!-- Add your screenshot at docs/images/mobile-view.png, then uncomment:
-![ImmersiveGroups mobile view](docs/images/mobile-view.png)
--->
+<img src="Preview-Mobile.gif" alt="ImmersiveGroups mobile preview" width="350">
 
 
 ## Features
