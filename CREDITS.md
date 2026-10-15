@@ -32,6 +32,10 @@ Original storage folders and command conventions are retained. The combined entr
 
 Outfit wheel cycling and bounded searchable menus; separate PC/Mobile offsets and visual presets; tallest-character height reference with signed Fit adjustment and scale diagnostics; width-based mobile detection; shared background filtering and opt-in ordered chat-load defaults with manual-choice cancellation. These changes are authored for ImmersiveGroups; the upstream credits and license notices above remain unchanged.
 
+## 0.1.5 additions — 2026-10-15
+
+Settings grouped by task; shared main/live preset controls; profile following and clearer scope labels; common character selection for heights, colors and outfits; optional Gallery image prompting under Automation; dependent controls and expandable help. Existing settings IDs and keys remain in use. These interface changes are part of ImmersiveGroups.
+
 These modifications are part of ImmersiveGroups, not claims about upstream functionality or upstream authorship.
 
 ## Licenses and dependency notices

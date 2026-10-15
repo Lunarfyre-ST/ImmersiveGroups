@@ -6,6 +6,7 @@ import { setupBackgrounds, refreshBackgrounds, backgroundSceneContext } from './
 import { seedOutfits, rememberOutfit, outfitOptions, catalogFor, setOutfitLock, onCatalogChange, discoverOutfits, automaticOutfitAllowed, sceneOutfitContext } from './outfit-catalog.js';
 import { setupOutfitEditor, openOutfitEditor } from './outfit-editor.js';
 import { createOutfitPicker } from './outfit-picker.js';
+import { setupSettingsDependencies } from './settings-dependencies.js';
 import { setupLiveTuning } from './live-tuning.js';
 import { applySpeakerDimming, setActiveSpeaker, setupSpeakerTracking } from './speaker-dimming.js';
 import { extension_settings, getContext } from '../../../../extensions.js';
@@ -150,7 +151,7 @@ function createCard(character) {
     });speak.classList.add('prome-stage-talk');
     const speakName=document.createElement('span');speak.append(speakName);
     const name=document.createElement('span');name.className='prome-character-label';
-    const picker=createOutfitPicker(`${character.name} outfit`),outfit=picker.button;
+    const picker=createOutfitPicker(`${character.name} outfit`,()=>({entries:outfitOptions(character),value:pendingOutfits.get(avatar)?.folder||currentFolder(character)})),outfit=picker.button;
     outfit.addEventListener('change',async()=>{
         const folder=outfit.value;if(!folder||isGenerating())return;
         const job=Symbol();pendingOutfits.set(avatar,{folder,job});lastAvatar=avatar;
@@ -326,7 +327,7 @@ export function setupStageControls() {
     liveTuning=setupLiveTuning(get('prome-stage-manage'),()=>openOutfitEditor(lastAvatar));
     const resize=new ResizeObserver(schedule);resize.observe(bar);resize.observe(get('ig-stage-tools'));resize.observe(get('prome-stage-roster'));
     get('prome-stage-shared').addEventListener('change',schedule);
-    onCatalogChange(schedule);bindSettings();
+    onCatalogChange(schedule);bindSettings();setupSettingsDependencies();
     for(const name of ['CHAT_CHANGED','GROUP_UPDATED','CHARACTER_MESSAGE_RENDERED','MESSAGE_SWIPED','MESSAGE_DELETED','GENERATION_STARTED','GENERATION_ENDED','GROUP_MEMBER_DRAFTED','SETTINGS_UPDATED'])if(event_types[name])eventSource.on(event_types[name],schedule);
     if(event_types.CHAT_CHANGED)eventSource.on(event_types.CHAT_CHANGED,()=>{window.dispatchEvent(new Event('ig-close-scene-panels'));autoDiscover().catch(error=>console.warn('[Prome] Outfit discovery',error));});
     new MutationObserver(records=>{

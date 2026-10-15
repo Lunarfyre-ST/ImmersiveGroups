@@ -32,6 +32,7 @@ export function spriteProfileFactor(node){
 }
 export function spriteProfileOffset(node){const c=characterFor(node);return c?bounded(profileFor(c.avatar).offsetY,-1000,1000,0):0;}
 function scopeKey(){const c=getContext();return c.groupId!=null?`group:${c.groupId}`:`solo:${c.characters?.[c.characterId]?.avatar||''}`;}
+export function selectProfileCharacter(avatar){const picker=el('prome-profile-character');if(picker&&[...picker.options].some(option=>option.value===avatar)&&picker.value!==avatar){picker.value=avatar;picker.dispatchEvent(new Event('change',{bubbles:true}));}}
 function selectedCharacter(){return groupCharacters().find(c=>c.avatar===el('prome-profile-character')?.value);}
 let applyScaleCallback=()=>{},timer;
 function scheduleRefresh(){clearTimeout(timer);timer=setTimeout(()=>{applyScaleCallback();refreshProfileEditor();},100);}
@@ -39,6 +40,7 @@ function rememberSelection(){Object.defineProperty(config().heightEditorSelectio
 export function refreshProfileEditor(force=false){
     const picker=el('prome-profile-character');if(!picker)return;
     if(!force&&document.activeElement?.closest('#prome-profile-fields'))return;
+    const before=picker.value;
     const characters=groupCharacters(),signature=JSON.stringify([scopeKey(),characters.map(c=>[c.avatar,c.name])]);
     if(picker.dataset.signature!==signature){
         const saved=config().heightEditorSelections[scopeKey()]?.avatar;
@@ -48,6 +50,7 @@ export function refreshProfileEditor(force=false){
         picker.dataset.signature=signature;picker.dataset.scope=scopeKey();
     }
     el('prome-profile-fields').disabled=!selectedCharacter();loadFields();
+    if(before!==picker.value)window.dispatchEvent(new CustomEvent('ig-character-selection',{detail:picker.value}));
 }
 function loadFields(){
     const character=selectedCharacter();if(!character){el('prome-profile-preview').textContent='Open a character or group chat to adjust heights.';return;}
@@ -61,6 +64,7 @@ function loadFields(){
     const base=config().scaleSprites?Number(config().maxSpriteScale)||1:1;
     const usingHeights=Boolean(config().enableHeightProfiles);
     const factor=(usingHeights?heightFactor({...profile,heightCm:height},reference):1)*Number(layoutSettings(editingLayout()).layoutSpriteScale||100)*base;
+    el('prome-profiles-enabled').checked=Boolean(config().enableHeightProfiles);
     el('prome-profile-preview').textContent=`Tallest reference: ${reference} cm. ${character.name}: ${usingHeights?Math.round(height/reference*100):100}% height × ${usingHeights?Math.round((1+fine/100)*10000)/100:100}% fine × ${layoutSettings(editingLayout()).layoutSpriteScale||100}% fit × ${Math.round(base*100)}% legacy = ${Math.round(factor)}% of the sprite frame${config().enableHeightProfiles?'':' (height scaling off)'}.`;
     el('prome-fine-range-status').textContent=Math.abs(fine)>20?`Typed adjustment: ${fine>0?'+':''}${Math.round(fine*100)/100}%. The slider stays within −20% to +20%.`:'Slider: −20% to +20%. Type a larger adjustment if needed; 0% leaves the scale unchanged.';
 }
@@ -80,7 +84,7 @@ export function setupHeightProfiles(applyScale){
     if(migrateHeightSettings(s,groupCharacters().map(c=>c.avatar),folders)){const legacyToggle=el('prome-sprite-scale');if(legacyToggle)legacyToggle.checked=false;saveSettingsDebounced();}
     if(migrateFineTuning(s))saveSettingsDebounced();
     el('prome-profiles-enabled').addEventListener('change',event=>{s.enableHeightProfiles=event.target.checked;saveSettingsDebounced();applyScale();loadFields();});
-    el('prome-profile-character').addEventListener('change',()=>{rememberSelection();loadFields();});
+    el('prome-profile-character').addEventListener('change',()=>{rememberSelection();loadFields();window.dispatchEvent(new CustomEvent('ig-character-selection',{detail:el('prome-profile-character').value}));});
     el('prome-profile-cm').addEventListener('change',event=>writeProfile('heightCm',bounded(event.target.value,30,300,180)));
     el('prome-profile-fine').addEventListener('change',event=>writeProfile('fineTuneOffset',bounded(event.target.value,-99,7900,0)));
     el('prome-profile-fine-slider').addEventListener('input',event=>writeProfile('fineTuneOffset',Number(event.target.value)));

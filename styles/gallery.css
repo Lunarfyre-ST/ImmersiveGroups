@@ -1026,3 +1026,13 @@
 
 .ig-settings-shell:has(> .ig-settings-tabs > #ig-tab-gallery[aria-selected="true"]) > .ig-settings-toolbar { display:none; }
 .ig-gallery-editor-heading { position:sticky; top:-16px; z-index:1; background:var(--SmartThemeBlurTintColor,#25262b); padding:8px 0; border-bottom:1px solid var(--SmartThemeBorderColor,#555); }
+.ig-gallery-prompt-advanced > summary { cursor:pointer; padding:8px 0; }
+.ig-gallery-prompt-advanced > label { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:10px 0; }
+.ig-gallery-prompt-advanced > label > input[type=number] { width:82px; }
+.localimage-shortcut-controls > details > summary { cursor:pointer; font-weight:600; padding:9px 0; }
+.localimage-shortcut-controls > details > label { margin:10px 0; }
+.localimage-shortcut-controls fieldset { min-width:0; border:1px solid var(--SmartThemeBorderColor,#555); border-radius:6px; padding:10px; }
+.localimage-shortcut-controls fieldset label { margin:10px 0; }
+.localimage-shortcut-controls fieldset:disabled { opacity:.45; }
+.ig-gallery-section :is(input,textarea):disabled { opacity:.45; }
+.ig-gallery-section > details > summary { cursor:pointer; padding:6px 0; font-size:.9em; }

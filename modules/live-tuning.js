@@ -1,20 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { extension_settings } from '../../../../extensions.js';
-import { saveSettingsDebounced } from '../../../../../script.js';
-import { captureVisualProfile, applyVisualProfile, exportVisualSettings, validateVisualImport } from './visual-presets.js';
-import { extensionName, defaultSettings } from '../constants.js';
+import { mountPresetControls, resetVisualSettings } from './preset-controls.js';
+import { extensionName } from '../constants.js';
 import { layoutSettings, mobileLayout, writeLayoutSetting, setLayoutMode } from './responsive.js';
 import { floatingPanel } from './floating-panel.js';
 
 export function setupLiveTuning(anchor, openOutfits) {
     const panel=document.createElement('section');panel.className='ig-live-tuning';panel.setAttribute('aria-label','Live scene tuning');
     panel.innerHTML=`<header><strong>Scene tuning</strong><button type="button" data-live-close aria-label="Close scene tuning">×</button></header>
-    <label>Use layout<select data-live-mode aria-label="Live layout mode"><option value="auto">Automatic</option><option value="desktop">PC (forced)</option><option value="mobile">Mobile (forced)</option></select></label>
+    <label>Preview layout<select data-live-mode aria-label="Live layout mode"><option value="auto">Automatic</option><option value="desktop">PC (forced)</option><option value="mobile">Mobile (forced)</option></select></label>
     <small data-live-status role="status"></small><div data-live-sliders></div>
     <details data-live-buttons><summary>Buttons</summary><div data-live-button-sliders></div><div data-live-toggles></div><div data-live-choices></div>
     <label><input type="checkbox" data-live-center> Center character buttons</label><small>Character and outfit colors are in Manage outfits.</small></details>
     <details data-live-offsets><summary>Position &amp; outfit menus</summary><div data-live-offset-sliders></div><small>Positive X moves right; positive Y moves down. Popup offsets are limited to the visible screen. Values are separate for PC and Mobile.</small><button type="button" class="menu_button" data-live-reset-offsets>Reset offsets</button></details>
-    <details data-live-presets><summary>Presets &amp; reset</summary><label>Saved visual preset<select data-live-preset aria-label="Visual preset"></select></label><label>Preset name<input type="text" class="text_pole" maxlength="80" data-live-preset-name></label><div class="ig-tool-actions"><button type="button" class="menu_button" data-live-save>Save current</button><button type="button" class="menu_button" data-live-load>Apply</button><button type="button" class="menu_button" data-live-delete>Delete</button><button type="button" class="menu_button" data-live-export>Export layouts</button><button type="button" class="menu_button" data-live-import>Import layouts</button><input type="file" accept="application/json,.json" data-live-file hidden></div><small>Presets apply to the live profile. Exports include both visual profiles, character corrections and presets; no messages or scene descriptions.</small><button type="button" class="menu_button" data-live-reset-scale>Reset scaling corrections</button><button type="button" class="menu_button" data-live-reset-layout>Reset this visual profile</button><small data-live-notice role="status"></small></details>
+    <details data-live-presets><summary>Presets &amp; reset</summary></details>
     <button type="button" class="menu_button" data-live-outfits>Manage outfits</button>`;
     const popup=floatingPanel(anchor,panel),controls=[],toggles=[],choices=[];
     const activeLayout=()=>mobileLayout()?'mobile':'desktop';
@@ -48,26 +47,14 @@ export function setupLiveTuning(anchor, openOutfits) {
         for(const [value,text] of entries)input.append(new Option(text,value));field.append(document.createTextNode(label),input);
         input.addEventListener('change',()=>write(key,input.value));panel.querySelector('[data-live-choices]').append(field);choices.push({key,input});
     }
-    const config=()=>extension_settings[extensionName],notice=text=>panel.querySelector('[data-live-notice]').textContent=text;
-    const saved=panel.querySelector('[data-live-preset]'),name=panel.querySelector('[data-live-preset-name]');
-    function changed(text){saveSettingsDebounced();window.dispatchEvent(new Event('ig-layout-change'));notice(text);}
-    function syncPresets(){const names=Object.keys(config().layoutPresets||{}),signature=JSON.stringify(names);if(saved.dataset.signature!==signature){const value=saved.value;saved.replaceChildren(new Option('Choose a preset',''),...names.map(n=>new Option(n,n)));saved.value=value;saved.dataset.signature=signature;}}
-    saved.addEventListener('change',()=>{name.value=saved.value;});
-    panel.querySelector('[data-live-save]').addEventListener('click',()=>{const key=name.value.trim();if(!key){notice('Enter a preset name.');return;}Object.defineProperty(config().layoutPresets||={},key,{value:captureVisualProfile(config(),activeLayout()),enumerable:true,writable:true,configurable:true});changed(`Saved ${key}.`);saved.value=key;});
-    panel.querySelector('[data-live-load]').addEventListener('click',()=>{const key=saved.value;if(!Object.hasOwn(config().layoutPresets||{},key)){notice('Choose a preset.');return;}applyVisualProfile(config(),activeLayout(),config().layoutPresets[key]);changed(`Applied ${key} to ${activeLayout()}.`);});
-    panel.querySelector('[data-live-delete]').addEventListener('click',()=>{if(!saved.value)return;delete config().layoutPresets[saved.value];changed('Preset removed.');});
-    panel.querySelector('[data-live-export]').addEventListener('click',()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(exportVisualSettings(config()),null,2)],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='ImmersiveGroups-visual-layouts.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
-    const file=panel.querySelector('[data-live-file]');panel.querySelector('[data-live-import]').addEventListener('click',()=>file.click());
-    file.addEventListener('change',async()=>{try{const selected=file.files?.[0];if(!selected)return;if(selected.size>2000000)throw new Error('Layout file is too large.');const data=validateVisualImport(JSON.parse(await selected.text()));applyVisualProfile(config(),'desktop',data.desktop);applyVisualProfile(config(),'mobile',data.mobile);config().layoutPresets=data.presets;changed('Imported both visual profiles and presets.');}catch(error){notice(error.message);}finally{file.value='';}});
-    panel.querySelector('[data-live-reset-offsets]').addEventListener('click',()=>{for(const key of ['stageOffsetX','stageOffsetY','outfitPopupOffsetX','outfitPopupOffsetY','spriteOffsetY'])write(key,0);changed('Offsets reset for the live profile.');});
-    panel.querySelector('[data-live-reset-scale]').addEventListener('click',()=>{const s=config(),key=activeLayout()==='mobile'?'mobileHeightProfiles':'heightProfiles';for(const p of Object.values(s[key]||{}))p.fineTuneOffset=0;s.scaleSprites=false;s.maxSpriteScale=1;const toggle=document.getElementById('prome-sprite-scale');if(toggle)toggle.checked=false;for(const id of ['prome-sprite-scale-size','prome-sprite-scale-size-counter']){const field=document.getElementById(id);if(field)field.value=1;}write('layoutSpriteScale',100);changed('Fit and character fine tuning reset to 0%. Legacy scaling disabled; centimeter heights kept.');});
-    panel.querySelector('[data-live-reset-layout]').addEventListener('click',()=>{const profile=captureVisualProfile(defaultSettings,'desktop');const s=config(),map=activeLayout()==='mobile'?s.mobileHeightProfiles:s.heightProfiles;profile.corrections=Object.fromEntries(Object.keys(map||{}).map(avatar=>[avatar,{fineTuneOffset:0,offsetY:0}]));applyVisualProfile(s,activeLayout(),profile);changed('Live visual profile reset; centimeter heights kept.');});
+    const presets=mountPresetControls(panel.querySelector('[data-live-presets]'),{profile:activeLayout,live:true});
+    panel.querySelector('[data-live-reset-offsets]').addEventListener('click',()=>resetVisualSettings('offsets',activeLayout()));
     function sync(){
         const s=extension_settings[extensionName],active=activeLayout(),layout=layoutSettings(active);
         mode.value=['desktop','mobile'].includes(s.layoutMode)?s.layoutMode:'auto';center.checked=Boolean(layout.stageCenterCards);
         panel.querySelector('[data-live-status]').textContent=`Tuning the live ${active==='mobile'?'Mobile':'PC'} profile. Window height applies to both.`;
         for(const {key,range,number,fallback,offset} of controls){range.value=(layout[key]??fallback)-offset;if(document.activeElement!==number)number.value=(layout[key]??fallback)-offset;}
-        syncPresets();
+        presets.sync();
         for(const {key,input} of toggles)input.checked=Boolean(layout[key]);
         for(const {key,input} of choices)if(document.activeElement!==input)input.value=layout[key];
         requestAnimationFrame(()=>popup.position());

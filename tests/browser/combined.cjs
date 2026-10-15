@@ -16,20 +16,22 @@ const html=`<!doctype html><meta charset=utf-8><meta name=viewport content="widt
 const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://fixture');requests.push(url.pathname);if(url.pathname==='/jquery.js'){res.setHeader('Content-Type','application/javascript');res.end(fs.readFileSync(root+'/node_modules/jquery/dist/jquery.min.js'));}else if(native.has(url.pathname)){res.setHeader('Content-Type','application/javascript');const names=[...native.get(url.pathname)];res.end(names.map(name=>`export const ${name} = window.native[${JSON.stringify(name)}] ?? function(){};`).join('\n'));}else if(url.pathname.startsWith(prefix)){const file=path.join(root,url.pathname.slice(prefix.length));if(!fs.existsSync(file)){res.writeHead(404);res.end('Missing '+file);return;}res.setHeader('Content-Type',file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'text/plain');res.end(fs.readFileSync(file));}else if(url.pathname==='/api/backgrounds/all'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({images:['forest.jpg','town.jpg']}));}else if(url.pathname.startsWith('/backgrounds/')){res.setHeader('Content-Type','image/svg+xml');res.end('<svg xmlns="http://www.w3.org/2000/svg" width="68" height="44"></svg>');}else if(url.pathname==='/api/images/list'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify(['forest.png']));}else if(url.pathname==='/api/sprites/get'){const folder=url.searchParams.get('name');res.setHeader('Content-Type','application/json');res.end(JSON.stringify(/outfit[12]$/.test(folder)?[{label:'neutral',path:'/characters/'+folder+'/neutral.png'}]:[]));}else if(url.pathname.startsWith('/characters/')||url.pathname.startsWith('/user/images/')){res.setHeader('Content-Type','image/svg+xml');res.end('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="280"><rect width="100" height="280" fill="#739b84"/></svg>');}else{res.setHeader('Content-Type','text/html');res.end(html);}});
 (async()=>{fs.mkdirSync(path.join(root,'tests/artifacts'),{recursive:true});await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await pw.launch({...(executablePath?{executablePath}:{}),args:launchArgs,headless:true});const browserContext=await browser.newContext({viewport:{width:1200,height:1200},hasTouch:true});const page=await browserContext.newPage();const errors=[];page.on('pageerror',e=>{errors.push(e.message);console.error('PAGE',e.message)});page.on('console',msg=>{if(msg.type()==='error')console.error('CONSOLE',msg.text())});await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.ImmersiveGroups?.getStatus().status==='ready');assert.equal(await page.locator('.prome-vn-settings').count(),1);assert.equal(await page.locator('#ig-tab-gallery').count(),1);assert.equal(await page.locator('[role=tab]').count(),9);assert.equal(await page.evaluate(()=>JSON.stringify({'Prome-VN-Extension':ctx.extensionSettings['Prome-VN-Extension'],'SillyTavern-LocalImage':ctx.extensionSettings['SillyTavern-LocalImage']})===beforeLegacy),true);assert.equal(await page.evaluate(()=>ctx.extensionSettings.ImmersiveGroups.heightProfiles['alex.png'].fineTuneOffset),-25);assert.equal(await page.evaluate(()=>ctx.extensionSettings.ImmersiveGroups.gallery.prompt.enabled),true);await page.waitForFunction(()=>document.querySelectorAll('#chat img.localimage-inserted').length===6);assert.equal(await page.evaluate(()=>JSON.stringify(ctx.chat)===beforeChat),true);
 
+ if(process.env.IG_BROWSER_ONLY==='settings'){await require('./v015.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);console.log('PASS: settings reorganization browser checks.');await browser.close();server.close();return;}
  // Profile edits must survive switching, reflect actual runtime controls, and never
  // cause mobile snapshots to mask changes to global settings.
+ await page.locator('#ig-tab-controls').click();
  const setting=key=>page.locator(`[data-prome-stage-setting="${key}"]`);
  await page.locator('#ig-layout-mode').selectOption('desktop');
  await setting('stageCenterCards').check();
  await page.waitForFunction(()=>document.getElementById('prome-stage-controls').dataset.center==='true');
  assert.equal(await page.locator('#prome-stage-roster').evaluate(n=>getComputedStyle(n).justifyContent),'safe center');
- await setting('settingsTabsCentered').check();
+ await page.locator('#ig-tab-chat').click();await setting('settingsTabsCentered').evaluate(n=>n.closest('details').open=true);await setting('settingsTabsCentered').check();await page.locator('#ig-tab-controls').click();
  assert.ok(await page.locator('.ig-settings-shell').evaluate(n=>n.classList.contains('ig-centered-tabs')));
  await page.locator('#ig-edit-layout').selectOption('mobile');
  assert.equal(await setting('stageCenterCards').isChecked(),false);
  assert.equal(await setting('settingsTabsCentered').isChecked(),true);
  assert.match(await page.locator('.ig-layout-status').textContent(),/editing the other profile/);
- await page.locator('#ig-pane-controls .ig-advanced > summary').click();
+ await page.locator('#ig-pane-controls .ig-advanced > summary').first().click();
  await page.locator('input[type=number][data-prome-stage-setting=stageFontSize]').fill('19');
  await page.locator('input[type=number][data-prome-stage-setting=stageFontSize]').press('Tab');
  await setting('stageNamesAbove').check();
@@ -40,7 +42,7 @@ const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://fix
  await page.waitForFunction(()=>document.querySelectorAll('#ig-mobile-sprites>.expression-holder').length===3);
  assert.equal(await page.locator('#prome-stage-controls').getAttribute('data-names'),'above');
  assert.equal(await page.locator('.prome-stage-talk:visible').count(),0);
- await setting('settingsTabsCentered').uncheck();
+ await page.locator('#ig-tab-chat').click();await setting('settingsTabsCentered').uncheck();await page.locator('#ig-tab-controls').click();
  assert.equal(await page.locator('.ig-settings-shell').evaluate(n=>n.classList.contains('ig-centered-tabs')),false);
  await page.locator('#ig-edit-layout').selectOption('desktop');
  assert.equal(await page.locator('input[type=number][data-prome-stage-setting=stageFontSize]').inputValue(),'13');
@@ -52,7 +54,7 @@ const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://fix
  assert.equal(await page.locator('input[type=number][data-prome-stage-setting=stageFontSize]').inputValue(),'13');
  await page.locator('#ig-edit-layout').selectOption('desktop');
  await page.locator('#ig-layout-mode').selectOption('desktop');
- await page.locator('#ig-tab-sprites').click();
+ await page.locator('#ig-tab-outfits').click();
  if(await page.locator('#prome-height-profile-editor').getAttribute('open')===null)await page.locator('#prome-height-profile-editor > summary').click();
  await page.locator('#prome-profile-character').selectOption('alex.png');
  await page.locator('#prome-profile-fine').fill('-15');await page.locator('#prome-profile-fine').press('Tab');
@@ -117,7 +119,7 @@ const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://fix
  await page.locator('#ig-tab-context').click();
  assert.match(await page.locator('#ig-pane-context').textContent(),/Work in progress/);
  assert.match(await page.locator('#ig-pane-context').textContent(),/All active characters/);
- assert.equal(await page.locator('#ig-pane-context input, #ig-pane-context select').count(),0);
+ assert.equal(await page.locator('#ig-automation-roadmap input, #ig-automation-roadmap select').count(),0);
  await page.locator('#ig-tab-controls').click();
  const outfit=page.locator('.prome-stage-outfit').first();
  await outfit.click();
@@ -213,5 +215,6 @@ const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://fix
  assert.deepEqual(upgradeErrors,[]);await upgrade.close();
  const fresh=await browserContext.newPage();const freshErrors=[];fresh.on('pageerror',e=>freshErrors.push(e.message));await fresh.goto(`http://127.0.0.1:${server.address().port}/?fresh`);await fresh.waitForFunction(()=>window.ImmersiveGroups?.getStatus().status==='ready');assert.equal(await fresh.locator('#ig-tab-gallery').count(),1);assert.equal(await fresh.evaluate(()=>ctx.extensionSettings.ImmersiveGroups.enableVN_UI),true);assert.deepEqual(freshErrors,[]);await fresh.close();
  await require('./v014.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);
- console.log('PASS: wheel cycling, bounded/searchable outfit menus, width breakpoints, signed fit, per-layout and sprite offsets, presets, background default priorities/restore/locks/cancellation;  actual combined ESM entry + scene subsystem + rebuilt Gallery bundle; one window/nine wrapped tabs; stable click/hover/keyboard outfit selection, full-bar centering, compact backgrounds, live tuning and speaker layering; tallest-character reference, signed fine tuning, live button editing, linked backgrounds, edit/live profiles, forced modes, checkboxes, profile reset, independent scales, background descriptions and context roadmap; both settings migrate with untouched backups; 60 messages unchanged; image rendering, Speak/outfit stability, new prompt namespace, combined API, mobile sprites/UI, duplicate guard, and fresh install.');await browser.close();server.close();
+ await require('./v015.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);
+ console.log('PASS: reorganized nine tabs, main/live preset parity, profile following, shared character selection and colors, dependent controls, moved Gallery prompting and phone overflow checks;  wheel cycling, bounded/searchable outfit menus, width breakpoints, signed fit, per-layout and sprite offsets, presets, background default priorities/restore/locks/cancellation;  actual combined ESM entry + scene subsystem + rebuilt Gallery bundle; one window/nine wrapped tabs; stable click/hover/keyboard outfit selection, full-bar centering, compact backgrounds, live tuning and speaker layering; tallest-character reference, signed fine tuning, live button editing, linked backgrounds, edit/live profiles, forced modes, checkboxes, profile reset, independent scales, background descriptions and context roadmap; both settings migrate with untouched backups; 60 messages unchanged; image rendering, Speak/outfit stability, new prompt namespace, combined API, mobile sprites/UI, duplicate guard, and fresh install.');await browser.close();server.close();
 })().catch(e=>{console.error(e);server.close();process.exit(1)});

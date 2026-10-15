@@ -709,3 +709,33 @@ body.waifuMode :is(#visual-novel-wrapper,#ig-mobile-sprites) > .expression-holde
 .ig-background-defaults summary { cursor:pointer; padding:8px 0; }
 .ig-background-defaults .ig-background-rule-members { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; }
 .ig-background-defaults .ig-background-rule-members label { display:flex; align-items:center; gap:6px; overflow-wrap:anywhere; }
+
+/* Settings use the same sections in the drawer and the live tuning popup. */
+.ig-preset-toolbar { border:1px solid var(--SmartThemeBorderColor,#555); border-radius:7px; margin:8px 0 14px; }
+.ig-preset-toolbar > summary { cursor:pointer; padding:9px 10px; font-size:.9em; font-weight:600; }
+.ig-preset-content { display:flex; flex-direction:column; gap:8px; padding:10px; min-width:0; }
+.ig-preset-content > label { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.ig-preset-content :is(input[type=text],select) { width:100%; min-width:0; }
+.ig-preset-content small { display:block; font-size:12px; line-height:1.45; opacity:.8; }
+.ig-preset-help > summary { cursor:pointer; padding:5px 0; font-size:.9em; }
+.ig-shared-badge { opacity:.6; }
+.ig-character-picker { padding:12px; border:1px solid var(--SmartThemeBorderColor,#555); border-radius:7px; margin-bottom:12px; }
+.ig-character-picker > label { display:flex; align-items:center; gap:10px; font-weight:600; }
+.ig-character-picker select { flex:1; min-width:0; }
+.ig-character-picker small { display:block; margin-top:7px; opacity:.75; }
+.ig-scale-breakdown { margin-top:10px; }
+.ig-scale-breakdown summary { cursor:pointer; font-size:.9em; padding:8px 0; }
+#ig-character-colors { display:flex; flex-direction:column; gap:8px; }
+#ig-character-colors .ig-color-field { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+#ig-character-colors input[type=color] { margin-inline-start:auto; flex:none; }
+.ig-settings-shell :is(input,select,textarea):disabled { opacity:.45; cursor:default; }
+.ig-settings-shell fieldset:disabled { opacity:.6; }
+.ig-settings-shell:is([data-active-tab=gallery],[data-active-tab=context],[data-active-tab=about]) > .ig-preset-toolbar { display:none; }
+#ig-automation-gallery { margin-bottom:14px; }
+#ig-pane-context .ig-gallery-section :is(label,summary) { font-size:inherit; }
+@media(max-width:600px){.ig-settings-toolbar > label { width:100%; }.ig-preset-content .ig-tool-actions > button { flex:1 1 100px; }#ig-character-colors .menu_button { padding:5px 8px; }}
+.ig-background-loading-options { min-width:0; border:1px solid var(--SmartThemeBorderColor,#555); border-radius:6px; padding:10px; margin:10px 0; }
+.ig-background-loading-options > label { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:12px 0; }
+.ig-background-defaults > details { margin:10px 0; }
+.ig-profile-help summary { cursor:pointer; padding:3px 0; font-size:12px; opacity:.8; }
+.ig-profile-help small { margin:5px 0; }

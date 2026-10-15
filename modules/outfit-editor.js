@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
+import { selectProfileCharacter } from './height-profiles.js';
 import { setCharacterColors, catalogFor, outfitOptions, hiddenOutfit, rememberOutfit, editOutfit, removeOutfit, moveOutfit, discoverOutfits, importFolderNames, validFolder, cleanFolder, onCatalogChange } from './outfit-catalog.js';
 
 let services, dialog, selected = '', scanBusy = false;
@@ -10,10 +11,20 @@ function action(title, icon, callback) {
     const button = el('button','prome-icon-button'); button.type = 'button'; button.title = title; button.setAttribute('aria-label',title);
     const glyph = el('i',`fa-solid ${icon}`); glyph.setAttribute('aria-hidden','true'); button.append(glyph); button.addEventListener('click',callback); return button;
 }
+function renderColors(colors,c){
+    colors.replaceChildren();if(!c){colors.append(el('small','','Open a character or group chat to customize colors.'));return;}
+    for(const [key,label,fallback] of [['background','Button background','#20232c'],['speak','Speak button','#513d2c'],['text','Button text','#e8e9ee']]){
+        const field=el('label','ig-color-field',label),input=el('input');input.type='color';input.value=catalogFor(c.avatar).colors?.[key]||fallback;input.setAttribute('aria-label',label);
+        input.addEventListener('input',()=>setCharacterColors(c.avatar,{[key]:input.value}));
+        const reset=el('button','menu_button','Theme default');reset.type='button';reset.addEventListener('click',()=>{setCharacterColors(c.avatar,{[key]:''});input.value=fallback;renderMainColors();});field.append(input,reset);colors.append(field);
+    }
+}
+function renderMainColors(){const container=document.getElementById('ig-character-colors');if(!container||container.contains(document.activeElement))return;const avatar=document.getElementById('prome-profile-character')?.value;renderColors(container,services.characters().find(c=>c.avatar===avatar));}
 function render() {
     const characters = services.characters();
     const picker = dialog.querySelector('[data-editor-character]');
-    const before = picker.value;
+    const before = document.getElementById('prome-profile-character')?.value||picker.value;
+    if(characters.some(c=>c.avatar===before))selected=before;
     picker.replaceChildren();
     for (const c of characters) { const option = el('option','',characters.filter(other=>other.name===c.name).length>1?`${c.name} (${c.avatar})`:c.name); option.value = c.avatar; option.title = c.avatar; picker.append(option); }
     if (!characters.some(c => c.avatar === selected)) selected = characters.some(c => c.avatar === before) ? before : characters[0]?.avatar || '';
@@ -22,14 +33,8 @@ function render() {
     list.replaceChildren();
     dialog.querySelector('[data-editor-empty]').hidden = Boolean(c);
     for (const button of dialog.querySelectorAll('[data-editor-requires-character]')) button.disabled = !c || scanBusy;
-    const colors=dialog.querySelector('[data-editor-colors]');colors.replaceChildren();
-    if (!c) return;
-    colors.append(el('h4','','Character button colors'));
-    for(const [key,label,fallback] of [['background','Button background','#20232c'],['speak','Speak button','#513d2c'],['text','Button text','#e8e9ee']]){
-        const field=el('label','ig-color-field',label),input=el('input');input.type='color';input.value=catalogFor(c.avatar).colors?.[key]||fallback;input.setAttribute('aria-label',label);
-        input.addEventListener('input',()=>setCharacterColors(c.avatar,{[key]:input.value}));
-        const reset=el('button','menu_button','Theme default');reset.type='button';reset.addEventListener('click',()=>{setCharacterColors(c.avatar,{[key]:''});render();});field.append(input,reset);colors.append(field);
-    }
+    renderColors(dialog.querySelector('[data-editor-colors]'),c);
+    if(!c)return;
     for (const entry of outfitOptions(c,true)) {
         const row = el('div','prome-outfit-editor-row');
         const main = el('div','prome-outfit-editor-main');
@@ -52,7 +57,8 @@ function render() {
 }
 export function openOutfitEditor(avatar = '') {
     if (!dialog) return;
-    selected = avatar || selected;
+    if(avatar)selectProfileCharacter(avatar);
+    selected = document.getElementById('prome-profile-character')?.value || avatar || selected;
     render(); status('');
     if (!dialog.open) dialog.showModal();
     dialog.scrollTop = 0;
@@ -72,7 +78,7 @@ export function setupOutfitEditor(api) {
     document.body.append(dialog);
     dialog.querySelector('[data-editor-close]').addEventListener('click',()=>dialog.close());
     dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
-    dialog.querySelector('[data-editor-character]').addEventListener('change',event=>{selected=event.target.value;render();status('');});
+    dialog.querySelector('[data-editor-character]').addEventListener('change',event=>{selected=event.target.value;selectProfileCharacter(selected);render();renderMainColors();status('');});
     dialog.querySelector('[data-editor-scan]').addEventListener('click',async()=>{
         const c=character();if(!c||scanBusy)return;scanBusy=true;render();status('Checking existing sprite folders…');
         try {const result=await discoverOutfits(c,services.currentFolder(c),true);status(`Found ${result.found} outfit folders.${result.failed?' Some folders could not be checked; you can retry.':''}`);}
@@ -90,5 +96,7 @@ export function setupOutfitEditor(api) {
         if(!added&&label.value.trim())editOutfit(c.avatar,folder,{label:label.value});
         status(added?'Outfit added. Select it on the Sheld to wear it.':'This folder is already in the library.');field.value=label.value='';render();
     });
-    onCatalogChange(()=>{if(dialog.open&&!dialog.contains(document.activeElement))render();});
+    window.addEventListener('ig-character-selection',()=>{renderMainColors();if(dialog.open)render();});
+    onCatalogChange(()=>{renderMainColors();if(dialog.open&&!dialog.contains(document.activeElement))render();});
+    renderMainColors();
 }

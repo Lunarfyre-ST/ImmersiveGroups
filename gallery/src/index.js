@@ -1359,8 +1359,9 @@ function applyGalleryShortcutSettings() {
         if (enabledControl) enabledControl.checked = getSettings().enabled !== false;
         const status = controls.querySelector('[data-localimage-render-status]');
         if (status) status.textContent = localImageUiError ? `Renderer active; settings error: ${localImageUiError}` :
-            `Gallery v16 — renderer ${localImageRendererReady ? 'ready' : 'starting'}; image conversion ${getSettings().enabled !== false ? 'enabled' : 'disabled'}.${localImageUnresolved.length ? ' No matching assignment: ' + localImageUnresolved.map(describeUnresolvedCommand).join('; ') : ''}`;
+            `Image renderer ${localImageRendererReady ? 'ready' : 'starting'}; image conversion ${getSettings().enabled !== false ? 'enabled' : 'disabled'}.${localImageUnresolved.length ? ' No matching assignment: ' + localImageUnresolved.map(describeUnresolvedCommand).join('; ') : ''}`;
 
+        controls.querySelector('[data-localimage-floating]').disabled=!ui.showFloatingButton;
         for (const control of controls.querySelectorAll('[data-localimage-ui]')) {
             const value = ui[control.dataset.localimageUi];
             if (control.type === 'checkbox') control.checked = value;
@@ -1373,27 +1374,22 @@ function createShortcutControls() {
     const controls = document.createElement('div');
     controls.className = 'localimage-shortcut-controls';
     controls.innerHTML = `
-        <div class="local-image-panel-toolbar">
-            <button type="button" class="menu_button" data-localimage-action="studio">Image library</button>
-            <button type="button" class="menu_button" data-localimage-action="general">General Gallery</button>
-            <button type="button" class="menu_button" data-localimage-action="character">Character Gallery</button>
-            <button type="button" class="menu_button" data-localimage-action="persona">My Gallery</button>
-        </div>
+        <div class="local-image-panel-toolbar"><button type="button" class="menu_button" data-localimage-action="studio">Open image library</button></div>
         <label><input type="checkbox" data-localimage-enabled> Render image commands</label>
-        <p data-localimage-render-status></p>
-        <button type="button" class="menu_button" data-localimage-action="refresh">Refresh chat images</button>
-        <small>Shared image command: <code>::img general image-name::</code></small>
-        <label><input type="checkbox" data-localimage-ui="showFloatingButton"> Show floating Quick Image Send icon</label>
+        <label>Maximum image height (px; 0 = unlimited)<input class="text_pole" type="number" min="0" max="4000" step="1" data-localimage-ui="imageMaxHeight"></label>
+        <small>Images fit the message width and keep their proportions.</small>
+        <details><summary>Gallery shortcuts</summary>
         <label><input type="checkbox" data-localimage-ui="showCharacterButton"> Show character gallery icon</label>
         <label><input type="checkbox" data-localimage-ui="showPersonaButton"> Show persona gallery icon</label>
-        <label>Floating icon size (px; default 40)<input class="text_pole" type="number" min="24" max="80" step="1" data-localimage-ui="buttonSize"></label>
+        <label><input type="checkbox" data-localimage-ui="showFloatingButton"> Show floating Quick Image Send icon</label>
+        <fieldset data-localimage-floating><legend>Floating icon position</legend>
+        <label>Icon size (px; default 40)<input class="text_pole" type="number" min="24" max="80" step="1" data-localimage-ui="buttonSize"></label>
         <label>Screen edge<select class="text_pole" data-localimage-ui="buttonSide"><option value="right">Right</option><option value="left">Left</option></select></label>
         <label>Distance from screen edge (px; default 20)<input class="text_pole" type="number" min="0" max="300" step="1" data-localimage-ui="buttonOffsetX"></label>
         <label>Distance from bottom (px; default 100)<input class="text_pole" type="number" min="0" max="600" step="1" data-localimage-ui="buttonOffsetBottom"></label>
-        <label>Maximum image height (px; 0 = unlimited)<input class="text_pole" type="number" min="0" max="4000" step="1" data-localimage-ui="imageMaxHeight"></label>
-        <small>One height limit, default 0 = unlimited. Images fit the message width and keep their proportions.</small>
-        <button type="button" class="menu_button" data-localimage-action="reset">Reset shortcut settings</button>
-        <small>Changes save automatically. These controls remain available under Extensions → ImmersiveGroups → Gallery when icons are hidden.</small>`;
+        </fieldset><button type="button" class="menu_button" data-localimage-action="reset">Reset image display &amp; shortcuts</button></details>
+        <details><summary>Refresh &amp; diagnostics</summary><p data-localimage-render-status></p><button type="button" class="menu_button" data-localimage-action="refresh">Refresh chat images</button><small>Shared image command: <code>::img general image-name::</code></small></details>
+        <details><summary>Individual gallery folders</summary><div class="local-image-panel-toolbar"><button type="button" class="menu_button" data-localimage-action="general">General Gallery</button><button type="button" class="menu_button" data-localimage-action="character">Character Gallery</button><button type="button" class="menu_button" data-localimage-action="persona">My Gallery</button></div></details>`;
     const enabledControl = controls.querySelector('[data-localimage-enabled]');
     enabledControl.checked = getSettings().enabled !== false;
     enabledControl.addEventListener('change', () => { getSettings().enabled = enabledControl.checked; saveSettings(); });

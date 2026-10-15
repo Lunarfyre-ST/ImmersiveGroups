@@ -6,6 +6,6 @@
   "js": "index.js",
   "css": "style.css",
   "author": "ImmersiveGroups contributors; based on Bronya-Rand / Prometheus and mechamarmot",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "auto_update": false
 }
