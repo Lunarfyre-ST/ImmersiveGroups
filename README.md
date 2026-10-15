@@ -2,7 +2,7 @@
 
 A light novel style expression extension for SillyTavern, focused on group chats, multiple outfits and mobile usability. Based on Bronya Rand's **Prome-VN-Extension** and mechamarmot's **SillyTavern-LocalImage**, with an integrated image gallery and planned LLM automation for outfit and background changes.
 
-What began as a quick patch for multiple outfits in the PromeVN extension quickly became a larger overhaul, bringing group-chat improvements, outfit management, mobile layouts, and a local image gallery together in one extension for SillyTavern.
+What began as a quick patch for issues with multiple outfits in the PromeVN extension quickly became a larger overhaul, bringing group-chat improvements, outfit management, mobile layouts, and a local image gallery together in one extension for SillyTavern.
 
 The goal is a more cohesive light novel experience: keep a group of characters on screen, change their outfits, set the scene, and eventually let optional automation handle outfits, backgrounds, and premade images from the gallery.
 
