@@ -6,7 +6,7 @@ What began as a quick patch for multiple outfits in the PromeVN extension quickl
 
 The goal is a more cohesive light novel experience: keep a group of characters on screen, change their outfits, set the scene, and optionally let the model choose suitable outfits, backgrounds and premade gallery images.
 
-**Current development version: 0.2.5.** Outfit/background automation works through either the main roleplay prompt or a separate API call. Gallery images have their own working prompt; coordinated image selection through the separate scene-analysis API remains planned.
+**Current version: 0.2.8.** Outfit/background automation works through either the main roleplay prompt or a separate API call. Gallery images have their own working prompt; coordinated image selection through the separate scene-analysis API remains planned.
 
 > [!WARNING]
 > **Beta project with limited real-world testing.** Back up your SillyTavern `data` folder before installing or updating. Use at your own risk. Features, settings and migration behavior may change during development. Automated checks do not replace testing across actual SillyTavern setups, browsers and phones.
@@ -86,10 +86,11 @@ Built on Prome-VN's visual novel foundation, ImmersiveGroups adds the following 
 - **Smooth outfit changes:** selector-based changes preload the image and update that character in place. Existing Quick Reply outfit changes can still trigger native sprite reloads.
 - **Outfit management:** visible Add outfit and Scan outfit folders actions, a dedicated form with its own character selector and optional ZIP upload, and memory for outfits used through Quick Replies. Rename, hide, reorder and describe outfits without renaming their files. Common-folder discovery is available manually or as an opt-in.
 - **Sprite ZIP uploads:** import images directly into an outfit folder. Existing filenames are preserved by numbering duplicates, such as `neutral-1` becoming `neutral-2`.
-- **Character styling:** customize character button backgrounds, Speak button colors and text colors, plus per-outfit text colors. Separated selectors retain their character colors.
+- **Character styling:** customize character button backgrounds, Speak button colors and text colors, plus per-outfit text colors. Button backgrounds stay independent when controls are together; optionally inherit the Speak button color when selectors and Speak buttons are separated.
 
   <img src="docs/Preview-Colors.jpg" alt="Per-character button background, Speak button and text color controls" width="320">
 
+- **Outfit ownership safeguards:** automatically learned folders that clearly belong to another known character are rejected. Previously saved mismatches are set aside with their descriptions preserved, keeping them out of selectors and automation. Intentional shared outfits can be restored explicitly in the library’s Tools panel. Image files are not moved or deleted.
 - **Working automation locks:** locked characters are omitted from model outfit context and automatic changes are rejected. Manual outfit selection remains available. Lock buttons are hidden by default; highlighted status notes distinguish disabled automation, Prompt mode and manual/automatic API analysis.
 - **Muted-member handling:** muted group members disappear on desktop and mobile, and the remaining sprites readjust.
 
@@ -111,19 +112,26 @@ Built on Prome-VN's visual novel foundation, ImmersiveGroups adds the following 
 - **Sprite overlap:** prioritize brighter characters, then recent speakers, so dimmed sprites stay behind highlighted ones.
 - **Sprite spacing and offsets:** bring characters closer together or spread them out, with global and per-character vertical positioning.
 
+### Scene animations
+
+- **Outfit and background transitions:** optionally blend the old outfit or background into the new one with **Crossfade**, or choose **Fade out, then fade in**. Outfit changes preload the new image and affect only the selected character in place.
+- **Linked fade timings:** enabled by default. Adjust either the fade-in or fade-out slider/number field to change both; unlink them for separate durations. Crossfade is the default style, with 200 ms for outfits and 350 ms for backgrounds.
+- **Live animation controls:** use the **Animations** settings tab or **Scene tuning → Animations**, between Position & outfit menus and Presets & reset. Both views edit the same shared PC/mobile settings and include **Reset animation defaults**.
+- **Optional and motion-aware:** fades start off on a fresh setup; existing on/off choices are retained. Reduced-motion preferences are respected, and interrupted transitions clean up their temporary layers. Background transitions preserve native background selection and locks.
+
 ### Mobile and interface controls
 
 - **Multiple sprites on mobile:** display several active group members together on smaller screens.
 - **Separate PC/mobile profiles:** independently tune control sizes, placement, sprite spacing and visual scaling.
 - **Automatic or forced layout:** use viewport-width detection or force PC/Mobile to preview either layout.
-- **Live Scene tuning:** adjust layout, Sheld height, spacing, fit, controls and offsets while viewing the chat. The tuning panel stays in place while the scene moves.
-- **Adjustable Sheld size:** resize the chat window to balance text and sprite visibility.
+- **Live Scene tuning:** adjust layout, Sheld height, spacing, fit, controls, offsets and animations while viewing the chat. The tuning panel stays in place while the scene moves.
+- **Adjustable Sheld size:** resize the chat window to balance text and sprite visibility. Under **Layout**, leave **Show only the latest message** off for scrollable history, or enable it for a single-message VN presentation.
 - **Limitable, scrollable Quick Reply rows:** cap inline Quick Replies and scroll additional rows. Set rows to zero to hide the inline bar; the popup remains available.
 - **Flexible character controls:** show or hide buttons, place controls above chat or below the textbox, put names above selectors, center controls, and adjust sizes and idle opacity. Speak/outfit controls stay paired when both are below the textbox.
 - **Automatic row fitting:** distribute available width across 1–8 character boxes per row, including compact mobile rows.
 - **Name/Speak customization:** separate width, height and text size, plus optional name abbreviations.
 - **Visual presets:** save named layouts and import/export PC/mobile visual settings and character corrections.
-- **Organized settings:** centered, wrapping tabs with subtle accent colors and expandable advanced options. Original Prome settings remain in **Advanced / Prome**, including Hide chat window with its **Ctrl + F1** shortcut.
+- **Organized settings:** centered, wrapping tabs with subtle accent colors and expandable advanced options. Original Prome settings remain in **Legacy / Prome**, including Hide chat window with its **Ctrl + F1** shortcut.
 
 ### Unified asset library
 
@@ -151,6 +159,7 @@ Built on Prome-VN's visual novel foundation, ImmersiveGroups adds the following 
 
 ### Scene automation and context
 
+- **At-a-glance status:** a compact summary below the live layout indicator shows scene automation on/off, Prompt/API mode, outfit scope, background automation and Gallery image instructions/placement. Gallery image prompting has its own switch.
 - **Prompt mode:** inject outfit/background catalogs and descriptions into the main roleplay request. The model writes applicable scene commands with its reply, avoiding a separate analysis call.
 - **API mode:** analyze the latest reply through the current main API, another connection profile or a custom/local OpenAI-compatible endpoint. Manual testing and optional automatic analysis are available.
 - **Character scope:** include all active, unlocked characters for group-wide outfit changes, or only the speaking character to reduce outfit context and restrict its targets.
@@ -174,6 +183,12 @@ In the main settings, **Preview layout** chooses the live layout; **Settings pro
 
 For compact rows, try **Scene tuning → Buttons → Fit character boxes to row**, choose the number of boxes, and enable names above selectors. The main settings expose these controls under **Controls → Fit & name sizes**.
 
+### Tune transitions
+
+Open **Animations**, or expand **Scene tuning → Animations** while viewing the chat. Enable outfit and/or background fades, choose a transition style, then adjust the durations in milliseconds. **Crossfade** blends the old and new images together; **Fade out, then fade in** runs the two parts in sequence.
+
+**Link fade-in and fade-out timings** starts enabled. Changing either value updates both; turning linking back on uses the current fade-in value. Unlink it for independent timing. A value of **0 ms** skips that part of the fade. **Reset animation defaults** restores Crossfade, linked timings, 200 ms for outfits and 350 ms for backgrounds, and turns fades off. These settings apply to both PC and mobile.
+
 ### Set character heights
 
 In **Characters**, select a character and enable height scaling, then enter their height in centimeters. The default for an unset height is **165 cm**; existing saved values are kept. In **Sprites**, adjust **Fit calibration** until the tallest active character fits, then use individual **Fine tune** sliders as needed. With equal fine tuning, a 150 cm character uses 75% of a 200 cm character's sprite height. Different transparent padding or artwork framing may still need adjustment.
@@ -191,6 +206,8 @@ Use **Scan outfit folders** to choose your local `SillyTavern/data/default-user/
 Open **Filters** for **Hide Basic outfits**, **Outfit images** and other category-specific options. The image filter checks sprite lists; failed checks are not treated as empty folders. **Tools → Check outfit images** retries stale or failed results. These library filters do not change which outfits are available in character selectors or model context.
 
 **Tools** also contains **Find common outfit folders** and **Import folder names**. Automatic common-folder discovery and automatic Basic hiding are **off by default** on fresh installs; existing preferences remain in effect. **Character appearance** opens the character-button color controls. Each outfit’s **More** menu contains ordering, font color and catalog removal; removal keeps the files.
+
+If an outfit appears under the wrong character, check **Tools → Mismatched outfits set aside** or the **Review mismatched outfits** button. The extension preserves mismatched entries and their descriptions without changing the image files. Use **Restore as shared outfit** only when sharing that folder is intentional; you can also assign a shared folder explicitly through **Add outfit**.
 
 Each outfit has an **Upload sprite ZIP** button, and the Add outfit form can upload one when creating an entry. Supported ZIP images include PNG, JPG/JPEG, GIF, WebP, AVIF and BMP. Imports preserve existing filenames by adding numbered variants. SillyTavern's native expression cache may need a page reload to discover newly added expressions in an already-cached folder.
 
@@ -231,42 +248,14 @@ Outfit locks and model background locks block automatic changes while leaving ma
 
 ## Progress and planned features
 
-**Available now:** outfit/background Prompt mode, manual and automatic API analysis, all-character/speaker-only outfit scopes, working locks, background descriptions and linked context, a unified asset library, and independent Gallery image prompting.
+**Available now:** outfit/background Prompt mode, manual and automatic API analysis, all-character/speaker-only outfit scopes, working locks, background descriptions and linked context, a unified asset library, independent Gallery image prompting, configurable outfit/background animations, live animation tuning and outfit ownership safeguards.
 
 **Still planned:**
 
-- A movable entry in SillyTavern's **Chat Completions Prompt Manager**. Current scene injection uses the extension-prompt hook with its own depth and preview controls.
 - Coordinated Gallery image selection through the separate scene-analysis API, alongside outfit and background decisions.
 - Continued improvements to mobile usability, settings organization, group-chat compatibility and real-model reliability.
 
 All-character context supports multiple outfit changes and provides a larger, more stable catalog. Speaker-only context uses fewer outfit tokens and changes with each speaker. Actual caching, speed, cost and command reliability depend on the model and provider.
-
-## Development
-
-<details>
-<summary>Build and validation commands</summary>
-
-Node/npm is only required for development. The repository includes the ready-to-use Gallery bundle and vendored sprite ZIP reader.
-
-```sh
-npm ci
-npm run build
-npm run check
-npm test
-```
-
-When editing Gallery source, rebuild and commit the generated bundle and dependency notices as well.
-
-Optional browser integration checks:
-
-```sh
-npx playwright install chromium
-npm run test:browser
-```
-
-Version 0.2.5 passes 48 unit tests and browser regressions covering settings migration, fresh defaults, height calculations, image/swipe rendering, library panels and filters, folder scanning, duplicate-safe uploads, shadow controls, command parsing, scopes, locks, API scheduling and cancellation. Browser checks use synthetic chat data and simulated SillyTavern/model APIs. Real-device and provider compatibility still need testing.
-
-</details>
 
 ## Credits and origins
 
