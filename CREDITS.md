@@ -36,6 +36,10 @@ Outfit wheel cycling and bounded searchable menus; separate PC/Mobile offsets an
 
 Settings grouped by task; shared main/live preset controls; profile following and clearer scope labels; common character selection for heights, colors and outfits; optional Gallery image prompting under Automation; dependent controls and expandable help. Existing settings IDs and keys remain in use. These interface changes are part of ImmersiveGroups.
 
+## 0.1.6 additions — 2026-10-15
+
+Scene command parsing and execution; scoped outfit/background context at a configurable injection depth; prompt preview/token counts; active-character versus speaker-only policies; model-change locks; formatting-preserving command hiding; and manual API trials through the host's main API, connection-profile service or a custom compatible endpoint. Native API usage was checked against SillyTavern's public source. These additions are ImmersiveGroups work.
+
 These modifications are part of ImmersiveGroups, not claims about upstream functionality or upstream authorship.
 
 ## Licenses and dependency notices
@@ -45,6 +49,14 @@ The original projects each included the same GNU Affero General Public License v
 - `licenses/Prome-AGPL-3.0.txt`
 - `licenses/LocalImage-AGPL-3.0.txt`
 
-The Gallery build bundles React, ReactDOM and Scheduler. Their MIT licenses are included in `licenses/React-MIT.txt`, `licenses/ReactDOM-MIT.txt` and `licenses/Scheduler-MIT.txt`; extracted bundle notices are in `gallery/dist/gallery.js.LEGAL.txt`. SillyTavern and its own dependencies are supplied by the host application.
+The Gallery build bundles React, ReactDOM and Scheduler. Their MIT licenses are included in `licenses/React-MIT.txt`, `licenses/ReactDOM-MIT.txt` and `licenses/Scheduler-MIT.txt`; extracted bundle notices are in `gallery/dist/gallery.js.LEGAL.txt`. Sprite ZIP import uses a vendored JSZip 3.10.1 browser bundle by Stuart Knightley and contributors under the MIT license; see `licenses/JSZIP-MIT.txt`, `licenses/JSZIP-DEPENDENCIES.txt` and `vendor/jszip.js.LEGAL.txt`. SillyTavern and its own dependencies are supplied by the host application.
 
 The source files, build script, dependency declarations and package lock are included with the release. See README for rebuilding. No warranty is provided.
+
+## 0.2.2 additions — 2026-10-16
+
+Paired bottom controls, muted-member desktop visibility, configurable command placement, responsive row fitting and name sizing, description/activity library sorting, verified local-directory outfit scanning, duplicate-safe sprite uploads, API history windows and response/token validation are ImmersiveGroups additions. ZIP parsing uses the credited JSZip dependency.
+
+## 0.2.3 additions — 2026-10-16
+
+Compact background navigation beside Scene tuning, explicit checkbox labels, persistent Basic-outfit library filtering, verified outfit-image filters and visible directory scanning are ImmersiveGroups changes.
