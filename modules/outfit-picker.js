@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { floatingPanel } from './floating-panel.js';
 import { layoutSettings } from './responsive.js';
-export function createOutfitPicker(label) {
+export function createOutfitPicker(label,readState=null) {
     const button=document.createElement('button');button.type='button';button.className='prome-stage-outfit';
     button.setAttribute('role','combobox');button.setAttribute('aria-haspopup','listbox');button.setAttribute('aria-label',label);
     const text=document.createElement('span'),chevron=document.createElement('i');chevron.className='fa-solid fa-chevron-down';chevron.setAttribute('aria-hidden','true');button.append(text,chevron);
@@ -34,7 +34,13 @@ export function createOutfitPicker(label) {
         }
         empty.hidden=Boolean(visible.length);popup.position();highlight(Math.max(0,visible.findIndex(entry=>entry.folder===button.value)),true);
     }
+    function freshOptions(){
+        if(!readState)return;
+        const {entries,value}=readState();options=entries.map(entry=>({...entry}));button.value=options.some(entry=>entry.folder===value)?value:'';
+        text.textContent=options.find(entry=>entry.folder===button.value)?.label||'Choose outfit';
+    }
     function open() {
+        freshOptions();
         if(button.disabled||!options.length)return;
         list.style.fontSize=getComputedStyle(button).fontSize;search.value='';search.hidden=options.length<=8;
         render();popup.open();highlight(Math.max(0,visible.findIndex(entry=>entry.folder===button.value)),true);
@@ -51,6 +57,7 @@ export function createOutfitPicker(label) {
         if(visible.length)highlight(event.key==='Home'?0:event.key==='End'?visible.length-1:(active+(event.key==='ArrowUp'?-1:1)+visible.length)%visible.length,true);
     });
     button.addEventListener('wheel',event=>{
+        if(!popup.isOpen)freshOptions();
         if(button.disabled||options.length<2||event.ctrlKey||Math.abs(event.deltaX)>Math.abs(event.deltaY)||!event.deltaY)return;
         event.preventDefault();
         const now=performance.now();if(now-lastWheel>300)wheelDelta=0;

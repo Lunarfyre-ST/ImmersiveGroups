@@ -4,15 +4,22 @@ import { heightFactor, tallestHeight, migrateHeightSettings, migrateFineTuning, 
 
 test('centimeters use the tallest active reference before signed fine tuning',()=>{
     const short={heightCm:150,fineTuneOffset:0},tall={heightCm:200,fineTuneOffset:0};
-    assert.equal(heightFactor(short),150/180);
+    assert.equal(heightFactor(short),150/165);
     assert.ok(Math.abs(heightFactor(short)/heightFactor(tall)-.75)<1e-12);
     assert.equal(heightFactor(short,150),1);
     assert.equal(heightFactor(short,200),.75);
     assert.equal(tallestHeight({a:short,b:tall},['a','b']),200);
     assert.equal(tallestHeight({a:short,b:tall},['a']),150);
-    assert.ok(Math.abs(heightFactor({...short,fineTuneOffset:10})-(150/180)*1.1)<1e-12);
-    assert.equal(heightFactor({heightCm:180,fineTuneOffset:75}),1.75);
-    assert.equal(heightFactor({heightCm:180,fineTuneOffset:-35}),.65);
+    assert.ok(Math.abs(heightFactor({...short,fineTuneOffset:10})-(150/165)*1.1)<1e-12);
+    assert.equal(heightFactor({heightCm:180,fineTuneOffset:75},180),1.75);
+    assert.equal(heightFactor({heightCm:180,fineTuneOffset:-35},180),.65);
+});
+test('unset character heights default to 165 cm without replacing saved heights',()=>{
+    assert.equal(heightFactor(),1);
+    assert.equal(tallestHeight({},[]),165);
+    assert.equal(tallestHeight({},['new.png']),165);
+    assert.equal(tallestHeight({saved:{heightCm:150}},['saved','new.png']),165);
+    assert.equal(tallestHeight({saved:{heightCm:180}},['saved','new.png']),180);
 });
 test('legacy height migration retains backups and independent device adjustments',()=>{
     const settings={heightMode:'cm',referenceHeightCm:180,scaleSprites:true,maxSpriteScale:1.2,layoutSpriteScale:90,mobileLayoutSettings:{layoutSpriteScale:60},heightProfiles:{a:{heightCm:150,scalePercent:110,calibrationPercent:95,outfits:{'A/two':{calibrationPercent:105}}},b:{heightCm:190,scalePercent:100}},mobileHeightProfiles:{a:{heightCm:150,scalePercent:75},b:{heightCm:190,scalePercent:85}}};

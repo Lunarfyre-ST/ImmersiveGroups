@@ -1,19 +1,29 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Small non-modal panels stay outside transformed chat containers.
 let nextId = 0;
-export function floatingPanel(anchor, panel, { onClose = () => {}, maxHeight = () => Infinity, offset = () => ({}), lockSide = false } = {}) {
-    let side;
+export function floatingPanel(anchor, panel, { onClose = () => {}, maxHeight = () => Infinity, offset = () => ({}), lockSide = false, pinPosition = false } = {}) {
+    let side, pinned;
     panel.id ||= `ig-floating-${++nextId}`;
     panel.classList.add('ig-floating-panel');panel.hidden = true;
     anchor.setAttribute('aria-controls', panel.id);anchor.setAttribute('aria-expanded', 'false');
     document.body.append(panel);
     function position() {
         if (panel.hidden) return;
-        if (!anchor.isConnected || !anchor.getClientRects().length) { close(); return; }
+        if (!anchor.isConnected || (!pinned && !anchor.getClientRects().length)) { close(); return; }
         const viewport=window.visualViewport, left=viewport?.offsetLeft||0, top=viewport?.offsetTop||0;
         const width=viewport?.width||innerWidth, height=viewport?.height||innerHeight;
         panel.style.maxWidth=`${Math.max(0,width-16)}px`;
         panel.style.maxHeight=`${Math.max(0,Math.min(height-24,maxHeight()))}px`;
+        // Live tuning moves its own anchor. Keep the panel in viewport coordinates
+        // until closed so dragging a slider cannot chase the moving toolbar.
+        if (pinned) {
+            const size=panel.getBoundingClientRect();
+            const x=Math.max(left+8,Math.min(pinned.x,left+width-size.width-8));
+            const y=Math.max(top+8,Math.min(pinned.y,top+height-48));
+            panel.style.left=`${x}px`;panel.style.top=`${y}px`;
+            panel.style.maxHeight=`${Math.max(0,Math.min(height-24,maxHeight(),top+height-y-8))}px`;
+            return;
+        }
         const rect=anchor.getBoundingClientRect(), box=panel.getBoundingClientRect();
         const above=rect.top-top-8, below=top+height-rect.bottom-8;
         const useAbove=lockSide?(side??=(below<100&&above>below)):box.height>below&&above>below;
@@ -22,10 +32,11 @@ export function floatingPanel(anchor, panel, { onClose = () => {}, maxHeight = (
         const adjustment=offset();
         panel.style.left=`${Math.max(left+8,Math.min(rect.right-size.width+(Number(adjustment.x)||0),left+width-size.width-8))}px`;
         panel.style.top=`${Math.max(top+8,Math.min((useAbove?rect.top-size.height-6:rect.bottom+6)+(Number(adjustment.y)||0),top+height-size.height-8))}px`;
+        if(pinPosition)pinned={x:parseFloat(panel.style.left),y:parseFloat(panel.style.top)};
     }
     function close(focus=false) {
         if(panel.hidden)return;
-        panel.hidden=true;side=undefined;anchor.setAttribute('aria-expanded','false');onClose();
+        panel.hidden=true;side=undefined;pinned=undefined;anchor.setAttribute('aria-expanded','false');onClose();
         if(focus&&anchor.isConnected)anchor.focus({preventScroll:true});
     }
     function open() {

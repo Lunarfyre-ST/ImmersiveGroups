@@ -1,0 +1,101 @@
+/* SPDX-License-Identifier: AGPL-3.0-only
+   Quiet navigation accents. Theme text, selected-tab gray and character colors
+   remain authoritative; these rules apply only to extension configuration UI. */
+.prome-vn-settings .ig-settings-brand-icon { color:var(--SmartThemeQuoteColor,#c9b8e9); margin-inline-end:.3em; font-size:.9em; }
+:root {
+    --ig-accent-layout:122,158,187;
+    --ig-accent-controls:190,156,111;
+    --ig-accent-characters:186,137,128;
+    --ig-accent-sprites:163,145,187;
+    --ig-accent-backgrounds:132,171,145;
+    --ig-accent-gallery:115,170,173;
+    --ig-accent-animations:179,151,198;
+    --ig-accent-automation:151,144,194;
+    --ig-accent-advanced:145,153,167;
+    --ig-accent-about:175,165,137;
+}
+.ig-settings-shell { --ig-accent:var(--ig-accent-layout); }
+:is([data-ig-tab=chat],[data-ig-pane=chat],.ig-settings-shell[data-active-tab=chat]) { --ig-accent:var(--ig-accent-layout); }
+:is([data-ig-tab=controls],[data-ig-pane=controls],.ig-settings-shell[data-active-tab=controls]) { --ig-accent:var(--ig-accent-controls); }
+:is([data-ig-tab=outfits],[data-ig-pane=outfits],.ig-settings-shell[data-active-tab=outfits]) { --ig-accent:var(--ig-accent-characters); }
+:is([data-ig-tab=sprites],[data-ig-pane=sprites],.ig-settings-shell[data-active-tab=sprites]) { --ig-accent:var(--ig-accent-sprites); }
+:is([data-ig-tab=backgrounds],[data-ig-pane=backgrounds],.ig-settings-shell[data-active-tab=backgrounds]) { --ig-accent:var(--ig-accent-backgrounds); }
+:is([data-ig-tab=gallery],[data-ig-pane=gallery],.ig-settings-shell[data-active-tab=gallery]) { --ig-accent:var(--ig-accent-gallery); }
+:is([data-ig-tab=animations],[data-ig-pane=animations],.ig-settings-shell[data-active-tab=animations]) { --ig-accent:var(--ig-accent-animations); }
+:is([data-ig-tab=context],[data-ig-pane=context],.ig-settings-shell[data-active-tab=context]) { --ig-accent:var(--ig-accent-automation); }
+:is([data-ig-tab=original],[data-ig-pane=original],.ig-settings-shell[data-active-tab=original]) { --ig-accent:var(--ig-accent-advanced); }
+:is([data-ig-tab=about],[data-ig-pane=about],.ig-settings-shell[data-active-tab=about]) { --ig-accent:var(--ig-accent-about); }
+
+.ig-settings-tabs > button {
+    border-block-end:3px solid rgba(var(--ig-accent),.8);
+}
+.ig-settings-tabs > button[aria-selected=true] {
+    border-color:rgba(var(--ig-accent),.65);
+    border-block-end-color:rgb(var(--ig-accent));
+    box-shadow:inset 0 -1px 0 rgba(var(--ig-accent),.4);
+}
+.ig-settings-shell > :is(.ig-settings-toolbar,.ig-preset-toolbar) {
+    border-inline-start:3px solid rgba(var(--ig-accent),.65);
+    background-image:linear-gradient(115deg,rgba(var(--ig-accent),.055),transparent 80%);
+}
+.ig-settings-panes > section > :is(details,.prome-settings-section,.ig-character-picker),
+.ig-gallery-settings > .ig-gallery-section,
+#ig-pane-context > .ig-gallery-section,
+#ig-automation-gallery > .ig-gallery-section {
+    border-inline-start:3px solid rgba(var(--ig-accent),.6);
+    border-radius:8px;
+    background-image:linear-gradient(115deg,rgba(var(--ig-accent),.045),transparent 75%);
+}
+.ig-settings-panes > section > details > summary,
+.ig-settings-shell .ig-preset-toolbar > summary {
+    background-image:linear-gradient(90deg,rgba(var(--ig-accent),.085),transparent 90%);
+    border-radius:6px;
+}
+.ig-settings-panes > section > details[open] > summary {
+    border-block-end:1px solid rgba(var(--ig-accent),.2);
+}
+.ig-settings-shell :is(h3,h4) { text-wrap:pretty; }
+.ig-settings-shell .ig-gallery-section > h4 { border-block-end:1px solid rgba(var(--ig-accent),.3); padding-block-end:8px; }
+
+/* The same colors identify the corresponding standalone configuration dialogs. */
+#prome-outfit-dialog { --ig-accent:var(--ig-accent-characters); }
+.ig-background-dialog,.ig-background-popover { --ig-accent:var(--ig-accent-backgrounds); }
+.ig-gallery-studio,.localimage-settings-modal,#localimage-extension-settings,#ig-gallery-model-prompt { --ig-accent:var(--ig-accent-gallery); }
+.ig-live-tuning { --ig-accent:var(--ig-accent-layout); }
+.ig-background-dialog > .prome-outfit-dialog-header,
+#prome-outfit-dialog > .prome-outfit-dialog-header,
+:is(.ig-gallery-studio,.localimage-settings-modal) > .local-image-modal-header,
+:is(.ig-live-tuning,.ig-background-popover) > header {
+    border-block-end:1px solid rgba(var(--ig-accent),.45);
+    background-image:linear-gradient(110deg,rgba(var(--ig-accent),.1),transparent 85%);
+}
+#prome-outfit-dialog .prome-outfit-editor-row {
+    border-inline-start:2px solid rgba(var(--ig-accent),.4);
+    padding-inline-start:10px;
+}
+.ig-background-dialog .ig-background-row { border-block-end-color:rgba(var(--ig-accent),.3); }
+.ig-gallery-studio :is(.ig-gallery-studio-tools,.ig-gallery-editor-heading) {
+    border-block-end:1px solid rgba(var(--ig-accent),.35);
+    background-image:linear-gradient(110deg,rgba(var(--ig-accent),.055),transparent 85%);
+}
+.ig-gallery-studio .ig-gallery-image-card { border-color:rgba(var(--ig-accent),.3); }
+
+:is(.ig-settings-shell,.ig-live-tuning,.ig-background-popover,#prome-outfit-dialog,.ig-background-dialog,.ig-gallery-studio,.localimage-settings-modal,#localimage-extension-settings) :is(input[type=checkbox],input[type=radio],input[type=range]) {
+    accent-color:rgb(var(--ig-accent));
+}
+:is(.ig-settings-shell,.ig-live-tuning,.ig-background-popover,#prome-outfit-dialog,.ig-background-dialog,.ig-gallery-studio,.localimage-settings-modal,#localimage-extension-settings) .menu_button {
+    border-color:rgba(var(--ig-accent),.4);
+    background-image:linear-gradient(110deg,rgba(var(--ig-accent),.07),transparent 90%);
+}
+:is(.ig-settings-shell,.ig-live-tuning,.ig-background-popover,#prome-outfit-dialog,.ig-background-dialog,.ig-gallery-studio,.localimage-settings-modal,#localimage-extension-settings) :is(button,input,select,textarea,summary):focus-visible {
+    outline:2px solid rgba(var(--ig-accent),.9);
+    outline-offset:2px;
+}
+:is(.ig-settings-shell,.ig-live-tuning,.ig-background-popover,#prome-outfit-dialog,.ig-background-dialog,.ig-gallery-studio,.localimage-settings-modal,#localimage-extension-settings) button:disabled {
+    opacity:.45;
+    cursor:default;
+    background-image:none;
+}
+@media (forced-colors:active) {
+    .ig-settings-tabs > button[aria-selected=true] { border-color:Highlight; }
+}

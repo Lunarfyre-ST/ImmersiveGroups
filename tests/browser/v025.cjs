@@ -1,0 +1,51 @@
+const assert=require('assert/strict'),path=require('path');
+module.exports=async function verifyDefaults(context,url){
+ const page=await context.newPage(),errors=[],discovery=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/sprites/get'&&/\/outfit[1-8]$/.test(u.searchParams.get('name')||''))discovery.push(u.searchParams.get('name'));});
+ await page.goto(url+'/?clean');await page.waitForFunction(()=>window.ImmersiveGroups?.getStatus().status==='ready');
+ const defaults=await page.evaluate(()=>{const s=ctx.extensionSettings.ImmersiveGroups;return {center:s.settingsTabsCentered,discover:s.autoDiscoverOutfits,basic:s.hideBasicOutfit,locks:s.stageShowLocks,mobileLocks:s.mobileLayoutSettings.stageShowLocks,heightSchema:s.heightSchemaVersion,heights:s.heightProfiles};});
+ assert.deepEqual(defaults,{center:true,discover:false,basic:false,locks:false,mobileLocks:false,heightSchema:3,heights:{}});
+ assert.equal(await page.locator('.ig-settings-shell').evaluate(n=>n.classList.contains('ig-centered-tabs')),true);
+ await page.locator('#prome-enable-vn').check();await page.waitForSelector('#prome-stage-controls',{state:'visible'});
+ await page.locator('#ig-tab-outfits').click();await page.locator('#prome-profile-cm').waitFor({state:'visible'});
+ assert.equal(await page.locator('#prome-profile-cm').inputValue(),'165');
+ await page.locator('#prome-profile-cm').fill('180');await page.locator('#prome-profile-cm').press('Tab');
+ assert.equal(await page.evaluate(()=>ctx.extensionSettings.ImmersiveGroups.heightProfiles['alex.png'].heightCm),180);
+ assert.equal(await page.evaluate(()=>ctx.extensionSettings.ImmersiveGroups.mobileHeightProfiles['alex.png'].heightCm),180);
+ await page.locator('#prome-profile-character').selectOption('bea.png');assert.equal(await page.locator('#prome-profile-cm').inputValue(),'165');
+ assert.deepEqual(discovery,[]);
+ // Adding an outfit1 catalog entry must not hide Basic with the new defaults.
+ assert.equal(await page.evaluate(async()=>{const m=await import('/scripts/extensions/third-party/ImmersiveGroups/modules/outfit-catalog.js');m.rememberOutfit(ctx.characters[1],'Bea/outfit1');return m.outfitOptions(ctx.characters[1]).some(o=>o.folder==='Bea');}),true);
+ await page.locator('#ig-tab-controls').click();const showLocks=page.locator('[data-prome-stage-setting=stageShowLocks]'),note=page.locator('[data-ig-lock-status]');
+ assert.equal(await showLocks.isChecked(),false);assert.equal(await page.locator('.prome-stage-lock:visible').count(),0);assert.match(await note.textContent(),/automation is off/);
+ await showLocks.check();await page.waitForSelector('.prome-stage-lock:visible');assert.match(await page.locator('.prome-stage-lock').first().getAttribute('title'),/API mode is off/);
+ // Status must react to each mode without changing any character's saved lock.
+ await page.locator('#ig-tab-context').click();const scene=page.locator('#ig-scene-automation');
+ await scene.locator('[data-scene-setting=enabled]').check();await page.waitForFunction(()=>document.querySelector('[data-ig-lock-status]').dataset.state==='prompt');
+ assert.match(await note.textContent(),/API mode is off\. Prompt mode is on/);
+ await scene.locator('[data-scene-setting=mode]').selectOption('api');await page.waitForFunction(()=>document.querySelector('[data-ig-lock-status]').dataset.state==='api-manual');
+ assert.match(await note.textContent(),/API mode is on\. Automatic analysis is off/);
+ await scene.locator('[data-scene-setting=apiAutoAfterReply]').check();await page.waitForFunction(()=>document.querySelector('[data-ig-lock-status]').dataset.state==='api-auto');
+ assert.match(await note.textContent(),/Automatic analysis is on/);
+ await scene.locator('[data-scene-setting=outfits]').uncheck();await page.waitForFunction(()=>document.querySelector('[data-ig-lock-status]').dataset.state==='outfits-off');
+ await scene.locator('[data-scene-setting=enabled]').uncheck();await page.waitForFunction(()=>document.querySelector('[data-ig-lock-status]').dataset.state==='off');
+ assert.equal(await page.evaluate(()=>Object.values(ctx.extensionSettings.ImmersiveGroups.outfitCatalog).every(c=>!c.locked)),true);
+ // Relocated controls retain their original IDs, handlers, values and reset actions.
+ assert.equal(await page.locator('#ig-pane-original #prome-sprite-shadow').count(),0);
+ await page.locator('#ig-tab-sprites').click();await page.locator('#ig-sprite-shadows > summary').click();
+ await page.locator('#prome-sprite-shadow').check();assert.equal(await page.locator('body').evaluate(n=>n.classList.contains('spriteShadow')),true);
+ await page.locator('#prome-shadow-opacity-number').fill('42');await page.locator('#prome-shadow-opacity-number').dispatchEvent('input');
+ assert.equal(await page.locator('#prome-shadow-opacity').inputValue(),'42');assert.match(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--prome-shadow-color')),/0\.42/);
+ await page.locator('#prome-sprite-shadow-offsetx-counter').fill('8');await page.locator('#prome-sprite-shadow-offsetx-counter').dispatchEvent('input');assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--prome-sprite-shadow-offsetx')),'8px');
+ await page.locator('#prome-sprite-shadow-offsetx-restore').click();assert.equal(await page.locator('#prome-sprite-shadow-offsetx-counter').inputValue(),'15');
+ await page.locator('#prome-shadow-opacity-reset').click();assert.equal(await page.locator('#prome-shadow-opacity-number').inputValue(),'100');
+ await page.setViewportSize({width:390,height:844});assert.equal(await page.locator('.prome-vn-settings').evaluate(n=>n.scrollWidth<=n.clientWidth),true);await page.locator('#ig-sprite-shadows').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(__dirname,'../artifacts/v025-shadows-mobile.png')});
+ await page.locator('#ig-tab-original').click();await page.locator('#prome-hide-sheld').evaluate(n=>n.closest('details').open=true);assert.match(await page.locator('label[for=prome-hide-sheld]').textContent(),/Ctrl \+ F1/);
+ await page.keyboard.press('Control+F1');assert.equal(await page.evaluate(()=>ctx.extensionSettings.ImmersiveGroups.hideSheld),true);await page.keyboard.press('Control+F1');assert.equal(await page.evaluate(()=>ctx.extensionSettings.ImmersiveGroups.hideSheld),false);
+ await page.locator('#ig-tab-about').click();assert.equal(await page.locator('#ig-pane-about a[href="https://github.com/Lunarfyre-ST"]').count(),1);assert.equal(await page.locator('#ig-pane-about a[href="https://github.com/Lunarfyre-ST/ImmersiveGroups"]').count(),1);assert.equal(await page.locator('#ig-pane-about a[href="https://github.com/Bronya-Rand/Prome-VN-Extension"]').count(),1);
+ await page.evaluate(()=>ImmersiveGroupsGallery.openLibrary({type:'outfit'}));const library=page.locator('.ig-unified-library');await library.getByRole('button',{name:'Import help',exact:true}).click();const help=library.getByRole('dialog',{name:'Outfit import help',exact:true});
+ assert.match(await help.textContent(),/data\/default-user\/characters/);assert.match(await help.textContent(),/Neither action uploads/);assert.equal(await help.getByRole('button',{name:'Choose characters folder',exact:true}).isVisible(),true);
+ assert.equal(await help.evaluate(n=>n.scrollWidth<=n.clientWidth),true);await page.screenshot({path:path.join(__dirname,'../artifacts/v025-import-mobile.png')});
+ assert.equal(await page.evaluate(()=>JSON.stringify(ctx.chat)===beforeChat),true);assert.deepEqual(errors,[]);await page.close();
+};

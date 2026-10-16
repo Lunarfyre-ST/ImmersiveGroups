@@ -4,14 +4,14 @@ import { extension_settings } from '../../../../extensions.js';
 import { saveSettingsDebounced } from '../../../../../script.js';
 import { extensionName } from '../constants.js';
 
-export const layoutKeys = new Set(['stageLayout','stageFlow','stageShowSpeak','stageShowOutfits','stageShowNames','stageShowLocks','stageShowManager','stageControlHeight','stageFontSize','stageOutfitWidth','stageGap','stageIdleOpacity','stageFadeTarget','stageNamesAbove','stageCenterCards','stageSpeakPlacement','stageOutfitPlacement','stageBackgroundPlacement','spriteSpacingPercent','layoutSpriteScale','spriteOffsetY','stageOffsetX','stageOffsetY','outfitPopupOffsetX','outfitPopupOffsetY','outfitMenuRows']);
+export const layoutKeys = new Set(['stageAutoFit','stageFitColumns','stageSpeakHeight','stageSpeakWidth','stageSpeakFontSize','stageAbbreviate','stageNameLetters','stageLayout','stageFlow','stageShowSpeak','stageShowOutfits','stageShowNames','stageShowLocks','stageShowManager','stageShowBackgroundArrows','stageControlHeight','stageFontSize','stageOutfitWidth','stageGap','stageIdleOpacity','stageFadeTarget','stageNamesAbove','stageCenterCards','stageSpeakPlacement','stageOutfitPlacement','stageBackgroundPlacement','spriteSpacingPercent','layoutSpriteScale','spriteOffsetY','stageOffsetX','stageOffsetY','outfitPopupOffsetX','outfitPopupOffsetY','outfitMenuRows']);
 export function mobileLayout() {
     const s = extension_settings[extensionName];
     if (s.layoutMode === 'desktop') return false;
     if (s.layoutMode === 'mobile') return true;
     return (window.innerWidth) <= (Number(s.mobileLayoutWidth) || 1000);
 }
-export function editingLayout() { return document.getElementById('ig-edit-layout')?.value || 'desktop'; }
+export function editingLayout() { const selected=document.getElementById('ig-edit-layout')?.value;return selected==='desktop'||selected==='mobile'?selected:mobileLayout()?'mobile':'desktop'; }
 export function layoutSettings(layout = mobileLayout() ? 'mobile' : 'desktop') {
     const s = extension_settings[extensionName];
     // Only profile-specific keys may override global preferences.
@@ -34,7 +34,13 @@ export function setupResponsive() {
     // Snapshot the working setup once. Desktop and mobile edits stay independent.
     if (!s.mobileLayoutSettings) s.mobileLayoutSettings = Object.fromEntries([...layoutKeys].map(key => [key, s[key]]));
     if (!s.mobileHeightProfiles) s.mobileHeightProfiles = JSON.parse(JSON.stringify(s.heightProfiles || {}));
-    document.getElementById('ig-edit-layout')?.addEventListener('change', () => window.dispatchEvent(new Event('ig-editor-layout-change')));
+    const editor=document.getElementById('ig-edit-layout');
+    editor.value=['desktop','mobile'].includes(s.settingsEditProfile)?s.settingsEditProfile:'auto';
+    editor.addEventListener('change',()=>{s.settingsEditProfile=editor.value;saveSettingsDebounced();window.dispatchEvent(new Event('ig-editor-layout-change'));});
+    let previous=editingLayout();
+    const follow=()=>{const current=editingLayout();if(current!==previous){previous=current;window.dispatchEvent(new Event('ig-editor-layout-change'));}};
+    window.addEventListener('resize',follow);window.addEventListener('ig-layout-change',follow);
+    editor.addEventListener('change',()=>{previous=editingLayout();});
     const mode = document.getElementById('ig-layout-mode');
     mode.value = ['desktop', 'mobile'].includes(s.layoutMode) ? s.layoutMode : 'auto';
     mode.addEventListener('change', () => {

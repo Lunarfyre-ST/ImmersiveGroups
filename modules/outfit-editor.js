@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
+import { selectProfileCharacter } from './height-profiles.js';
 import { setCharacterColors, catalogFor, outfitOptions, hiddenOutfit, rememberOutfit, editOutfit, removeOutfit, moveOutfit, discoverOutfits, importFolderNames, validFolder, cleanFolder, onCatalogChange } from './outfit-catalog.js';
 
 let services, dialog, selected = '', scanBusy = false;
@@ -10,10 +11,21 @@ function action(title, icon, callback) {
     const button = el('button','prome-icon-button'); button.type = 'button'; button.title = title; button.setAttribute('aria-label',title);
     const glyph = el('i',`fa-solid ${icon}`); glyph.setAttribute('aria-hidden','true'); button.append(glyph); button.addEventListener('click',callback); return button;
 }
+function renderColors(colors,c){
+    colors.replaceChildren();if(!c){colors.append(el('small','','Open a character or group chat to customize colors.'));return;}
+    const inherit=el('label','ig-color-field'),check=el('input');check.type='checkbox';check.checked=catalogFor(c.avatar).colors?.inheritSpeak!==false;check.setAttribute('aria-label','Inherit Speak color when separated');check.addEventListener('change',()=>setCharacterColors(c.avatar,{inheritSpeak:check.checked}));inherit.append(check,document.createTextNode('Inherit Speak button color when controls are separated'));colors.append(inherit);
+    for(const [key,label,fallback] of [['background' ,'Button background','#20232c'],['speak','Speak button','#513d2c'],['text','Button text','#e8e9ee']]){
+        const field=el('label','ig-color-field',label),input=el('input');input.type='color';input.value=catalogFor(c.avatar).colors?.[key]||fallback;input.setAttribute('aria-label',label);
+        input.addEventListener('input',()=>setCharacterColors(c.avatar,{[key]:input.value}));
+        const reset=el('button','menu_button','Theme default');reset.type='button';reset.addEventListener('click',()=>{setCharacterColors(c.avatar,{[key]:''});input.value=fallback;renderMainColors();});field.append(input,reset);colors.append(field);
+    }
+}
+function renderMainColors(){const container=document.getElementById('ig-character-colors');if(!container||container.contains(document.activeElement))return;const avatar=document.getElementById('prome-profile-character')?.value;renderColors(container,services.characters().find(c=>c.avatar===avatar));}
 function render() {
     const characters = services.characters();
     const picker = dialog.querySelector('[data-editor-character]');
-    const before = picker.value;
+    const before = document.getElementById('prome-profile-character')?.value||picker.value;
+    if(characters.some(c=>c.avatar===before))selected=before;
     picker.replaceChildren();
     for (const c of characters) { const option = el('option','',characters.filter(other=>other.name===c.name).length>1?`${c.name} (${c.avatar})`:c.name); option.value = c.avatar; option.title = c.avatar; picker.append(option); }
     if (!characters.some(c => c.avatar === selected)) selected = characters.some(c => c.avatar === before) ? before : characters[0]?.avatar || '';
@@ -22,14 +34,8 @@ function render() {
     list.replaceChildren();
     dialog.querySelector('[data-editor-empty]').hidden = Boolean(c);
     for (const button of dialog.querySelectorAll('[data-editor-requires-character]')) button.disabled = !c || scanBusy;
-    const colors=dialog.querySelector('[data-editor-colors]');colors.replaceChildren();
-    if (!c) return;
-    colors.append(el('h4','','Character button colors'));
-    for(const [key,label,fallback] of [['background','Button background','#20232c'],['speak','Speak button','#513d2c'],['text','Button text','#e8e9ee']]){
-        const field=el('label','ig-color-field',label),input=el('input');input.type='color';input.value=catalogFor(c.avatar).colors?.[key]||fallback;input.setAttribute('aria-label',label);
-        input.addEventListener('input',()=>setCharacterColors(c.avatar,{[key]:input.value}));
-        const reset=el('button','menu_button','Theme default');reset.type='button';reset.addEventListener('click',()=>{setCharacterColors(c.avatar,{[key]:''});render();});field.append(input,reset);colors.append(field);
-    }
+    renderColors(dialog.querySelector('[data-editor-colors]'),c);
+    if(!c)return;
     for (const entry of outfitOptions(c,true)) {
         const row = el('div','prome-outfit-editor-row');
         const main = el('div','prome-outfit-editor-main');
@@ -41,7 +47,7 @@ function render() {
         actions.append(action('Move up','fa-chevron-up',()=>{moveOutfit(c.avatar,entry.folder,-1);render();}),action('Move down','fa-chevron-down',()=>{moveOutfit(c.avatar,entry.folder,1);render();}),action('Remove from catalog (keeps files)','fa-trash-can',()=>{removeOutfit(c.avatar,entry.folder);render();}));
         main.append(visible,name,actions);
         const path = el('code','prome-outfit-path',entry.folder);
-        const extra = el('details','prome-outfit-note'); extra.append(el('summary','','Scene description (for future automation)'));
+        const extra = el('div','prome-outfit-note'); extra.append(el('label','','Scene description (for model context)'));
         const note = el('textarea','text_pole'); note.value=entry.description||''; note.maxLength=1000; note.rows=2; note.setAttribute('aria-label','Outfit scene description'); note.placeholder='When this outfit fits the scene…';
         note.addEventListener('change',()=>editOutfit(c.avatar,entry.folder,{description:note.value})); extra.append(note);
         const font=el('label','ig-color-field','Outfit font color'),color=el('input');color.type='color';color.value=entry.fontColor||'#e8e9ee';color.setAttribute('aria-label','Outfit font color');color.addEventListener('input',()=>editOutfit(c.avatar,entry.folder,{fontColor:color.value}));
@@ -52,7 +58,9 @@ function render() {
 }
 export function openOutfitEditor(avatar = '') {
     if (!dialog) return;
-    selected = avatar || selected;
+    if(avatar)selectProfileCharacter(avatar);
+    selected = document.getElementById('prome-profile-character')?.value || avatar || selected;
+    if(window.ImmersiveGroupsGallery?.openLibrary)return window.ImmersiveGroupsGallery.openLibrary({type:'outfit',character:selected});
     render(); status('');
     if (!dialog.open) dialog.showModal();
     dialog.scrollTop = 0;
@@ -65,14 +73,14 @@ export function setupOutfitEditor(api) {
     dialog.innerHTML=`<div class="prome-outfit-dialog-header"><div><h3>Outfit library</h3><small>Display names, visibility and scene notes</small></div><button type="button" class="prome-icon-button" data-editor-close aria-label="Close outfit library"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>
     <div class="prome-outfit-dialog-body"><label class="prome-editor-character">Character <select data-editor-character></select><small data-editor-count></small></label>
     <div class="prome-outfit-tools"><button type="button" class="menu_button" data-editor-scan data-editor-requires-character>Find outfits</button><button type="button" class="menu_button" data-editor-import data-editor-requires-character>Import folder names</button><input type="file" webkitdirectory multiple data-editor-files hidden></div>
-    <p class="prome-help">Find outfits checks common names. Import folder names reads custom names from your character’s sprite folder. No images are uploaded.</p>
+    <p class="prome-help">Outfits are saved per character across all chats and groups. Find outfits checks common names. Import folder names reads custom names from your character’s sprite folder. No images are uploaded.</p>
     <p data-editor-status class="prome-editor-status" role="status"></p><p data-editor-empty>No active character.</p><div data-editor-colors class="ig-editor-colors"></div><div data-editor-list class="prome-outfit-editor-list"></div>
     <form data-editor-add class="prome-outfit-add"><h4>Add an outfit</h4><label>Sprite folder<input class="text_pole" data-editor-folder required maxlength="200" placeholder="Nerys/outfit3"></label><label>Display name<input class="text_pole" data-editor-label maxlength="80" placeholder="Pyjamas"></label><button type="submit" class="menu_button" data-editor-requires-character>Add folder</button></form>
     <small class="prome-help">Renaming changes the display label. Hiding and removing entries keep the files on disk. Hidden outfits remain available through existing Quick Replies; removed entries stay excluded from automatic discovery.</small></div>`;
     document.body.append(dialog);
     dialog.querySelector('[data-editor-close]').addEventListener('click',()=>dialog.close());
     dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
-    dialog.querySelector('[data-editor-character]').addEventListener('change',event=>{selected=event.target.value;render();status('');});
+    dialog.querySelector('[data-editor-character]').addEventListener('change',event=>{selected=event.target.value;selectProfileCharacter(selected);render();renderMainColors();status('');});
     dialog.querySelector('[data-editor-scan]').addEventListener('click',async()=>{
         const c=character();if(!c||scanBusy)return;scanBusy=true;render();status('Checking existing sprite folders…');
         try {const result=await discoverOutfits(c,services.currentFolder(c),true);status(`Found ${result.found} outfit folders.${result.failed?' Some folders could not be checked; you can retry.':''}`);}
@@ -90,5 +98,7 @@ export function setupOutfitEditor(api) {
         if(!added&&label.value.trim())editOutfit(c.avatar,folder,{label:label.value});
         status(added?'Outfit added. Select it on the Sheld to wear it.':'This folder is already in the library.');field.value=label.value='';render();
     });
-    onCatalogChange(()=>{if(dialog.open&&!dialog.contains(document.activeElement))render();});
+    window.addEventListener('ig-character-selection',()=>{renderMainColors();if(dialog.open)render();});
+    onCatalogChange(()=>{renderMainColors();if(dialog.open&&!dialog.contains(document.activeElement))render();});
+    renderMainColors();
 }

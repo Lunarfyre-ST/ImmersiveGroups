@@ -8,6 +8,12 @@ export function backgroundChoices(files,settings,activeAvatars,filter='') {
     return {linked,starred};
 }
 
+export function nextLinkedBackground(files,settings,activeAvatars,current,direction=1){
+    const pool=backgroundChoices(files,settings,activeAvatars).linked;if(!pool.length)return null;
+    const index=pool.indexOf(current),step=direction<0?-1:1;
+    return pool[index<0?(step<0?pool.length-1:0):(index+step+pool.length)%pool.length];
+}
+
 // Rule order breaks ties inside each priority class; filenames never execute commands.
 export function chooseBackgroundDefault(files,settings,activeAvatars) {
     const avatars=[...new Set(activeAvatars)],active=new Set(avatars);

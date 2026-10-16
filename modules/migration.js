@@ -11,6 +11,10 @@ export function migrateSettings(settings) {
     const root=settings.ImmersiveGroups;
     if(root.schemaVersion===1)return {settings:root,changed};
     const scene=own(settings,'Prome-VN-Extension')&&record(settings['Prome-VN-Extension'])?settings['Prome-VN-Extension']:{};
+    // A new scene setup already uses the current height model. Legacy installs
+    // still run their old conversion, retaining saved scales and centimeter values.
+    const freshScene=Object.keys(scene).length===0&&!Object.keys(root).some(key=>!['gallery','schemaVersion'].includes(key));
+    if(freshScene)root.heightSchemaVersion=3;
     for(const [key,value] of Object.entries(scene))if(!own(root,key)&&!['gallery','schemaVersion'].includes(key))put(root,key,clone(value));
     if(!own(root,'gallery')||!record(root.gallery))put(root,'gallery',own(settings,'SillyTavern-LocalImage')&&record(settings['SillyTavern-LocalImage'])?clone(settings['SillyTavern-LocalImage']):{});
     root.schemaVersion=1;

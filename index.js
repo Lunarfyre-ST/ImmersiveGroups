@@ -3,10 +3,11 @@
 import * as extensions from '../../../extensions.js';
 import { migrateSettings, findLegacyConflicts } from './modules/migration.js';
 
+let sceneAutomation=null;
 const runtimeKey=Symbol.for('ImmersiveGroups.runtime');
 const rootUrl=new URL('.',import.meta.url);
 const current='third-party/'+decodeURIComponent(rootUrl.pathname.split('/').filter(Boolean).pop());
-const runtime=globalThis[runtimeKey] ||= {version:'0.1.4',status:'idle',components:{},errors:[]};
+const runtime=globalThis[runtimeKey] ||= {version:'0.2.8',status:'idle',components:{},errors:[]};
 
 function showProblem(text) {
     console.error('[ImmersiveGroups]',text);
@@ -33,13 +34,13 @@ async function start() {
     runtime.status='starting';
     const results=await Promise.allSettled([
         import('./gallery/dist/gallery.js').then(module=>module.initGallery()).then(()=>{runtime.components.gallery=true;}),
-        import('./prome.js').then(module=>module.initScene()).then(()=>{runtime.components.scene=true;}),
+        import('./prome.js').then(module=>module.initScene()).then(async()=>{runtime.components.scene=true;sceneAutomation=(await import('./modules/scene-automation.js')).setupSceneAutomation();runtime.components.automation=true;}),
     ]);
     for(const [index,result] of results.entries())if(result.status==='rejected'){
         runtime.errors.push(String(result.reason?.message||result.reason));showProblem(`${index===0?'Gallery':'Scene controls'} could not start: ${result.reason?.message||result.reason}`);
     }
     runtime.status=runtime.errors.length?'partial':'ready';
-    globalThis.ImmersiveGroups=Object.freeze({version:runtime.version,getStatus:()=>JSON.parse(JSON.stringify(runtime)),getSceneContext:async()=>{
+    globalThis.ImmersiveGroups=Object.freeze({version:runtime.version,automation:sceneAutomation,getStatus:()=>JSON.parse(JSON.stringify(runtime)),getSceneContext:async()=>{
         const stage=runtime.components.scene?await import('./modules/stage-controls.js'):null;
         return {version:1,scene:stage?.getSceneContext(),gallery:globalThis.ImmersiveGroupsGallery?.getSceneContext()};
     }});

@@ -4,14 +4,14 @@ export function bounded(value,min,max,fallback) {
     const n=Number(value);return Number.isFinite(n)?Math.min(max,Math.max(min,n)):fallback;
 }
 const own=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k);
-export const REFERENCE_HEIGHT_CM=180;
+export const REFERENCE_HEIGHT_CM=165;
 export function heightFactor(profile={},reference=REFERENCE_HEIGHT_CM) {
     const fine=bounded(profile.fineTuneOffset,-99,7900,0);
     // The caller supplies the tallest active character as the reference.
     return Math.min(8,Math.max(.01,bounded(profile.heightCm,30,300,REFERENCE_HEIGHT_CM)/bounded(reference,30,300,REFERENCE_HEIGHT_CM)*(1+fine/100)));
 }
 export function tallestHeight(profiles,avatars) {
-    return avatars.length?Math.max(30,...avatars.map(avatar=>bounded(own(profiles,avatar)?profiles[avatar]?.heightCm:null,30,300,180))):180;
+    return avatars.length?Math.max(30,...avatars.map(avatar=>bounded(own(profiles,avatar)?profiles[avatar]?.heightCm:null,30,300,REFERENCE_HEIGHT_CM))):REFERENCE_HEIGHT_CM;
 }
 export function legacyHeightFactor(profile={},mode='manual',reference=180,outfit='') {
     const relative=mode==='cm'?bounded(profile.heightCm,30,300,reference)/bounded(reference,30,300,180):mode==='percent'?bounded(profile.heightPercent,10,300,100)/100:1;

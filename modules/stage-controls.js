@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
+import { cancelSceneFade, fadeSceneSwap } from './scene-animations.js';
 import { layoutSettings, editingLayout, writeLayoutSetting } from './responsive.js';
 import { mobileSpritesActive, mobileSprite, syncMobileSprites } from './mobile-sprites.js';
 import { setupBackgrounds, refreshBackgrounds, backgroundSceneContext } from './scene-backgrounds.js';
-import { seedOutfits, rememberOutfit, outfitOptions, catalogFor, setOutfitLock, onCatalogChange, discoverOutfits, automaticOutfitAllowed, sceneOutfitContext } from './outfit-catalog.js';
+import { seedOutfits, rememberOutfit, rememberNativeOutfits, outfitOptions, catalogFor, setOutfitLock, onCatalogChange, discoverOutfits, automaticOutfitAllowed, sceneOutfitContext, outfitFolderAllowed, displayedOutfitAllowed, repairOutfitOwnership } from './outfit-catalog.js';
 import { setupOutfitEditor, openOutfitEditor } from './outfit-editor.js';
 import { createOutfitPicker } from './outfit-picker.js';
+import { setupSettingsDependencies } from './settings-dependencies.js';
 import { setupLiveTuning } from './live-tuning.js';
+import { setupSceneLibrary } from './scene-library.js';
 import { applySpeakerDimming, setActiveSpeaker, setupSpeakerTracking } from './speaker-dimming.js';
 import { extension_settings, getContext } from '../../../../extensions.js';
 import { Generate, isGenerating, saveSettingsDebounced, eventSource, event_types } from '../../../../../script.js';
@@ -15,6 +18,7 @@ import * as expressions from '../../../expressions/index.js';
 import { extensionName, defaultSettings } from '../constants.js';
 import { applyScale } from './scale.js';
 import { bounded, packFromSource } from './height-profiles.js';
+import { outfitAutomationStatus } from './scene-automation-model.js';
 
 const config = () => extension_settings[extensionName];
 const owns = (object, key) => Object.prototype.hasOwnProperty.call(object || {}, key);
@@ -49,6 +53,7 @@ export function applySpriteSlots() {
         const index = members.findIndex(c => (node.id === `expression-${c.avatar}` || node.id === `ig-expression-${c.avatar}`));
         const enabled = active && index >= 0 && !manualPosition(node);
         node.classList.toggle('prome-stable-slot', enabled);
+        node.classList.toggle('ig-muted-sprite',Boolean(config()?.enableVN_UI&&getContext().groupId!=null&&index<0));
         if (enabled) {
             const center = `${slotCenter(index, members.length, layoutSettings().spriteSpacingPercent)}%`;
             if (node.style.getPropertyValue('--prome-slot-center') !== center) node.style.setProperty('--prome-slot-center', center);
@@ -64,10 +69,11 @@ export async function updateSpriteLayers(container) {
 function overrideKey(character) { return character.avatar.replace(/\.[^/.]+$/, ''); }
 function activeFolder(character) {
     const override = extension_settings.expressionOverrides?.find(e => e.name === overrideKey(character));
-    return override?.path || character.name;
+    return override?.path && outfitFolderAllowed(character,override.path) ? override.path : character.name;
 }
 export function currentFolder(character) {
-    return packFromSource(spriteNode(character)?.querySelector('img')?.getAttribute('src') || '', activeFolder(character));
+    const displayed=packFromSource(spriteNode(character)?.querySelector('img')?.getAttribute('src') || '', activeFolder(character));
+    return displayedOutfitAllowed(character,displayed,activeFolder(character)) ? displayed : activeFolder(character);
 }
 export function chooseOutfitSprite(sprites, expression = '') {
     const candidates = sprites.filter(s => s && typeof s.path === 'string' && typeof s.label === 'string');
@@ -84,15 +90,17 @@ function preload(src) {
         image.src = src;
     });
 }
-export async function changeOutfit(avatar, requestedFolder, { source = 'manual', chatId = null, groupId = null } = {}) {
+export async function changeOutfit(avatar, requestedFolder, { source = 'manual', chatId = null, groupId = null, allowDuringGeneration = false, isCurrent = () => true } = {}) {
     const character = stageCharacters().find(c => c.avatar === avatar);
     if (!character) throw new Error('Character is no longer active in this chat');
     const folder = requestedFolder.trim();
-    if (source === 'automatic' && (String(chatId) !== String(getContext().getCurrentChatId?.()) || String(groupId ?? '') !== String(getContext().groupId ?? '') || !automaticOutfitAllowed(avatar, folder) || isGenerating())) return false;
+    if (!outfitFolderAllowed(character,folder)) {if(source==='automatic')return false;throw new Error('This folder belongs to another character. Add it manually as a shared outfit in the library if this is intentional.');}
+    if (source === 'automatic' && (String(chatId) !== String(getContext().getCurrentChatId?.()) || String(groupId ?? '') !== String(getContext().groupId ?? '') || !automaticOutfitAllowed(avatar, folder) || (!allowDuringGeneration&&isGenerating()) || !isCurrent())) return false;
     if (!folder || folder.length > 200 || /[\r\n\0]/.test(folder)) throw new Error('Enter a sprite folder, such as Character/pyjama');
     const node = spriteNode(character);
     const img = node?.querySelector('img');
     if (!img) throw new Error('No sprite is displayed for this character yet. Enable Character Expressions first.');
+    cancelSceneFade(img);
     const scope = currentScope(), job = Symbol(); outfitJobs.set(avatar, job);
     const response = await fetch(`/api/sprites/get?name=${encodeURIComponent(folder)}`);
     if (!response.ok) throw new Error(`Could not read outfit folder (${response.status})`);
@@ -104,30 +112,33 @@ export async function changeOutfit(avatar, requestedFolder, { source = 'manual',
     if (url.origin !== window.location.origin || !url.pathname.startsWith('/characters/')) throw new Error('Invalid sprite image path');
     await preload(url.href);
     if (outfitJobs.get(avatar) !== job || currentScope() !== scope || spriteNode(character) !== node || node.querySelector('img') !== img || !node.isConnected) return false;
-    if (source === 'automatic' && !automaticOutfitAllowed(avatar, folder)) return false;
-    // Update the native override keyed by avatar filename, without running the
-    // native override button (which empties the entire VN wrapper).
-    if (!Array.isArray(extension_settings.expressionOverrides)) extension_settings.expressionOverrides = [];
-    const key = overrideKey(character);
-    const override = extension_settings.expressionOverrides.find(e => e.name === key);
-    if (override) override.path = folder;
-    else extension_settings.expressionOverrides.push({ name: key, path: folder });
-    if (expressions.lastExpression && typeof expressions.lastExpression === 'object') expressions.lastExpression[folder.split('/')[0]] = sprite.label;
-    img.setAttribute('src', sprite.path);
-    img.setAttribute('data-expression', sprite.label);
-    img.setAttribute('data-sprite-folder-name', folder);
-    img.setAttribute('data-sprite-filename', url.pathname.split('/').pop());
-    img.title = sprite.label;
-    // Keep settings and .data() readers in agreement on native jQuery versions.
-    $(img).data('expression', sprite.label).data('sprite-folder-name', folder);
-    const folders = config().outfitFolders;
-    const known = owns(folders, avatar) && Array.isArray(folders[avatar]) ? folders[avatar] : [];
-    Object.defineProperty(folders, avatar, { value: [...new Set([...known, folder])], enumerable: true, writable: true, configurable: true });
-    rememberOutfit(character, folder, { explicit: source !== 'automatic' });
-    saveSettingsDebounced(); // Extension settings only; never save/reload a chat.
-    applyScale(node);
-    refreshStageControls();
-    return true;
+    if (source === 'automatic' && (!automaticOutfitAllowed(avatar, folder)||!isCurrent()||!stageCharacters().some(c=>c.avatar===avatar))) return false;
+    const valid = () => outfitJobs.get(avatar) === job && currentScope() === scope && spriteNode(character) === node && node.querySelector('img') === img && node.isConnected &&
+        (source !== 'automatic' || (automaticOutfitAllowed(avatar, folder) && isCurrent() && stageCharacters().some(c=>c.avatar===avatar)));
+    return fadeSceneSwap(img, 'outfit', () => {
+        // Update the native override keyed by avatar filename, without running the
+        // native override button (which empties the entire VN wrapper).
+        if (!Array.isArray(extension_settings.expressionOverrides)) extension_settings.expressionOverrides = [];
+        const key = overrideKey(character);
+        const override = extension_settings.expressionOverrides.find(e => e.name === key);
+        if (override) override.path = folder;
+        else extension_settings.expressionOverrides.push({ name: key, path: folder });
+        if (expressions.lastExpression && typeof expressions.lastExpression === 'object') expressions.lastExpression[folder.split('/')[0]] = sprite.label;
+        img.setAttribute('src', sprite.path);
+        img.setAttribute('data-expression', sprite.label);
+        img.setAttribute('data-sprite-folder-name', folder);
+        img.setAttribute('data-sprite-filename', url.pathname.split('/').pop());
+        img.title = sprite.label;
+        // Keep settings and .data() readers in agreement on native jQuery versions.
+        $(img).data('expression', sprite.label).data('sprite-folder-name', folder);
+        const folders = config().outfitFolders;
+        const known = owns(folders, avatar) && Array.isArray(folders[avatar]) ? folders[avatar] : [];
+        Object.defineProperty(folders, avatar, { value: [...new Set([...known, folder])], enumerable: true, writable: true, configurable: true });
+        rememberOutfit(character, folder, { explicit: source !== 'automatic' });
+        saveSettingsDebounced(); // Extension settings only; never save/reload a chat.
+        applyScale(node);
+        refreshStageControls();
+    }, valid);
 }
 const cards = new Map();
 const pendingOutfits = new Map();
@@ -150,7 +161,7 @@ function createCard(character) {
     });speak.classList.add('prome-stage-talk');
     const speakName=document.createElement('span');speak.append(speakName);
     const name=document.createElement('span');name.className='prome-character-label';
-    const picker=createOutfitPicker(`${character.name} outfit`),outfit=picker.button;
+    const picker=createOutfitPicker(`${character.name} outfit`,()=>({entries:outfitOptions(character),value:pendingOutfits.get(avatar)?.folder||currentFolder(character)})),outfit=picker.button;
     outfit.addEventListener('change',async()=>{
         const folder=outfit.value;if(!folder||isGenerating())return;
         const job=Symbol();pendingOutfits.set(avatar,{folder,job});lastAvatar=avatar;
@@ -161,9 +172,12 @@ function createCard(character) {
     });
     const lock=iconButton('Lock automatic outfit changes; manual changes still work','fa-lock-open',()=>{lastAvatar=avatar;setOutfitLock(avatar,!catalogFor(avatar).locked);});lock.classList.add('prome-stage-lock');
     root.addEventListener('focusin',()=>{lastAvatar=avatar;});root.append(speak,name,outfit,lock);
-    return {root,speak,speakName,name,outfit,lock,picker};
+    const speakGroup=document.createElement('div'),outfitGroup=document.createElement('div');
+    for(const group of [speakGroup,outfitGroup]){group.className='prome-character-chip ig-split-chip';group.dataset.avatar=avatar;}
+    return {root,speak,speakName,name,outfit,lock,picker,speakGroup,outfitGroup};
 }
 function captureOutfits(characters) {
+    rememberNativeOutfits(false);
     for(const c of characters) {
         seedOutfits(c,activeFolder(c));
         const displayed=currentFolder(c);if(displayed)rememberOutfit(c,displayed);
@@ -175,13 +189,18 @@ export function refreshStageControls() {
     applySpriteSlots();applySpeakerDimming();captureOutfits(characters);
     const bar=get('prome-stage-controls');if(!bar)return;
     applyScale();
-    const settings=layoutSettings();bar.hidden=!settings.enableVN_UI||settings.sheldCharacterControls===false;
+    const settings=layoutSettings(),automation=outfitAutomationStatus(config().sceneAutomation);bar.hidden=!settings.enableVN_UI||settings.sheldCharacterControls===false;
+    const lockStatus=document.querySelector('[data-ig-lock-status]');
+    if(lockStatus){if(lockStatus.textContent!==automation.text)lockStatus.textContent=automation.text;lockStatus.dataset.state=automation.state;}
     const appearance={
         '--ig-controls-x':`${Number(settings.stageOffsetX)||0}px`,
         '--ig-controls-y':`${Number(settings.stageOffsetY)||0}px`,
         '--prome-control-height':`${bounded(settings.stageControlHeight,24,56,32)}px`,
         '--prome-control-font':`${bounded(settings.stageFontSize,10,22,13)}px`,
         '--prome-outfit-width':`${bounded(settings.stageOutfitWidth,80,260,130)}px`,
+        '--ig-speak-height':`${bounded(settings.stageSpeakHeight||settings.stageControlHeight,16,80,32)}px`,
+        '--ig-speak-width':`${bounded(settings.stageSpeakWidth,0,400,0)}px`,
+        '--ig-speak-font':`${bounded(settings.stageSpeakFontSize||settings.stageFontSize,8,32,13)}px`,
         '--prome-control-gap':`${bounded(settings.stageGap,2,16,6)}px`,
         '--prome-control-idle':String(bounded(settings.stageIdleOpacity,20,100,75)/100),
     };
@@ -198,29 +217,33 @@ export function refreshStageControls() {
     const signature=JSON.stringify(characters.map(c=>[c.avatar,c.name]));
     if(shared.dataset.signature!==signature){const old=shared.value;shared.replaceChildren();for(const c of characters){const option=document.createElement('option');option.value=c.avatar;option.textContent=characters.filter(v=>v.name===c.name).length>1?`${c.name} (${c.avatar})`:c.name;shared.append(option);}shared.value=characters.some(c=>c.avatar===old)?old:characters[0]?.avatar||'';shared.dataset.signature=signature;}
     const roster=get('prome-stage-roster'),busy=speaking||isGenerating();
-    for(const [avatar,card] of cards)if(!characters.some(c=>c.avatar===avatar)){card.picker.destroy();for(const node of [card.root,card.speak,card.name,card.outfit,card.lock])node.remove();cards.delete(avatar);}
+    for(const [avatar,card] of cards)if(!characters.some(c=>c.avatar===avatar)){card.picker.destroy();for(const node of [card.root,card.speak,card.name,card.outfit,card.lock,card.speakGroup,card.outfitGroup])node.remove();cards.delete(avatar);}
     for(const [index,c] of characters.entries()){
         let card=cards.get(c.avatar);if(!card){card=createCard(c);cards.set(c.avatar,card);}
-        if(roster.children[index]!==card.root)roster.insertBefore(card.root,roster.children[index]||null);
+        const combinedBottom=settings.stageSpeakPlacement==='bottom'&&settings.stageOutfitPlacement==='bottom',host=combinedBottom?get('ig-bottom-combined'):roster;
+        if(host.children[index]!==card.root)host.insertBefore(card.root,host.children[index]||null);
         card.root.hidden=(settings.stageLayout==='shared'&&shared.value!==c.avatar)||(settings.stageShowSpeak===false&&settings.stageShowNames===false&&settings.stageShowOutfits===false);
         card.speak.hidden=settings.stageShowSpeak===false;
         card.speak.disabled=busy;
         const named=characters.filter(other=>other.name===c.name).length>1?`${c.name} (${c.avatar})`:c.name;
-        card.speakName.textContent=settings.stageLayout==='shared'?'Speak':named;
+        const short=settings.stageAbbreviate?Array.from(c.name).slice(0,bounded(settings.stageNameLetters,1,40,3)).join(''):named;
+        card.speakName.textContent=settings.stageLayout==='shared'?'Speak':short;
         card.speak.title=`Ask ${named} to speak (sends your draft if present)`;card.speak.setAttribute('aria-label',`Ask ${named} to speak`);card.name.title=named;
         card.speakName.hidden=settings.stageShowNames===false;
-        card.name.textContent=named;card.name.hidden=settings.stageShowSpeak!==false||settings.stageShowNames===false;
+        card.name.textContent=short;card.name.hidden=settings.stageShowSpeak!==false||settings.stageShowNames===false;
         card.outfit.hidden=settings.stageShowOutfits===false;card.outfit.disabled=busy;
         const locked=Boolean(catalogFor(c.avatar).locked);card.lock.hidden=settings.stageShowLocks===false||settings.stageShowOutfits===false;
         card.lock.setAttribute('aria-pressed',String(locked));card.lock.classList.toggle('is-locked',locked);
         card.lock.querySelector('i').className=`fa-solid ${locked?'fa-lock':'fa-lock-open'}`;
-        card.lock.title=locked?'Automatic outfit changes locked. Manual changes still work.':'Allow automatic outfit changes (future automation).';
+        card.lock.dataset.automation=automation.state;
+        card.lock.title=`${locked?'Model outfit changes locked. Manual changes still work.':'Allow model outfit changes.'}\n${automation.text}`;
+        card.lock.setAttribute('aria-label',`${c.name}: ${locked?'unlock':'lock'} model outfit changes. ${automation.text}`);
         const current=currentFolder(c),options=outfitOptions(c);
         const desired=pendingOutfits.get(c.avatar)?.folder||current;
         card.picker.update(options,options.some(o=>o.folder===desired)?desired:'');
         const colors=catalogFor(c.avatar).colors||{};
-        for(const node of [card.root,card.speak,card.outfit,card.lock,card.name]){
-            for(const [property,value] of [['--ig-card-color',colors.background],['--ig-speak-color',colors.speak],['--ig-button-text',colors.text],['--ig-outfit-text',options.find(o=>o.folder===desired)?.fontColor]]){
+        for(const node of [card.root,card.speak,card.outfit,card.lock,card.name,card.speakGroup,card.outfitGroup]){
+            for(const [property,value] of [['--ig-card-color',settings.stageSpeakPlacement!==settings.stageOutfitPlacement&&colors.inheritSpeak!==false?colors.speak||colors.background:colors.background],['--ig-speak-color',colors.speak],['--ig-button-text',colors.text],['--ig-outfit-text',options.find(o=>o.folder===desired)?.fontColor]]){
                 if(/^#[a-f0-9]{6}$/i.test(value||''))node.style.setProperty(property,value);else node.style.removeProperty(property);
             }
         }
@@ -228,13 +251,20 @@ export function refreshStageControls() {
     }
     // Move existing controls; keep each character's picker and handlers together.
     for(const card of cards.values()){
-        const outfitTarget=settings.stageOutfitPlacement==='bottom'?get('ig-bottom-outfits'):card.root;
-        const speakTarget=settings.stageSpeakPlacement==='bottom'?get('ig-bottom-speak'):card.root;
+        const together=settings.stageOutfitPlacement===settings.stageSpeakPlacement;
+        const outfitTarget=together||settings.stageOutfitPlacement!=='bottom'?card.root:card.outfitGroup;
+        const speakTarget=together||settings.stageSpeakPlacement!=='bottom'?card.root:card.speakGroup;
+        for(const [group,target,needed] of [[card.speakGroup,get('ig-bottom-speak'),speakTarget===card.speakGroup],[card.outfitGroup,get('ig-bottom-outfits'),outfitTarget===card.outfitGroup]]){if(needed&&group.parentElement!==target)target.append(group);group.hidden=!needed||card.root.hidden;}
         for(const node of [card.speak,card.name])if(node.parentElement!==speakTarget){if(speakTarget===card.root)card.root.prepend(node);else speakTarget.append(node);}
         for(const node of [card.outfit,card.lock])if(node.parentElement!==outfitTarget)outfitTarget.append(node);
         // Shared mode must hide controls after moving them outside their card.
         for(const node of [card.speak,card.name,card.outfit,card.lock])if(node.parentElement!==card.root)node.hidden=card.root.hidden||(node===card.speak?settings.stageShowSpeak===false:node===card.name?settings.stageShowSpeak!==false||settings.stageShowNames===false:node===card.outfit?settings.stageShowOutfits===false:settings.stageShowLocks===false||settings.stageShowOutfits===false);
     }
+    for(const host of [roster,get('ig-bottom-combined'),get('ig-bottom-speak'),get('ig-bottom-outfits')]){
+        host.dataset.fit=String(Boolean(settings.stageAutoFit));
+        host.style.setProperty('--ig-fit-columns',String(Math.min(Math.round(bounded(settings.stageFitColumns,1,8,3)),Math.max(1,[...host.children].filter(n=>!n.hidden).length))));
+    }
+    for(const host of [bar,bottom])host.dataset.speakWidth=String(Number(settings.stageSpeakWidth)>0);
     refreshBackgrounds(settings);
     balanceControls(bar,settings.stageCenterCards);
     bottom.hidden=bar.hidden||![...bottom.querySelectorAll('button,select,span')].some(n=>!n.hidden&&n.getClientRects().length);
@@ -290,7 +320,7 @@ function bindSettings() {
     for(const id of ['prome-sprite-spacing','prome-sprite-spacing-number']){get(id).value=settings.spriteSpacingPercent;get(id).addEventListener('input',event=>spacing(event.target.value));}
     get('prome-sprite-spacing-reset').addEventListener('click',()=>spacing(100));
     get('prome-stage-style-reset')?.addEventListener('click',()=>{
-        for(const key of ['stageNamesAbove','stageCenterCards','stageSpeakPlacement','stageOutfitPlacement','stageBackgroundPlacement','stageLayout','stageFlow','stageShowSpeak','stageShowOutfits','stageShowNames','stageShowLocks','stageShowManager','stageControlHeight','stageFontSize','stageOutfitWidth','stageGap','stageIdleOpacity','stageFadeTarget'])writeLayoutSetting(key,defaultSettings[key]);
+        for(const key of ['stageNamesAbove','stageCenterCards','stageSpeakPlacement','stageOutfitPlacement','stageBackgroundPlacement','stageLayout','stageFlow','stageShowSpeak','stageShowOutfits','stageShowNames','stageShowLocks','stageShowManager','stageAutoFit','stageFitColumns','stageSpeakWidth','stageSpeakHeight','stageSpeakFontSize','stageAbbreviate','stageNameLetters','stageControlHeight','stageFontSize','stageOutfitWidth','stageGap','stageIdleOpacity','stageFadeTarget'])writeLayoutSetting(key,defaultSettings[key]);
         window.dispatchEvent(new Event('ig-editor-layout-change'));
         saveSettingsDebounced();schedule();
     });
@@ -301,34 +331,38 @@ function bindSettings() {
 }
 export function getSceneContext() {
     return { chatId:getContext().getCurrentChatId?.(),groupId:getContext().groupId,
-        capabilities:{outfits:true,backgrounds:false,localImages:false},
+        capabilities:{outfits:true,backgrounds:true,localImages:false},
         characters:sceneOutfitContext(stageCharacters(),currentFolder),
         backgrounds:backgroundSceneContext() };
 }
-// Adapter for a future planner. No model calls run here. Requests must carry
+// Model command adapter. Requests must carry
 // the chat ID they were planned for; locks are checked again after preloading.
-export async function requestAutomaticOutfit({avatar,folder,chatId,groupId}={}) {
+export async function requestAutomaticOutfit({avatar,folder,chatId,groupId,allowDuringGeneration=false,isCurrent=()=>true}={}) {
     if(typeof avatar!=='string'||typeof folder!=='string'||chatId==null)return false;
-    return changeOutfit(avatar,folder,{source:'automatic',chatId,groupId});
+    return changeOutfit(avatar,folder,{source:'automatic',chatId,groupId,allowDuringGeneration,isCurrent});
 }
 export function setupStageControls() {
     setupSpeakerTracking();
+    repairOutfitOwnership();
     const settings=config();
     if(!settings.outfitFolders||typeof settings.outfitFolders!=='object'||Array.isArray(settings.outfitFolders))settings.outfitFolders={};
     const chat=get('chat');if(!chat||get('prome-stage-controls'))return;
     const bar=document.createElement('div');bar.id='prome-stage-controls';
     bar.innerHTML=`<select id="prome-stage-shared" class="prome-stage-shared" aria-label="Character" hidden></select><div id="prome-stage-roster" class="prome-stage-roster"></div><span id="prome-stage-empty" class="prome-help">Open a character or group chat</span><div id="ig-stage-tools"><button type="button" id="prome-stage-manage" class="prome-stage-button prome-stage-manager" title="Scene tuning &amp; outfits" aria-label="Scene tuning and outfits"><i class="fa-solid fa-sliders" aria-hidden="true"></i></button></div><small id="prome-stage-status" role="status" aria-live="polite"></small>`;
     chat.before(bar);
-    const bottom=document.createElement('div');bottom.id='ig-stage-bottom';bottom.className='ig-stage-bottom';bottom.innerHTML='<div id="ig-bottom-speak" class="ig-bottom-group"></div><div id="ig-bottom-outfits" class="ig-bottom-group"></div><div id="ig-bottom-background" class="ig-bottom-group"></div>';
+    const bottom=document.createElement('div');bottom.id='ig-stage-bottom';bottom.className='ig-stage-bottom';bottom.innerHTML='<div id="ig-bottom-combined" class="ig-bottom-group prome-stage-roster"></div><div id="ig-bottom-speak" class="ig-bottom-group"></div><div id="ig-bottom-outfits" class="ig-bottom-group"></div><div id="ig-bottom-background" class="ig-bottom-group"></div>';
     const form=get('send_form');if(form)form.after(bottom);else chat.after(bottom);
     setupBackgrounds({characters:stageCharacters,top:get('ig-stage-tools'),bottom:get('ig-bottom-background')});
     setupOutfitEditor({characters:stageCharacters,currentFolder});
+    setupSceneLibrary({characters:stageCharacters,currentFolder,changeOutfit});
     liveTuning=setupLiveTuning(get('prome-stage-manage'),()=>openOutfitEditor(lastAvatar));
     const resize=new ResizeObserver(schedule);resize.observe(bar);resize.observe(get('ig-stage-tools'));resize.observe(get('prome-stage-roster'));
     get('prome-stage-shared').addEventListener('change',schedule);
-    onCatalogChange(schedule);bindSettings();
+    onCatalogChange(schedule);bindSettings();setupSettingsDependencies();
     for(const name of ['CHAT_CHANGED','GROUP_UPDATED','CHARACTER_MESSAGE_RENDERED','MESSAGE_SWIPED','MESSAGE_DELETED','GENERATION_STARTED','GENERATION_ENDED','GROUP_MEMBER_DRAFTED','SETTINGS_UPDATED'])if(event_types[name])eventSource.on(event_types[name],schedule);
-    if(event_types.CHAT_CHANGED)eventSource.on(event_types.CHAT_CHANGED,()=>{window.dispatchEvent(new Event('ig-close-scene-panels'));autoDiscover().catch(error=>console.warn('[Prome] Outfit discovery',error));});
+    if(event_types.CHAT_CHANGED)eventSource.on(event_types.CHAT_CHANGED,()=>{rememberNativeOutfits();window.dispatchEvent(new Event('ig-close-scene-panels'));autoDiscover().catch(error=>console.warn('[Prome] Outfit discovery',error));});
+    if(event_types.SETTINGS_UPDATED)eventSource.on(event_types.SETTINGS_UPDATED,rememberNativeOutfits);
+    document.addEventListener('click',event=>{if(event.target.closest?.('#expression_override_button'))queueMicrotask(rememberNativeOutfits);},true);
     new MutationObserver(records=>{
         // Capture each displayed outfit immediately, even if a Quick Reply moves
         // through several folders before the next animation frame.
@@ -336,7 +370,7 @@ export function setupStageControls() {
             const node=record.target?.closest?.('.expression-holder');
             const c=stageCharacters().find(c=>(node?.id===`expression-${c.avatar}`||node?.id===`ig-expression-${c.avatar}`)||(node?.id==='expression-holder'&&getContext().characters?.[getContext().characterId]?.avatar===c.avatar));
             if(c&&record.type==='attributes'&&record.attributeName==='src'){
-                const old=packFromSource(record.oldValue||'','');if(old)rememberOutfit(c,old);
+                const old=packFromSource(record.oldValue||'','');if(old&&displayedOutfitAllowed(c,old,activeFolder(c)))rememberOutfit(c,old);
                 const now=currentFolder(c);if(now)rememberOutfit(c,now);
             }
         }
@@ -348,6 +382,7 @@ export function setupStageControls() {
         const left=node.offsetLeft-node.offsetWidth/2;node.classList.remove('prome-stable-slot');node.style.left=`${left}px`;$(node).data('dragged',true);
     },true);
     window.addEventListener('resize',schedule);
+    window.addEventListener('ig-automation-state-change',schedule);
     window.visualViewport?.addEventListener('resize',schedule);
     refreshStageControls();autoDiscover().catch(error=>console.warn('[Prome] Outfit discovery',error));
 }
