@@ -66,6 +66,11 @@ Built on Prome-VN's visual novel foundation, ImmersiveGroups adds the following 
 - **Working automation locks:** locked characters are omitted from model outfit context and automatic changes are rejected. Manual outfit selection remains available.
 - **Muted-member handling:** muted group members disappear on desktop and mobile, and the remaining sprites readjust.
 
+<p>
+  <img src="docs/Preview-OutfitSelector.jpg" alt="Outfit selector with available outfits and the selected outfit highlighted" width="260">
+  <img src="docs/Preview-Colors.jpg" alt="Per-character button background, Speak button and text color controls" width="320">
+</p>
+
 ### Sprite customization
 
 - **Character heights in centimeters:** scale characters relative to the tallest active member, with individual fine tuning to compensate for inconsistent sprite framing.
@@ -75,6 +80,13 @@ Built on Prome-VN's visual novel foundation, ImmersiveGroups adds the following 
 - **Speaking-order dimming:** configure darkness for the current, previous and older speakers, including completely black silhouettes.
 - **Sprite overlap:** prioritize brighter characters, then recent speakers, so dimmed sprites stay behind highlighted ones.
 - **Sprite spacing and offsets:** bring characters closer together or spread them out, with global and per-character vertical positioning.
+
+![Characters displayed at different relative heights](docs/Preview-Height.jpg)
+
+<p>
+  <img src="docs/Preview-HeightSettings.jpg" alt="Character height in centimeters, fine tuning and vertical offset settings" width="320">
+  <img src="docs/Preview-Dimming.jpg" alt="Speaking-order sprite dimming controls" width="320">
+</p>
 
 ### Mobile and interface controls
 
@@ -99,6 +111,8 @@ Built on Prome-VN's visual novel foundation, ImmersiveGroups adds the following 
 - **Visible descriptions:** edit scene descriptions directly under each entry. Edits save when leaving the field or closing the library.
 - **Character and group bindings:** make images follow one or more characters into group chats, or bind them to specific groups. Optional all-required matching is available.
 - **Existing-image aliases:** renaming an image command retains the previous name as an alias for older messages.
+
+![Unified asset library with outfit, background and image tabs](docs/Preview-Library.jpg)
 
 ### Images and backgrounds
 
