@@ -59,34 +59,36 @@ Built on Prome-VN's visual novel foundation, ImmersiveGroups adds the following 
 - **Multiple-outfit fixes:** addresses outfit handling issues while Prome's visual novel interface is active, including in group chats.
 - **Group-chat message controls:** per-character Speak buttons request the next reply from a particular character. These can submit your current draft text when triggering a reply.
 - **Outfit selection:** change clothes through each character's outfit selector, with distinct hover/focus outlines, a selected checkmark and mouse, touch and keyboard support. Hover and scroll to cycle through outfits.
+
+  <img src="docs/Preview-OutfitSelector.jpg" alt="Outfit selector with available outfits and the selected outfit highlighted" width="260">
+
 - **Smooth outfit changes:** selector-based changes preload the image and update that character in place. Existing Quick Reply outfit changes can still trigger native sprite reloads.
 - **Outfit management:** find common folders, remember outfits used through Quick Replies, scan a selected local character directory or add folders manually. Rename, hide, reorder and describe outfits without renaming their files.
 - **Sprite ZIP uploads:** import images directly into an outfit folder. Existing filenames are preserved by numbering duplicates, such as `neutral-1` becoming `neutral-2`.
 - **Character styling:** customize character button backgrounds, Speak button colors and text colors, plus per-outfit text colors. Separated selectors retain their character colors.
+
+  <img src="docs/Preview-Colors.jpg" alt="Per-character button background, Speak button and text color controls" width="320">
+
 - **Working automation locks:** locked characters are omitted from model outfit context and automatic changes are rejected. Manual outfit selection remains available.
 - **Muted-member handling:** muted group members disappear on desktop and mobile, and the remaining sprites readjust.
-
-<p>
-  <img src="docs/Preview-OutfitSelector.jpg" alt="Outfit selector with available outfits and the selected outfit highlighted" width="260">
-  <img src="docs/Preview-Colors.jpg" alt="Per-character button background, Speak button and text color controls" width="320">
-</p>
 
 ### Sprite customization
 
 - **Character heights in centimeters:** scale characters relative to the tallest active member, with individual fine tuning to compensate for inconsistent sprite framing.
+
+  ![Characters displayed at different relative heights](docs/Preview-Height.jpg)
+
+  <img src="docs/Preview-HeightSettings.jpg" alt="Character height in centimeters, fine tuning and vertical offset settings" width="320">
+
 - **Fit calibration:** adjust the overall sprite scale until the tallest character fits comfortably on screen.
 - **Persistent profiles:** heights are remembered across chats and groups. Heights are shared between PC and mobile; fine tuning, fit calibration and visual offsets have separate profiles.
 - **Shadow opacity:** control how strong sprite shadows appear.
 - **Speaking-order dimming:** configure darkness for the current, previous and older speakers, including completely black silhouettes.
+
+  <img src="docs/Preview-Dimming.jpg" alt="Speaking-order sprite dimming controls" width="320">
+
 - **Sprite overlap:** prioritize brighter characters, then recent speakers, so dimmed sprites stay behind highlighted ones.
 - **Sprite spacing and offsets:** bring characters closer together or spread them out, with global and per-character vertical positioning.
-
-![Characters displayed at different relative heights](docs/Preview-Height.jpg)
-
-<p>
-  <img src="docs/Preview-HeightSettings.jpg" alt="Character height in centimeters, fine tuning and vertical offset settings" width="320">
-  <img src="docs/Preview-Dimming.jpg" alt="Speaking-order sprite dimming controls" width="320">
-</p>
 
 ### Mobile and interface controls
 
@@ -105,14 +107,15 @@ Built on Prome-VN's visual novel foundation, ImmersiveGroups adds the following 
 ### Unified asset library
 
 - **One library:** browse outfits, backgrounds and gallery images together or use their individual tabs.
+
+  ![Unified asset library with outfit, background and image tabs](docs/Preview-Library.jpg)
+
 - **Shared search:** search names, descriptions, folders, galleries and character bindings.
 - **Filtering:** narrow results by character, current chat, descriptions, outfit visibility, linked/starred backgrounds or image gallery. Hide Basic outfits and filter outfits with or without images.
 - **Sorting:** sort by name, asset type, character/gallery, missing descriptions or description length. Character activity/recent sorting uses available SillyTavern metadata, with current-chat fallbacks; activity is not an exact global message count.
 - **Visible descriptions:** edit scene descriptions directly under each entry. Edits save when leaving the field or closing the library.
 - **Character and group bindings:** make images follow one or more characters into group chats, or bind them to specific groups. Optional all-required matching is available.
 - **Existing-image aliases:** renaming an image command retains the previous name as an alias for older messages.
-
-![Unified asset library with outfit, background and image tabs](docs/Preview-Library.jpg)
 
 ### Images and backgrounds
 
