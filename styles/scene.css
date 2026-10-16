@@ -488,6 +488,12 @@ body.waifuMode :is(#visual-novel-wrapper, #ig-mobile-sprites) > .expression-hold
 :is(#prome-stage-controls, #ig-stage-bottom) .prome-character-label { padding: 0 5px; font-weight: 600; }
 :is(#prome-stage-controls, #ig-stage-bottom) .prome-stage-lock { min-width: 26px; padding-inline: 5px; }
 :is(#prome-stage-controls, #ig-stage-bottom) .prome-stage-lock.is-locked { color: var(--SmartThemeQuoteColor,#c9b8e9); }
+.ig-lock-status { display:block; padding:8px 10px; border-inline-start:3px solid #9da2ad; border-radius:4px; background:#9da2ad12; line-height:1.5; }
+.prome-settings-toggles > .ig-lock-status { grid-column:1/-1; }
+.ig-lock-status[data-state^="api"] { border-color:#8dbca8; background:#8dbca814; }
+.ig-lock-status[data-state="prompt"] { border-color:#b4a4ce; background:#b4a4ce14; }
+:is(#prome-stage-controls, #ig-stage-bottom) .prome-stage-lock[data-automation^="api"] { box-shadow:inset 0 -2px #8dbca8; }
+:is(#prome-stage-controls, #ig-stage-bottom) .prome-stage-lock[data-automation="prompt"] { box-shadow:inset 0 -2px #b4a4ce; }
 :is(#prome-stage-controls, #ig-stage-bottom) .prome-stage-outfit, :is(#prome-stage-controls, #ig-stage-bottom) .prome-stage-lock, :is(#prome-stage-controls, #ig-stage-bottom) .prome-character-chip {
     transition: opacity 140ms ease, border-color 140ms ease;
 }

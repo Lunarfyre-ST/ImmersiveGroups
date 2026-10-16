@@ -32,7 +32,7 @@ export function setupSceneLibrary(services){
         const background=backgroundSceneContext(),avatars=[...present];
         return [...outfits,...background.library.map(entry=>({kind:'background',id:JSON.stringify(['background',entry.file]),name:entry.file,entity:'Backgrounds',src:getBackgroundPath(entry.file),...entry,inChat:entry.available&&(!entry.characterBindings.length||(avatars.length>0&&avatars.every(a=>entry.characterBindings.includes(a)))),linked:avatars.length>0&&avatars.every(a=>entry.characterBindings.includes(a)),current:background.current===entry.file}))];
     };
-    const api=Object.freeze({getEntries,getCharacters:characters,getActiveAvatars:()=>[...active()],selectCharacter:selectProfileCharacter,
+    const api=Object.freeze({getEntries,getCharacters:characters,getActiveAvatars:()=>[...active()],outfitRoot:avatar=>{const c=characters().find(c=>c.avatar===avatar);return c?(active().has(avatar)?services.currentFolder(c).split('/')[0]:c.name):'';},selectCharacter:selectProfileCharacter,
         refresh:force=>{if(force)assets.clear();return force?readBackgrounds():ensureBackgrounds();},
         checkOutfitImages:async(force=false)=>{if(force)assets.clear();const folders=[...new Set(getEntries().filter(e=>e.kind==='outfit').map(e=>e.folder))];let index=0;async function worker(){while(index<folders.length)await inspectOutfit(folders[index++]);}await Promise.all([worker(),worker(),worker()]);},
         getColors:avatar=>({...catalogFor(avatar).colors}),setColors:setCharacterColors,

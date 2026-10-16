@@ -195,6 +195,7 @@ function setupUi(){
     for(const input of panel.querySelectorAll('[data-scene-setting]'))input.addEventListener(input.type==='range'?'input':'change',()=>{
         const key=input.dataset.sceneSetting,value=input.type==='checkbox'?input.checked:['number','range'].includes(input.type)?Number(input.value):input.value;
         root().sceneAutomation=automationSettings({...settings(),[key]:value});saveSettingsDebounced();cancel();syncUi();updateInjection();renderCommands();schedulePreview();
+        if(['enabled','mode','outfits','apiAutoAfterReply'].includes(key))window.dispatchEvent(new Event('ig-automation-state-change'));
         if(['enabled','backgrounds'].includes(key))loadBackgroundContext();
         if(key==='enabled')status(settings().enabled?'Scene commands enabled.':'Scene automation is off.');
     });

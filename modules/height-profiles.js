@@ -4,7 +4,7 @@ import { mobileLayout, editingLayout, layoutSettings } from './responsive.js';
 import { getContext, extension_settings } from '../../../../extensions.js';
 import { saveSettingsDebounced, eventSource, event_types } from '../../../../../script.js';
 import { extensionName } from '../constants.js';
-import { bounded, heightFactor, tallestHeight, migrateHeightSettings, migrateFineTuning } from './height-model.js';
+import { bounded, heightFactor, tallestHeight, migrateHeightSettings, migrateFineTuning, REFERENCE_HEIGHT_CM } from './height-model.js';
 export { bounded } from './height-model.js';
 
 const owns=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k);
@@ -54,7 +54,7 @@ export function refreshProfileEditor(force=false){
 }
 function loadFields(){
     const character=selectedCharacter();if(!character){el('prome-profile-preview').textContent='Open a character or group chat to adjust heights.';return;}
-    const profile=profileFor(character.avatar,editingLayout()),height=profileFor(character.avatar,'desktop').heightCm||180,fine=profile.fineTuneOffset??0;
+    const profile=profileFor(character.avatar,editingLayout()),height=profileFor(character.avatar,'desktop').heightCm||REFERENCE_HEIGHT_CM,fine=profile.fineTuneOffset??0;
     el('prome-profile-cm').value=height;
     const range=el('prome-profile-fine-slider');range.value=Math.max(-20,Math.min(20,fine));
     el('prome-profile-fine').value=Math.round(fine*100)/100;
@@ -85,7 +85,7 @@ export function setupHeightProfiles(applyScale){
     if(migrateFineTuning(s))saveSettingsDebounced();
     el('prome-profiles-enabled').addEventListener('change',event=>{s.enableHeightProfiles=event.target.checked;saveSettingsDebounced();applyScale();loadFields();});
     el('prome-profile-character').addEventListener('change',()=>{rememberSelection();loadFields();window.dispatchEvent(new CustomEvent('ig-character-selection',{detail:el('prome-profile-character').value}));});
-    el('prome-profile-cm').addEventListener('change',event=>writeProfile('heightCm',bounded(event.target.value,30,300,180)));
+    el('prome-profile-cm').addEventListener('change',event=>writeProfile('heightCm',bounded(event.target.value,30,300,REFERENCE_HEIGHT_CM)));
     el('prome-profile-fine').addEventListener('change',event=>writeProfile('fineTuneOffset',bounded(event.target.value,-99,7900,0)));
     el('prome-profile-fine-slider').addEventListener('input',event=>writeProfile('fineTuneOffset',Number(event.target.value)));
     el('prome-profile-y').addEventListener('change',event=>writeProfile('offsetY',bounded(event.target.value,-1000,1000,0)));

@@ -17,6 +17,7 @@ import * as expressions from '../../../expressions/index.js';
 import { extensionName, defaultSettings } from '../constants.js';
 import { applyScale } from './scale.js';
 import { bounded, packFromSource } from './height-profiles.js';
+import { outfitAutomationStatus } from './scene-automation-model.js';
 
 const config = () => extension_settings[extensionName];
 const owns = (object, key) => Object.prototype.hasOwnProperty.call(object || {}, key);
@@ -181,7 +182,9 @@ export function refreshStageControls() {
     applySpriteSlots();applySpeakerDimming();captureOutfits(characters);
     const bar=get('prome-stage-controls');if(!bar)return;
     applyScale();
-    const settings=layoutSettings();bar.hidden=!settings.enableVN_UI||settings.sheldCharacterControls===false;
+    const settings=layoutSettings(),automation=outfitAutomationStatus(config().sceneAutomation);bar.hidden=!settings.enableVN_UI||settings.sheldCharacterControls===false;
+    const lockStatus=document.querySelector('[data-ig-lock-status]');
+    if(lockStatus){if(lockStatus.textContent!==automation.text)lockStatus.textContent=automation.text;lockStatus.dataset.state=automation.state;}
     const appearance={
         '--ig-controls-x':`${Number(settings.stageOffsetX)||0}px`,
         '--ig-controls-y':`${Number(settings.stageOffsetY)||0}px`,
@@ -225,7 +228,9 @@ export function refreshStageControls() {
         const locked=Boolean(catalogFor(c.avatar).locked);card.lock.hidden=settings.stageShowLocks===false||settings.stageShowOutfits===false;
         card.lock.setAttribute('aria-pressed',String(locked));card.lock.classList.toggle('is-locked',locked);
         card.lock.querySelector('i').className=`fa-solid ${locked?'fa-lock':'fa-lock-open'}`;
-        card.lock.title=locked?'Model outfit changes locked. Manual changes still work.':'Allow model outfit changes.';
+        card.lock.dataset.automation=automation.state;
+        card.lock.title=`${locked?'Model outfit changes locked. Manual changes still work.':'Allow model outfit changes.'}\n${automation.text}`;
+        card.lock.setAttribute('aria-label',`${c.name}: ${locked?'unlock':'lock'} model outfit changes. ${automation.text}`);
         const current=currentFolder(c),options=outfitOptions(c);
         const desired=pendingOutfits.get(c.avatar)?.folder||current;
         card.picker.update(options,options.some(o=>o.folder===desired)?desired:'');
@@ -369,6 +374,7 @@ export function setupStageControls() {
         const left=node.offsetLeft-node.offsetWidth/2;node.classList.remove('prome-stable-slot');node.style.left=`${left}px`;$(node).data('dragged',true);
     },true);
     window.addEventListener('resize',schedule);
+    window.addEventListener('ig-automation-state-change',schedule);
     window.visualViewport?.addEventListener('resize',schedule);
     refreshStageControls();autoDiscover().catch(error=>console.warn('[Prome] Outfit discovery',error));
 }

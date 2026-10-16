@@ -72,7 +72,7 @@ export function hiddenOutfit(character, entry) {
     if (typeof entry.hidden === 'boolean') return entry.hidden;
     const record = catalogFor(character.avatar);
     const basic = entry.folder === character.name || entry.folder === character.avatar.replace(/\.[^/.]+$/, '');
-    return Boolean(settings().hideBasicOutfit !== false && basic && record.outfits.some(e => /\/outfit[ _-]?1$/i.test(e.folder)));
+    return Boolean(settings().hideBasicOutfit === true && basic && record.outfits.some(e => /\/outfit[ _-]?1$/i.test(e.folder)));
 }
 export function outfitOptions(character, includeHidden = false) {
     return catalogFor(character.avatar).outfits.filter(entry => validFolder(entry.folder) && (includeHidden || !hiddenOutfit(character, entry)));

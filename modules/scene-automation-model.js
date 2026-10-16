@@ -28,6 +28,13 @@ export function automationSettings(value={}){
     return s;
 }
 export function outfitCommand(avatar,folder){return `::outfit ${JSON.stringify(avatar)} ${JSON.stringify(folder)}::`;}
+export function outfitAutomationStatus(value){
+    const s=automationSettings(value);
+    if(!s.enabled)return {state:'off',text:`Scene automation is off. ${s.mode==='api'?'API mode is selected but inactive.':'API mode is off.'} Locks take effect when model outfit changes are enabled.`};
+    if(!s.outfits)return {state:'outfits-off',text:'Model outfit changes are off. Locks do not affect background changes or manual outfit selection.'};
+    if(s.mode==='prompt')return {state:'prompt',text:'API mode is off. Prompt mode is on: locks block outfit commands in model replies.'};
+    return s.apiAutoAfterReply?{state:'api-auto',text:'API mode is on. Automatic analysis is on: locks block model outfit changes after replies.'}:{state:'api-manual',text:'API mode is on. Automatic analysis is off: locks apply when you run Analyze & apply last reply.'};
+}
 export function backgroundCommand(file){return `::background ${JSON.stringify(file)}::`;}
 export function messageSpeaker(message,characters){
     if(!message||message.is_user||message.is_system)return '';
