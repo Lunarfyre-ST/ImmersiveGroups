@@ -138,5 +138,25 @@
 .ig-library-group p { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; }
 .ig-group-editor > label { flex-direction:column; align-items:stretch; }
 .ig-group-editor textarea { width:100%; min-width:0; box-sizing:border-box; }
+.ig-outfit-order-list { display:flex; flex-direction:column; gap:12px; }
+.ig-outfit-order-list section { border:1px solid var(--SmartThemeBorderColor,#555); border-radius:8px; padding:10px; min-width:0; }
+.ig-outfit-order-list h4 { margin:0 0 8px; }
+.ig-outfit-order-row { display:flex; align-items:center; gap:6px; padding:7px 0; border-top:1px solid var(--SmartThemeBorderColor,#555); }
+.ig-outfit-order-row > span { flex:1; min-width:0; }
+.ig-outfit-order-row :is(strong,small) { display:block; overflow-wrap:anywhere; }
+.ig-outfit-order-row small { font-size:11px; opacity:.7; }
+.ig-expression-browser { display:flex; flex-direction:column; gap:6px; margin-top:6px; }
+.ig-expression-browser > div { display:flex; align-items:center; gap:5px; }
+.ig-expression-browser select { flex:1; min-width:0; width:0; }
+.ig-expression-browser small { font-size:12px; opacity:.8; }
+.ig-library-card .ig-background-outfit-link { flex-direction:column; align-items:stretch; }
+.ig-background-outfit-link select { width:100%; min-width:0; }
+.ig-background-outfit-link small { opacity:.75; }
+#ig-all-outfits { background:var(--ig-card-color,#3f5b57); border:1px solid var(--SmartThemeBorderColor,#666); max-width:170px; min-width:90px; padding-inline:8px; }
+#ig-all-outfits[hidden] { display:none; }
+#ig-stage-tools:has(#ig-all-outfits:not([hidden])) { flex-wrap:wrap; max-width:45%; justify-content:flex-end; }
+.ig-api-cache-note { display:block; padding:8px 10px; border-inline-start:2px solid #c49d64; background:#c49d6410; margin:8px 0; }
+.ig-file-search { padding:10px 16px; flex:none; }
+.ig-file-search input { width:100%; min-width:0; box-sizing:border-box; }
 .ig-unified-library .ig-library-types > button:last-child { border-bottom-color:rgba(var(--ig-accent-characters),.8); }
 @media(max-width:600px) { .ig-library-types { grid-template-columns:repeat(3,minmax(0,1fr)); } }

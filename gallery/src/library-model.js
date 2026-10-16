@@ -2,6 +2,10 @@
 import { GENERAL_KEY, availableInChat } from './gallery-model.js';
 import { contextBindingGroups, expandedBindings } from '../../modules/binding-groups-model.js';
 const text=value=>String(value||'').normalize('NFKD').replace(/\p{Diacritic}/gu,'').toLocaleLowerCase();
+export function imageMatchesSearch(image,assignment,search){
+    const haystack=text([image.name,image.owner,assignment?.name,assignment?.description].join(' '));
+    return text(search).split(/\s+/).filter(Boolean).every(word=>haystack.includes(word));
+}
 export function imageLibraryEntries(entries,ctx){
     return entries.map(entry=>{
         const characters=entry.availability==='bound'?[...(entry.characterBindings||[]),...(entry.groupBindings||[]).flatMap(id=>ctx.groups?.find(g=>String(g.id)===String(id))?.members||[])]:entry.availability==='all'||entry.gallery===GENERAL_KEY?[]:[...(ctx.characters||[]).filter(c=>c.name===entry.gallery).map(c=>c.avatar),...(ctx.groups||[]).filter(g=>g.name===entry.gallery).flatMap(g=>g.members||[])];
@@ -34,7 +38,7 @@ export function filterLibrary(entries,filters,ctx){
         if(entry.kind==='background'&&((filters.backgrounds==='linked'&&!entry.linked)||(filters.backgrounds==='starred'&&!entry.favorite)))return false;
         if(entry.kind==='image'&&filters.gallery&&entry.gallery!==filters.gallery)return false;
         const groups=[...(entry.groupBindings||[]).map(id=>ctx.groups?.find(g=>String(g.id)===String(id))?.name||id),...contextBindingGroups(ctx).filter(g=>entry.presetBindings?.includes(g.id)).map(g=>g.name)];
-        const haystack=text([entry.name,entry.description,entry.entity,entry.folder,entry.file,entry.gallery,entry.avatar,...characters,...characters.map(a=>names.get(a)),...groups].join(' '));
+        const haystack=text([entry.name,entry.commonName,entry.commonLabel,entry.description,entry.entity,entry.folder,entry.file,entry.gallery,entry.avatar,...characters,...characters.map(a=>names.get(a)),...groups].join(' '));
         return words.every(word=>haystack.includes(word));
     });
     // Ordinary name/search/filter changes never scan chat history. Activity and

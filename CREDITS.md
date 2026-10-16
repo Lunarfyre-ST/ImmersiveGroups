@@ -92,3 +92,7 @@ HTML-aware image-command recognition uses parse5 by Ivan Nikulin and contributor
 ## 0.2.9 additions — 2026-10-16
 
 Reusable named character groups, group-aware background/image bindings, chat-scoped searchable binding lists, missing-background metadata cleanup and relinking, and descriptions-only prompt context are ImmersiveGroups changes. Outfits retain their individual character ownership. The prior CodeQL repairs remain included.
+
+## 0.3.0 additions — 2026-10-17
+
+Compact outfit reordering, shared outfit names and group selection, background-linked outfit changes, expression browsing/counts, mismatched-entry disposal and file-gallery search are ImmersiveGroups changes. These additions retain the original Prome and LocalImage credits and all previous repairs.

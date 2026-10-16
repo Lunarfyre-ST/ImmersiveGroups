@@ -6,11 +6,13 @@ import { floatingPanel } from './floating-panel.js';
 import { layoutSettings } from './responsive.js';
 import { setupBackgroundDefaults } from './background-defaults.js';
 import { backgroundChoices, nextLinkedBackground } from './background-model.js';
+import { commonOutfitKey } from './common-outfits-model.js';
 import { bindingGroups } from './binding-groups-model.js';
 import { knownBackgrounds, forgetBackground, relinkBackground } from './background-catalog-model.js';
 import * as backgrounds from '../../../../backgrounds.js';
 import { extensionName } from '../constants.js';
 
+let linkedOutfitEpoch=0;
 let imageMenu, mediaPane='backgrounds',linkedNav,linkedCursor='',linkedScope='';
 let api, panel, picker, popup, dialog, files = [], loading = false, filesLoaded = false, backgroundRevision = 0, defaultController;
 const settings = () => extension_settings[extensionName];
@@ -23,8 +25,8 @@ export function backgroundSceneContext() {
     const activeUrl = lockedUrl || backgrounds.background_settings?.url || '';
     const current = lockedUrl ? files.find(file => activeUrl.includes(getBackgroundPath(file))) || null : backgrounds.background_settings?.name || null;
     const known = knownBackgrounds(files,settings());
-    return { current, locked: Boolean(lockedUrl), automationLocked: Boolean(settings().backgroundAutomationLocked), url: activeUrl,
-        library: known.map(file => ({file, available:files.includes(file), description:description(file), characterBindings:[...bindings(file)], presetBindings:own(settings().backgroundGroupBindings,file)&&Array.isArray(settings().backgroundGroupBindings[file])?[...settings().backgroundGroupBindings[file]]:[], favorite:(settings().backgroundFavorites || []).includes(file)})) };
+    return { current,outfitsEnabled:Boolean(settings().backgroundOutfitsEnabled), locked: Boolean(lockedUrl), automationLocked: Boolean(settings().backgroundAutomationLocked), url: activeUrl,
+        library: known.map(file => ({file, available:files.includes(file), description:description(file),outfitPreset:own(settings().backgroundOutfitLinks,file)?settings().backgroundOutfitLinks[file]:'', characterBindings:[...bindings(file)], presetBindings:own(settings().backgroundGroupBindings,file)&&Array.isArray(settings().backgroundGroupBindings[file])?[...settings().backgroundGroupBindings[file]]:[], favorite:(settings().backgroundFavorites || []).includes(file)})) };
 }
 const el = (tag,text='') => {const n=document.createElement(tag);n.textContent=text;return n;};
 function status(text) { dialog.querySelector('[data-bg-status]').textContent=text; }
@@ -43,6 +45,7 @@ export function updateBackground(file,patch){
     if(typeof patch.description==='string')Object.defineProperty(settings().backgroundDescriptions,file,{value:patch.description.slice(0,12000),enumerable:true,writable:true,configurable:true});
     if(Array.isArray(patch.characterBindings))Object.defineProperty(settings().backgroundBindings,file,{value:[...new Set(patch.characterBindings.filter(a=>typeof a==='string'))],enumerable:true,writable:true,configurable:true});
     if(Array.isArray(patch.presetBindings))Object.defineProperty(settings().backgroundGroupBindings,file,{value:[...new Set(patch.presetBindings.filter(id=>bindingGroups(settings().bindingGroups).some(g=>g.id===id)))],enumerable:true,writable:true,configurable:true});
+    if(typeof patch.outfitPreset==='string')Object.defineProperty(settings().backgroundOutfitLinks||={},file,{value:commonOutfitKey(patch.outfitPreset),writable:true,enumerable:true,configurable:true});
     if(typeof patch.favorite==='boolean'){const list=settings().backgroundFavorites||[];settings().backgroundFavorites=patch.favorite?[...new Set([...list,file])]:list.filter(f=>f!==file);}
     saveLibrary();favorites();refreshLinkedArrows();
 }
@@ -57,14 +60,22 @@ export async function readBackgrounds() {
     filesLoaded=true;refreshLinkedArrows();return files;
 }
 export function ensureBackgrounds(){return filesLoaded?Promise.resolve(files):readBackgrounds();}
-export function pickBackground(file,{automatic=false}={}) {
+export function pickBackground(file,{automatic=false,isCurrent=()=>true,excludeAvatars=[]}={}) {
     if(!files.includes(file))throw new Error('This background is no longer available. Refresh the library.');
     // Use the native selection handler so chat locks and existing native UI
     // behavior stay consistent, without constructing/executing slash commands.
-    const proxy=document.createElement('div');proxy.className='bg_example';proxy.hidden=true;proxy.setAttribute('bgfile',file);proxy.setAttribute('custom','false');proxy.dataset.igAutomatic=String(automatic);
+    const proxy=document.createElement('div');proxy.className='bg_example';proxy.hidden=true;proxy.setAttribute('bgfile',file);proxy.setAttribute('custom','false');proxy.dataset.igAutomatic=String(automatic);proxy.dataset.igLinkedManaged='true';
     $(proxy).data('url',`url("${getBackgroundPath(file)}")`);
     document.body.append(proxy);
     try {proxy.click();linkedCursor=file;refreshLinkedArrows();} finally {proxy.remove();}
+    return applyLinkedBackgroundOutfits(file,{isCurrent,excludeAvatars});
+}
+async function applyLinkedBackgroundOutfits(file,{isCurrent=()=>true,excludeAvatars=[]}={}){
+    const epoch=++linkedOutfitEpoch,s=settings(),theme=own(s.backgroundOutfitLinks,file)?s.backgroundOutfitLinks[file]:'',ctx=getContext(),chat=ctx.getCurrentChatId?.(),group=ctx.groupId;
+    const allowed=()=>s.backgroundOutfitsEnabled&&!(s.sceneAutomation?.commandless&&s.sceneAutomation?.mode!=='api');
+    if(!theme||!allowed()||!api.applyCommonOutfit)return;
+    const valid=()=>epoch===linkedOutfitEpoch&&isCurrent()&&allowed()&&settings().backgroundOutfitLinks?.[file]===theme&&getContext().getCurrentChatId?.()===chat&&getContext().groupId===group;
+    return api.applyCommonOutfit(theme,{automatic:true,isCurrent:valid,excludeAvatars});
 }
 function refreshLinkedArrows(){
     if(!linkedNav)return;
@@ -76,12 +87,12 @@ function refreshLinkedArrows(){
     for(const button of linkedNav.querySelectorAll('button'))button.disabled=!pool.length||(pool.length===1&&index===0);
 
 }
-export async function requestAutomaticBackground({file,chatId,groupId,isCurrent=()=>true}={}){
+export async function requestAutomaticBackground({file,chatId,groupId,isCurrent=()=>true,excludeAvatars=[]}={}){
     const revision=backgroundRevision;
     const valid=()=>isCurrent()&&String(getContext().getCurrentChatId?.())===String(chatId)&&String(getContext().groupId??'')===String(groupId??'')&&!chat_metadata?.custom_background&&!settings().backgroundAutomationLocked&&backgroundRevision===revision;
     if(!valid())return false;await ensureBackgrounds();if(!files.includes(file)||!valid())return false;
     await new Promise((resolve,reject)=>{const image=new Image(),timer=setTimeout(()=>done(new Error('Background image load timed out')),15000);function done(error){clearTimeout(timer);image.onload=image.onerror=null;error?reject(error):resolve();}image.onload=()=>done();image.onerror=()=>done(new Error('Background image could not load'));image.src=getBackgroundPath(file);});
-    if(!valid())return false;defaultController?.cancel();pickBackground(file,{automatic:true});return true;
+    if(!valid())return false;defaultController?.cancel();await pickBackground(file,{automatic:true,isCurrent:valid,excludeAvatars});return true;
 }
 function favorites() {
     const character=picker.querySelector('[data-bg-character]');
@@ -139,7 +150,8 @@ async function openLibrary() {
     try{await readBackgrounds();renderLibrary();favorites();status(`${files.length} backgrounds. Star favorites to show them on the Sheld.`);}catch(error){status(error.message);}finally{loading=false;}
 }
 export function setupBackgrounds(services) {
-    api=services;const s=settings();if(!Array.isArray(s.backgroundFavorites))s.backgroundFavorites=[];if(!s.backgroundBindings||typeof s.backgroundBindings!=='object'||Array.isArray(s.backgroundBindings))s.backgroundBindings={};
+    api=services;const s=settings();
+    document.addEventListener('click',event=>{const node=event.target.closest?.('.bg_example');if(!node||node.dataset.igLinkedManaged==='true')return;const file=node.getAttribute('bgfile');queueMicrotask(()=>applyLinkedBackgroundOutfits(file).catch(error=>console.warn('[ImmersiveGroups] Linked outfits:',error.message)));},true);if(!Array.isArray(s.backgroundFavorites))s.backgroundFavorites=[];if(!s.backgroundBindings||typeof s.backgroundBindings!=='object'||Array.isArray(s.backgroundBindings))s.backgroundBindings={};
     if(!s.backgroundDescriptions||typeof s.backgroundDescriptions!=='object'||Array.isArray(s.backgroundDescriptions))s.backgroundDescriptions={};
     if(!s.backgroundGroupBindings||typeof s.backgroundGroupBindings!=='object'||Array.isArray(s.backgroundGroupBindings))s.backgroundGroupBindings={};
     panel=el('div');panel.className='ig-background-controls';

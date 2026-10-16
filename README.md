@@ -6,7 +6,7 @@ What began as a quick patch for multiple outfits in the PromeVN extension quickl
 
 The goal is a more cohesive light novel experience: keep a group of characters on screen, change their outfits, set the scene, and optionally let the model choose suitable outfits, backgrounds and premade gallery images.
 
-**Current version: 0.2.9.** Outfit/background automation works through either the main roleplay prompt or a separate API call. Gallery images have their own working prompt; coordinated image selection through the separate scene-analysis API remains planned.
+**Current version: 0.2.8.** Outfit/background automation works through either the main roleplay prompt or a separate API call. Gallery images have their own working prompt; coordinated image selection through the separate scene-analysis API remains planned.
 
 > [!WARNING]
 > **Beta project with limited real-world testing.** Back up your SillyTavern `data` folder before installing or updating. Use at your own risk. Features, settings and migration behavior may change during development. Automated checks do not replace testing across actual SillyTavern setups, browsers and phones.

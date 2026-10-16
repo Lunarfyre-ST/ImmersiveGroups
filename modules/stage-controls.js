@@ -6,6 +6,7 @@ import { mobileSpritesActive, mobileSprite, syncMobileSprites } from './mobile-s
 import { setupBackgrounds, refreshBackgrounds, backgroundSceneContext } from './scene-backgrounds.js';
 import { seedOutfits, rememberOutfit, rememberNativeOutfits, outfitOptions, catalogFor, setOutfitLock, onCatalogChange, discoverOutfits, automaticOutfitAllowed, sceneOutfitContext, outfitFolderAllowed, displayedOutfitAllowed, repairOutfitOwnership } from './outfit-catalog.js';
 import { setupOutfitEditor, openOutfitEditor } from './outfit-editor.js';
+import { commonOutfitChoices, commonOutfitTargets, commonOutfitKey, commonOutfitName } from './common-outfits-model.js';
 import { createOutfitPicker } from './outfit-picker.js';
 import { setupSettingsDependencies } from './settings-dependencies.js';
 import { setupLiveTuning } from './live-tuning.js';
@@ -23,7 +24,7 @@ import { outfitAutomationStatus } from './scene-automation-model.js';
 const config = () => extension_settings[extensionName];
 const owns = (object, key) => Object.prototype.hasOwnProperty.call(object || {}, key);
 const get = id => document.getElementById(id);
-let scheduled = false, liveTuning;
+let scheduled = false, liveTuning,allOutfitPicker,batchEpoch=0;
 const outfitJobs = new Map();
 const currentScope = () => String(getContext().groupId ?? '') + ':' + String(getContext().getCurrentChatId?.() ?? '');
 export function stageCharacters() {
@@ -111,9 +112,9 @@ export async function changeOutfit(avatar, requestedFolder, { source = 'manual',
     const url = new URL(sprite.path, window.location.href);
     if (url.origin !== window.location.origin || !url.pathname.startsWith('/characters/')) throw new Error('Invalid sprite image path');
     await preload(url.href);
-    if (outfitJobs.get(avatar) !== job || currentScope() !== scope || spriteNode(character) !== node || node.querySelector('img') !== img || !node.isConnected) return false;
+    if (!isCurrent() || outfitJobs.get(avatar) !== job || currentScope() !== scope || spriteNode(character) !== node || node.querySelector('img') !== img || !node.isConnected) return false;
     if (source === 'automatic' && (!automaticOutfitAllowed(avatar, folder)||!isCurrent()||!stageCharacters().some(c=>c.avatar===avatar))) return false;
-    const valid = () => outfitJobs.get(avatar) === job && currentScope() === scope && spriteNode(character) === node && node.querySelector('img') === img && node.isConnected &&
+    const valid = () => isCurrent() && outfitJobs.get(avatar) === job && currentScope() === scope && spriteNode(character) === node && node.querySelector('img') === img && node.isConnected &&
         (source !== 'automatic' || (automaticOutfitAllowed(avatar, folder) && isCurrent() && stageCharacters().some(c=>c.avatar===avatar)));
     return fadeSceneSwap(img, 'outfit', () => {
         // Update the native override keyed by avatar filename, without running the
@@ -139,6 +140,21 @@ export async function changeOutfit(avatar, requestedFolder, { source = 'manual',
         applyScale(node);
         refreshStageControls();
     }, valid);
+}
+export async function applyCommonOutfit(name,{automatic=false,isCurrent=()=>true,excludeAvatars=[]}={}) {
+    name=commonOutfitKey(name);
+    if(!automatic&&isGenerating())throw new Error('Wait for generation to finish before changing all outfits.');
+    const scope=currentScope(),members=JSON.stringify(stageCharacters().map(c=>c.avatar).sort()),epoch=++batchEpoch,characters=sceneOutfitContext(stageCharacters(),currentFolder);
+    if(!automatic&&!commonOutfitChoices(characters).some(o=>o.key===name))throw new Error('This outfit is no longer shared by every active character.');
+    const planned=commonOutfitTargets(characters,name,{respectLocks:automatic}),excluded=new Set(excludeAvatars);
+    const valid=()=>epoch===batchEpoch&&scope===currentScope()&&members===JSON.stringify(stageCharacters().map(c=>c.avatar).sort())&&isCurrent()&&(automatic||!isGenerating());
+    const results=await Promise.allSettled(planned.targets.filter(t=>!excluded.has(t.avatar)).map(async target=>{
+        if(!valid())return false;
+        const stillMatching=()=>{if(!valid())return false;const c=stageCharacters().find(c=>c.avatar===target.avatar),matches=c?outfitOptions(c).filter(o=>commonOutfitName(o)===name):[];return matches.length===1&&matches[0].folder===target.folder;};
+        return changeOutfit(target.avatar,target.folder,{source:automatic?'automatic':'manual',chatId:getContext().getCurrentChatId?.(),groupId:getContext().groupId,allowDuringGeneration:automatic,isCurrent:stillMatching});
+    }));
+    const applied=results.filter(r=>r.status==='fulfilled'&&r.value).length,failed=results.filter(r=>r.status==='rejected').length;
+    return {applied,failed,skipped:planned.skipped.length};
 }
 const cards = new Map();
 const pendingOutfits = new Map();
@@ -265,6 +281,17 @@ export function refreshStageControls() {
         host.style.setProperty('--ig-fit-columns',String(Math.min(Math.round(bounded(settings.stageFitColumns,1,8,3)),Math.max(1,[...host.children].filter(n=>!n.hidden).length))));
     }
     for(const host of [bar,bottom])host.dataset.speakWidth=String(Number(settings.stageSpeakWidth)>0);
+    if(allOutfitPicker){
+        const common=commonOutfitChoices(sceneOutfitContext(characters,currentFolder)),button=allOutfitPicker.button;
+        const selected=common.find(o=>o.targets.every(t=>characters.some(c=>c.avatar===t.avatar&&currentFolder(c)===t.folder)));
+        button.hidden=!settings.stageShowAllOutfits||characters.length<2;button.disabled=busy||!common.length;
+        allOutfitPicker.update(common.map(o=>({folder:o.key,label:o.label})),selected?.key||'');
+        button.firstElementChild.textContent=selected?`All: ${selected.label}`:'All outfits';
+        button.title=common.length?'Change every active character to a matching outfit. Individual manual outfit locks do not block this explicit choice.':'No unambiguous outfit names are shared by every active character.';
+        button.style.setProperty('--ig-card-color',/^#[a-f0-9]{6}$/i.test(settings.stageAllOutfitColor||'')?settings.stageAllOutfitColor:'#3f5b57');
+        const target=settings.stageOutfitPlacement==='bottom'?get('ig-bottom-background'):get('ig-stage-tools');
+        if(button.parentElement!==target)target.prepend(button);
+    }
     refreshBackgrounds(settings);
     balanceControls(bar,settings.stageCenterCards);
     bottom.hidden=bar.hidden||![...bottom.querySelectorAll('button,select,span')].some(n=>!n.hidden&&n.getClientRects().length);
@@ -320,7 +347,7 @@ function bindSettings() {
     for(const id of ['prome-sprite-spacing','prome-sprite-spacing-number']){get(id).value=settings.spriteSpacingPercent;get(id).addEventListener('input',event=>spacing(event.target.value));}
     get('prome-sprite-spacing-reset').addEventListener('click',()=>spacing(100));
     get('prome-stage-style-reset')?.addEventListener('click',()=>{
-        for(const key of ['stageNamesAbove','stageCenterCards','stageSpeakPlacement','stageOutfitPlacement','stageBackgroundPlacement','stageLayout','stageFlow','stageShowSpeak','stageShowOutfits','stageShowNames','stageShowLocks','stageShowManager','stageAutoFit','stageFitColumns','stageSpeakWidth','stageSpeakHeight','stageSpeakFontSize','stageAbbreviate','stageNameLetters','stageControlHeight','stageFontSize','stageOutfitWidth','stageGap','stageIdleOpacity','stageFadeTarget'])writeLayoutSetting(key,defaultSettings[key]);
+        for(const key of ['stageShowAllOutfits','stageAllOutfitColor','stageNamesAbove','stageCenterCards','stageSpeakPlacement','stageOutfitPlacement','stageBackgroundPlacement','stageLayout','stageFlow','stageShowSpeak','stageShowOutfits','stageShowNames','stageShowLocks','stageShowManager','stageAutoFit','stageFitColumns','stageSpeakWidth','stageSpeakHeight','stageSpeakFontSize','stageAbbreviate','stageNameLetters','stageControlHeight','stageFontSize','stageOutfitWidth','stageGap','stageIdleOpacity','stageFadeTarget'])writeLayoutSetting(key,defaultSettings[key]);
         window.dispatchEvent(new Event('ig-editor-layout-change'));
         saveSettingsDebounced();schedule();
     });
@@ -353,7 +380,8 @@ export function setupStageControls() {
     chat.before(bar);
     const bottom=document.createElement('div');bottom.id='ig-stage-bottom';bottom.className='ig-stage-bottom';bottom.innerHTML='<div id="ig-bottom-combined" class="ig-bottom-group prome-stage-roster"></div><div id="ig-bottom-speak" class="ig-bottom-group"></div><div id="ig-bottom-outfits" class="ig-bottom-group"></div><div id="ig-bottom-background" class="ig-bottom-group"></div>';
     const form=get('send_form');if(form)form.after(bottom);else chat.after(bottom);
-    setupBackgrounds({characters:stageCharacters,top:get('ig-stage-tools'),bottom:get('ig-bottom-background')});
+    allOutfitPicker=createOutfitPicker('All characters outfit');allOutfitPicker.button.id='ig-all-outfits';allOutfitPicker.button.addEventListener('change',async()=>{const name=allOutfitPicker.button.value;allOutfitPicker.button.disabled=true;try{const result=await applyCommonOutfit(name);message(`Changed ${result.applied} outfits.${result.failed?' Some folders could not load.':''}`);}catch(error){message(error.message);}finally{schedule();}});get('ig-stage-tools').append(allOutfitPicker.button);
+    setupBackgrounds({characters:stageCharacters,applyCommonOutfit,top:get('ig-stage-tools'),bottom:get('ig-bottom-background')});
     setupOutfitEditor({characters:stageCharacters,currentFolder});
     setupSceneLibrary({characters:stageCharacters,currentFolder,changeOutfit});
     liveTuning=setupLiveTuning(get('prome-stage-manage'),()=>openOutfitEditor(lastAvatar));

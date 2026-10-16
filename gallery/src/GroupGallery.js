@@ -2,6 +2,7 @@
 // Gallery subsystem derived from LocalImage by mechamarmot; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
 /* global SillyTavern */
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { imageMatchesSearch } from './library-model.js';
 
 /**
  * Get request headers for ST API calls
@@ -26,15 +27,16 @@ function GroupSettingsPanel({ groupName }) {
 /**
  * Member Section Component - shows a character's images (read-only view)
  */
-function MemberSection({ memberName, assignments, expanded, onToggle, onImageClick }) {
+function MemberSection({ memberName, assignments, expanded, onToggle, onImageClick,search='' }) {
+    const open=expanded||Boolean(search.trim());
     const [images, setImages] = useState([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (expanded) {
+        if (open) {
             fetchMemberImages();
         }
-    }, [expanded, memberName]);
+    }, [open, memberName]);
 
     const fetchMemberImages = async () => {
         setLoading(true);
@@ -86,13 +88,13 @@ function MemberSection({ memberName, assignments, expanded, onToggle, onImageCli
     return (
         <div className="group-member-section">
             <div className="group-member-header" onClick={onToggle}>
-                <i className={`fa-solid ${expanded ? 'fa-chevron-down' : 'fa-chevron-right'}`}></i>
+                <i className={`fa-solid ${open ? 'fa-chevron-down' : 'fa-chevron-right'}`}></i>
                 <span className="member-name">{memberName}</span>
                 {assignedCount > 0 && (
                     <span className="member-count">{assignedCount} assigned</span>
                 )}
             </div>
-            {expanded && (
+            {open && (
                 <div className="group-member-content">
                     {loading ? (
                         <div className="local-image-loading">Loading...</div>
@@ -100,7 +102,7 @@ function MemberSection({ memberName, assignments, expanded, onToggle, onImageCli
                         <div className="local-image-empty-small">No images</div>
                     ) : (
                         <div className="local-image-grid local-image-grid-small">
-                            {images.map((image, index) => {
+                            {images.filter(image=>imageMatchesSearch(image,getAssignmentInfo(image.src),search)).map((image, index) => {
                                 const { name: assignmentName, description } = getAssignmentInfo(image.src);
                                 return (
                                     <div
@@ -228,6 +230,7 @@ function GroupGallery({
     const [error, setError] = useState(null);
     const [showSettings, setShowSettings] = useState(false);
     const [expandedMembers, setExpandedMembers] = useState({});
+    const [search,setSearch]=useState('');
     const fileInputRef = useRef(null);
 
     // Use groupId as folder name for group-specific images
@@ -595,7 +598,7 @@ function GroupGallery({
                     <span>Use <code>{`::img ${groupName} name::`}</code> for group images, or <code>::img MemberName name::</code> for member images.</span>
                 </div>
 
-                <div className="local-image-modal-content group-gallery-content">
+                <div className="ig-file-search"><input type="search" className="text_pole" aria-label="Search gallery images" placeholder="Search group and member images…" value={search} onChange={event=>setSearch(event.target.value)}/></div><div className="local-image-modal-content group-gallery-content">
                     {/* Group-specific images section */}
                     <div className="group-section">
                         <div className="group-section-header">
@@ -615,7 +618,7 @@ function GroupGallery({
                                 </div>
                             ) : (
                                 <div className="local-image-grid">
-                                    {groupImages.map((image, index) => {
+                                    {groupImages.filter(image=>imageMatchesSearch(image,getGroupAssignmentInfo(image.src),search)).map((image, index) => {
                                         const { name: assignmentName, description } = getGroupAssignmentInfo(image.src);
                                         return (
                                             <div
@@ -656,6 +659,7 @@ function GroupGallery({
                                     assignments={memberAssignments[memberName] || {}}
                                     expanded={expandedMembers[memberName] || false}
                                     onToggle={() => toggleMember(memberName)}
+                                    search={search}
                                     onImageClick={handleImageClick}
                                 />
                             ))}

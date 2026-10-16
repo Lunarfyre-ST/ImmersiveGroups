@@ -71,6 +71,11 @@ export function quarantinedOutfits() {
     const config = settings(), characters = getContext().characters || [];
     return Object.keys(config.outfitCatalog || {}).flatMap(avatar => (catalogFor(avatar).quarantinedOutfits || []).map(entry => ({ ...entry, avatar, character: characters.find(c => c.avatar === avatar)?.name || avatar })));
 }
+export function discardQuarantinedOutfit(avatar,folder){
+    const record=catalogFor(avatar);
+    record.quarantinedOutfits=(record.quarantinedOutfits||[]).filter(e=>e.folder!==folder);
+    record.ignored=[...new Set([...record.ignored,folder])];changed();
+}
 function rememberFolder(avatar, folder) {
     const config=settings();
     if(!config.outfitFolders||typeof config.outfitFolders!=='object'||Array.isArray(config.outfitFolders))config.outfitFolders={};
@@ -128,6 +133,7 @@ export function editOutfit(avatar, folder, patch) {
     if (!entry) return;
     if (typeof patch.label === 'string') entry.label = patch.label.trim().slice(0,80) || folder.split('/').pop();
     if (typeof patch.description === 'string') entry.description = patch.description.trim().slice(0,1000);
+    if (typeof patch.commonName === 'string') entry.commonName = patch.commonName.trim().slice(0,80);
     if (typeof patch.fontColor === 'string') entry.fontColor = /^#[a-f0-9]{6}$/i.test(patch.fontColor) ? patch.fontColor : '';
     if (typeof patch.hidden === 'boolean' || patch.hidden === null) entry.hidden = patch.hidden;
     changed();
@@ -209,7 +215,7 @@ export function sceneOutfitContext(characters, currentFolder) {
         const folder=currentFolder(character),current=outfitOptions(character,true).find(o=>o.folder===folder);
         return { avatar: character.avatar, name: character.name,
         currentOutfit: folder,currentOutfitName:current?.label||'',currentOutfitDescription:current?.description||'',outfitLocked: Boolean(catalogFor(character.avatar).locked),
-        outfits: outfitOptions(character).map(({folder,label,description}) => ({folder,name:label,description})) };
+        outfits: outfitOptions(character).map(({folder,label,description,commonName}) => ({folder,name:label,description,commonName})) };
     });
 }
 
