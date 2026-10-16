@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
+import { cancelSceneFade, fadeSceneSwap } from './scene-animations.js';
 import { layoutSettings, editingLayout, writeLayoutSetting } from './responsive.js';
 import { mobileSpritesActive, mobileSprite, syncMobileSprites } from './mobile-sprites.js';
 import { setupBackgrounds, refreshBackgrounds, backgroundSceneContext } from './scene-backgrounds.js';
+<<<<<<< HEAD
+import { seedOutfits, rememberOutfit, rememberNativeOutfits, outfitOptions, catalogFor, setOutfitLock, onCatalogChange, discoverOutfits, automaticOutfitAllowed, sceneOutfitContext, outfitFolderAllowed, displayedOutfitAllowed, repairOutfitOwnership } from './outfit-catalog.js';
+=======
 import { seedOutfits, rememberOutfit, rememberNativeOutfits, outfitOptions, catalogFor, setOutfitLock, onCatalogChange, discoverOutfits, automaticOutfitAllowed, sceneOutfitContext } from './outfit-catalog.js';
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 import { setupOutfitEditor, openOutfitEditor } from './outfit-editor.js';
 import { createOutfitPicker } from './outfit-picker.js';
 import { setupSettingsDependencies } from './settings-dependencies.js';
@@ -68,10 +73,11 @@ export async function updateSpriteLayers(container) {
 function overrideKey(character) { return character.avatar.replace(/\.[^/.]+$/, ''); }
 function activeFolder(character) {
     const override = extension_settings.expressionOverrides?.find(e => e.name === overrideKey(character));
-    return override?.path || character.name;
+    return override?.path && outfitFolderAllowed(character,override.path) ? override.path : character.name;
 }
 export function currentFolder(character) {
-    return packFromSource(spriteNode(character)?.querySelector('img')?.getAttribute('src') || '', activeFolder(character));
+    const displayed=packFromSource(spriteNode(character)?.querySelector('img')?.getAttribute('src') || '', activeFolder(character));
+    return displayedOutfitAllowed(character,displayed,activeFolder(character)) ? displayed : activeFolder(character);
 }
 export function chooseOutfitSprite(sprites, expression = '') {
     const candidates = sprites.filter(s => s && typeof s.path === 'string' && typeof s.label === 'string');
@@ -92,11 +98,16 @@ export async function changeOutfit(avatar, requestedFolder, { source = 'manual',
     const character = stageCharacters().find(c => c.avatar === avatar);
     if (!character) throw new Error('Character is no longer active in this chat');
     const folder = requestedFolder.trim();
+<<<<<<< HEAD
+    if (!outfitFolderAllowed(character,folder)) {if(source==='automatic')return false;throw new Error('This folder belongs to another character. Add it manually as a shared outfit in the library if this is intentional.');}
+=======
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     if (source === 'automatic' && (String(chatId) !== String(getContext().getCurrentChatId?.()) || String(groupId ?? '') !== String(getContext().groupId ?? '') || !automaticOutfitAllowed(avatar, folder) || (!allowDuringGeneration&&isGenerating()) || !isCurrent())) return false;
     if (!folder || folder.length > 200 || /[\r\n\0]/.test(folder)) throw new Error('Enter a sprite folder, such as Character/pyjama');
     const node = spriteNode(character);
     const img = node?.querySelector('img');
     if (!img) throw new Error('No sprite is displayed for this character yet. Enable Character Expressions first.');
+    cancelSceneFade(img);
     const scope = currentScope(), job = Symbol(); outfitJobs.set(avatar, job);
     const response = await fetch(`/api/sprites/get?name=${encodeURIComponent(folder)}`);
     if (!response.ok) throw new Error(`Could not read outfit folder (${response.status})`);
@@ -109,6 +120,34 @@ export async function changeOutfit(avatar, requestedFolder, { source = 'manual',
     await preload(url.href);
     if (outfitJobs.get(avatar) !== job || currentScope() !== scope || spriteNode(character) !== node || node.querySelector('img') !== img || !node.isConnected) return false;
     if (source === 'automatic' && (!automaticOutfitAllowed(avatar, folder)||!isCurrent()||!stageCharacters().some(c=>c.avatar===avatar))) return false;
+<<<<<<< HEAD
+    const valid = () => outfitJobs.get(avatar) === job && currentScope() === scope && spriteNode(character) === node && node.querySelector('img') === img && node.isConnected &&
+        (source !== 'automatic' || (automaticOutfitAllowed(avatar, folder) && isCurrent() && stageCharacters().some(c=>c.avatar===avatar)));
+    return fadeSceneSwap(img, 'outfit', () => {
+        // Update the native override keyed by avatar filename, without running the
+        // native override button (which empties the entire VN wrapper).
+        if (!Array.isArray(extension_settings.expressionOverrides)) extension_settings.expressionOverrides = [];
+        const key = overrideKey(character);
+        const override = extension_settings.expressionOverrides.find(e => e.name === key);
+        if (override) override.path = folder;
+        else extension_settings.expressionOverrides.push({ name: key, path: folder });
+        if (expressions.lastExpression && typeof expressions.lastExpression === 'object') expressions.lastExpression[folder.split('/')[0]] = sprite.label;
+        img.setAttribute('src', sprite.path);
+        img.setAttribute('data-expression', sprite.label);
+        img.setAttribute('data-sprite-folder-name', folder);
+        img.setAttribute('data-sprite-filename', url.pathname.split('/').pop());
+        img.title = sprite.label;
+        // Keep settings and .data() readers in agreement on native jQuery versions.
+        $(img).data('expression', sprite.label).data('sprite-folder-name', folder);
+        const folders = config().outfitFolders;
+        const known = owns(folders, avatar) && Array.isArray(folders[avatar]) ? folders[avatar] : [];
+        Object.defineProperty(folders, avatar, { value: [...new Set([...known, folder])], enumerable: true, writable: true, configurable: true });
+        rememberOutfit(character, folder, { explicit: source !== 'automatic' });
+        saveSettingsDebounced(); // Extension settings only; never save/reload a chat.
+        applyScale(node);
+        refreshStageControls();
+    }, valid);
+=======
     // Update the native override keyed by avatar filename, without running the
     // native override button (which empties the entire VN wrapper).
     if (!Array.isArray(extension_settings.expressionOverrides)) extension_settings.expressionOverrides = [];
@@ -132,6 +171,7 @@ export async function changeOutfit(avatar, requestedFolder, { source = 'manual',
     applyScale(node);
     refreshStageControls();
     return true;
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 }
 const cards = new Map();
 const pendingOutfits = new Map();
@@ -170,7 +210,11 @@ function createCard(character) {
     return {root,speak,speakName,name,outfit,lock,picker,speakGroup,outfitGroup};
 }
 function captureOutfits(characters) {
+<<<<<<< HEAD
+    rememberNativeOutfits(false);
+=======
     rememberNativeOutfits();
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     for(const c of characters) {
         seedOutfits(c,activeFolder(c));
         const displayed=currentFolder(c);if(displayed)rememberOutfit(c,displayed);
@@ -236,7 +280,11 @@ export function refreshStageControls() {
         card.picker.update(options,options.some(o=>o.folder===desired)?desired:'');
         const colors=catalogFor(c.avatar).colors||{};
         for(const node of [card.root,card.speak,card.outfit,card.lock,card.name,card.speakGroup,card.outfitGroup]){
+<<<<<<< HEAD
+            for(const [property,value] of [['--ig-card-color',settings.stageSpeakPlacement!==settings.stageOutfitPlacement&&colors.inheritSpeak!==false?colors.speak||colors.background:colors.background],['--ig-speak-color',colors.speak],['--ig-button-text',colors.text],['--ig-outfit-text',options.find(o=>o.folder===desired)?.fontColor]]){
+=======
             for(const [property,value] of [['--ig-card-color',colors.background||colors.speak],['--ig-speak-color',colors.speak],['--ig-button-text',colors.text],['--ig-outfit-text',options.find(o=>o.folder===desired)?.fontColor]]){
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
                 if(/^#[a-f0-9]{6}$/i.test(value||''))node.style.setProperty(property,value);else node.style.removeProperty(property);
             }
         }
@@ -336,6 +384,7 @@ export async function requestAutomaticOutfit({avatar,folder,chatId,groupId,allow
 }
 export function setupStageControls() {
     setupSpeakerTracking();
+    repairOutfitOwnership();
     const settings=config();
     if(!settings.outfitFolders||typeof settings.outfitFolders!=='object'||Array.isArray(settings.outfitFolders))settings.outfitFolders={};
     const chat=get('chat');if(!chat||get('prome-stage-controls'))return;
@@ -362,7 +411,7 @@ export function setupStageControls() {
             const node=record.target?.closest?.('.expression-holder');
             const c=stageCharacters().find(c=>(node?.id===`expression-${c.avatar}`||node?.id===`ig-expression-${c.avatar}`)||(node?.id==='expression-holder'&&getContext().characters?.[getContext().characterId]?.avatar===c.avatar));
             if(c&&record.type==='attributes'&&record.attributeName==='src'){
-                const old=packFromSource(record.oldValue||'','');if(old)rememberOutfit(c,old);
+                const old=packFromSource(record.oldValue||'','');if(old&&displayedOutfitAllowed(c,old,activeFolder(c)))rememberOutfit(c,old);
                 const now=currentFolder(c);if(now)rememberOutfit(c,now);
             }
         }

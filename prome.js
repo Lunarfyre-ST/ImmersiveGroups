@@ -482,17 +482,22 @@ function observeSceneUI() {
 	const chatDiv = document.getElementById("chat");
 	promeChatObserver.observe(chatDiv, { childList: true });
 
-	// Since the VN Wrapper is loaded by ST, we need to wait for it to load
-	const vnWrapperInterval = setInterval(() => {
+	// Attach when ST creates the wrapper; gallery-only setups need no polling.
+	const attachWrapper = () => {
 		const vnWrapperDiv = document.getElementById("visual-novel-wrapper");
 		if (vnWrapperDiv) {
 			promeChatObserver.observe(vnWrapperDiv, {
 				childList: true,
 				subtree: true,
 			});
-			clearInterval(vnWrapperInterval);
+			return true;
 		}
-	}, 100);
+		return false;
+	};
+	if (!attachWrapper()) {
+		const waiting = new MutationObserver(() => { if (attachWrapper()) waiting.disconnect(); });
+		waiting.observe(document.body, { childList: true, subtree: true });
+	}
 }
 
 /* Keybinds */

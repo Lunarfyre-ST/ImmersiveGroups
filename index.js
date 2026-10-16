@@ -7,7 +7,11 @@ let sceneAutomation=null;
 const runtimeKey=Symbol.for('ImmersiveGroups.runtime');
 const rootUrl=new URL('.',import.meta.url);
 const current='third-party/'+decodeURIComponent(rootUrl.pathname.split('/').filter(Boolean).pop());
+<<<<<<< HEAD
+const runtime=globalThis[runtimeKey] ||= {version:'0.2.8',status:'idle',components:{},errors:[]};
+=======
 const runtime=globalThis[runtimeKey] ||= {version:'0.2.5',status:'idle',components:{},errors:[]};
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 
 function showProblem(text) {
     console.error('[ImmersiveGroups]',text);

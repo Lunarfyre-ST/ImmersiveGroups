@@ -1,6 +1,10 @@
 /* SPDX-License-Identifier: AGPL-3.0-only
    Quiet navigation accents. Theme text, selected-tab gray and character colors
    remain authoritative; these rules apply only to extension configuration UI. */
+<<<<<<< HEAD
+.prome-vn-settings .ig-settings-brand-icon { color:var(--SmartThemeQuoteColor,#c9b8e9); margin-inline-end:.3em; font-size:.9em; }
+=======
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 :root {
     --ig-accent-layout:122,158,187;
     --ig-accent-controls:190,156,111;
@@ -8,6 +12,10 @@
     --ig-accent-sprites:163,145,187;
     --ig-accent-backgrounds:132,171,145;
     --ig-accent-gallery:115,170,173;
+<<<<<<< HEAD
+    --ig-accent-animations:179,151,198;
+=======
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     --ig-accent-automation:151,144,194;
     --ig-accent-advanced:145,153,167;
     --ig-accent-about:175,165,137;
@@ -19,6 +27,10 @@
 :is([data-ig-tab=sprites],[data-ig-pane=sprites],.ig-settings-shell[data-active-tab=sprites]) { --ig-accent:var(--ig-accent-sprites); }
 :is([data-ig-tab=backgrounds],[data-ig-pane=backgrounds],.ig-settings-shell[data-active-tab=backgrounds]) { --ig-accent:var(--ig-accent-backgrounds); }
 :is([data-ig-tab=gallery],[data-ig-pane=gallery],.ig-settings-shell[data-active-tab=gallery]) { --ig-accent:var(--ig-accent-gallery); }
+<<<<<<< HEAD
+:is([data-ig-tab=animations],[data-ig-pane=animations],.ig-settings-shell[data-active-tab=animations]) { --ig-accent:var(--ig-accent-animations); }
+=======
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 :is([data-ig-tab=context],[data-ig-pane=context],.ig-settings-shell[data-active-tab=context]) { --ig-accent:var(--ig-accent-automation); }
 :is([data-ig-tab=original],[data-ig-pane=original],.ig-settings-shell[data-active-tab=original]) { --ig-accent:var(--ig-accent-advanced); }
 :is([data-ig-tab=about],[data-ig-pane=about],.ig-settings-shell[data-active-tab=about]) { --ig-accent:var(--ig-accent-about); }

@@ -5,6 +5,11 @@ test('avatar bindings follow characters into groups and support all-required',()
     const ctx={characters:[{name:'Same',avatar:'a.png'},{name:'Same',avatar:'b.png'}],characterId:0,groupId:1,groups:[{id:1,members:['b.png']}]};
     const image={gallery:'General',availability:'bound',characterBindings:['a.png']};assert.equal(availableInChat(image,ctx),false);image.characterBindings=['b.png'];assert.equal(availableInChat(image,ctx),true);image.characterBindings=['a.png','b.png'];image.requireAllCharacters=true;assert.equal(availableInChat(image,ctx),false);
 });
+test('local image sources reject encoded separators and control characters while preserving normal filenames',()=>{
+ for(const path of ['https://evil.invalid/a.png','//evil.invalid/a.png','\\\\evil.invalid/a.png','user/images/%2e%2e%2fprivate.png','user/images/%5cprivate.png','user/images/%00a.png'])assert.equal(safeImageSource(path),'',path);
+ assert.equal(safeImageSource('user/images/My Character/a#b ?.png'),'/user/images/My%20Character/a%23b%20%3F.png');
+ assert.equal(safeImageSource('user/images/My%20Character/a.png'),'/user/images/My%20Character/a.png');
+});
 test('repeat limits count user turns, ignore suppressed repeats, and use file identity',()=>{
     const chat=[{mes:'::img general scene::'},{is_user:true,mes:'one'},{mes:'::img Other alias::'},{is_user:true,mes:'two'},{mes:'::img general scene::'},{is_user:true,mes:'three'},{mes:'::img general scene::'}];
     const policy=buildDisplayPolicy(chat,{limits:{repeatEnabled:true,cooldownRounds:2}},()=>({src:'/same.png'}));assert.equal(policy.decisions.get(2).get('/same.png')[0],'recently shown');assert.equal(policy.decisions.get(4).get('/same.png')[0],'recently shown');assert.equal(policy.decisions.get(6).get('/same.png')[0],'');

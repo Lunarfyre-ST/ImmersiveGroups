@@ -34,9 +34,9 @@ export function availableInChat(entry,ctx) {
     return chars.some(c=>c.name===entry.gallery)||ctx.name1===entry.gallery||(group&&group.name===entry.gallery);
 }
 export function safeImageSource(path) {
-    if(typeof path!=='string'||!path.trim()||/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(path.trim())||/[\r\n\0]/.test(path))return '';
+    if(typeof path!=='string'||!path.trim()||/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(path.trim())||/[\\\x00-\x1f\x7f]/.test(path))return '';
     const segments=path.trim().replace(/^\/+/, '').split('/');
-    if(segments.some(s=>{try{return ['.','..'].includes(decodeURIComponent(s));}catch{return false;}}))return '';
+    if(segments.some(s=>{let decoded=s;try{decoded=decodeURIComponent(s);}catch{}return ['.','..'].includes(decoded)||/[\\/\x00-\x1f\x7f]/.test(decoded);} ))return '';
     return '/'+segments.map(s=>{try{return encodeURIComponent(decodeURIComponent(s));}catch{return encodeURIComponent(s);}}).join('/');
 }
 export function catalogEntries(settings,generalFiles=[]) {

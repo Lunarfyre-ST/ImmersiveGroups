@@ -21,9 +21,36 @@ function speaker({force_chid}={}){
 function inventory(avatar){return buildSceneInventory(getSceneContext(),avatar,settings());}
 function status(text){statusText=text;const node=panel?.querySelector('[data-scene-status]');if(node)node.textContent=text;}
 function cancel(){epoch++;ticket=null;pendingApi=null;clearTimeout(autoTimer);autoTimer=null;apiAbort?.abort();}
+<<<<<<< HEAD
+let commandObserver=null,commandChat=null,allCommandRows=false;
+const commandRows=new Set();
+function renderCommands(rows){
+    if(rows===undefined)allCommandRows=true;else for(const row of rows)commandRows.add(row);
+    if(domFrame!==null)return;
+    domFrame=requestAnimationFrame(()=>{
+        domFrame=null;const s=settings(),chat=document.getElementById('chat');
+        if(commandChat!==chat){commandObserver?.disconnect();commandChat=chat;allCommandRows=true;}
+        const targets=allCommandRows?chat?.querySelectorAll('.mes_text')||[]:[...commandRows];
+        allCommandRows=false;commandRows.clear();commandObserver?.disconnect();
+        try{for(const row of targets)if(row.isConnected)renderSceneCommandText(row,s.enabled&&s.hideCommands);}
+        finally{if(commandChat?.isConnected)commandObserver?.observe(commandChat,{childList:true,subtree:true,characterData:true});}
+    });
+}
+function changedCommandRows(records){
+    const rows=new Set();
+    for(const record of records){
+        const element=record.target.nodeType===Node.ELEMENT_NODE?record.target:record.target.parentElement,row=element?.closest('.mes_text');
+        if(row)rows.add(row);
+        for(const node of record.addedNodes||[])if(node.nodeType===Node.ELEMENT_NODE){if(node.matches('.mes_text'))rows.add(node);for(const child of node.querySelectorAll('.mes_text'))rows.add(child);}
+    }
+    if(rows.size)renderCommands(rows);
+}
+
+=======
 function renderCommands(){
     if(domFrame!==null)return;domFrame=requestAnimationFrame(()=>{domFrame=null;const s=settings();for(const row of document.querySelectorAll('#chat .mes_text'))renderSceneCommandText(row,s.enabled&&s.hideCommands);});
 }
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 function updateInjection(avatar=speaker(),skip=false){
     const s=settings(),text=!skip&&s.enabled&&s.mode==='prompt'?buildScenePrompt(inventory(avatar),s):'';
     getContext().setExtensionPrompt?.(SCENE_PROMPT_KEY,text,1,s.depth,false,0);
@@ -195,7 +222,11 @@ function setupUi(){
     for(const input of panel.querySelectorAll('[data-scene-setting]'))input.addEventListener(input.type==='range'?'input':'change',()=>{
         const key=input.dataset.sceneSetting,value=input.type==='checkbox'?input.checked:['number','range'].includes(input.type)?Number(input.value):input.value;
         root().sceneAutomation=automationSettings({...settings(),[key]:value});saveSettingsDebounced();cancel();syncUi();updateInjection();renderCommands();schedulePreview();
+<<<<<<< HEAD
+        window.dispatchEvent(new Event('ig-automation-state-change'));
+=======
         if(['enabled','mode','outfits','apiAutoAfterReply'].includes(key))window.dispatchEvent(new Event('ig-automation-state-change'));
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
         if(['enabled','backgrounds'].includes(key))loadBackgroundContext();
         if(key==='enabled')status(settings().enabled?'Scene commands enabled.':'Scene automation is off.');
     });
@@ -221,7 +252,11 @@ export function setupSceneAutomation(){
     if(event_types.GENERATION_STOPPED)eventSource.on(event_types.GENERATION_STOPPED,()=>{cancel();status('Generation stopped; pending scene changes cancelled.');});
     for(const name of ['CHAT_CHANGED','GROUP_CHAT_CHANGED','GROUP_UPDATED'])if(event_types[name])eventSource.on(event_types[name],()=>{cancel();groupRunning=false;drafted='';updateInjection();renderCommands();schedulePreview();});
     for(const name of ['MESSAGE_SWIPED','MESSAGE_EDITED','MESSAGE_DELETED'])if(event_types[name])eventSource.on(event_types[name],()=>{cancel();renderCommands();updateInjection();schedulePreview();});
+<<<<<<< HEAD
+    if(event_types.SETTINGS_UPDATED)eventSource.on(event_types.SETTINGS_UPDATED,()=>{updateInjection();schedulePreview();renderCommands();});
+=======
     if(event_types.SETTINGS_UPDATED)eventSource.on(event_types.SETTINGS_UPDATED,()=>{updateInjection();schedulePreview();});
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     if(event_types.CHAT_COMPLETION_PROMPT_READY)eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY,data=>{
         if(!settings().enabled||apiBusy)return;
         const key=Array.isArray(data?.chat)?'chat':Array.isArray(data?.messages)?'messages':null;if(!key)return;
@@ -234,7 +269,11 @@ export function setupSceneAutomation(){
     onCatalogChange(()=>{updateInjection();schedulePreview();});
     window.addEventListener('ig-background-catalog-change',()=>{updateInjection();schedulePreview();});
     window.addEventListener('ig-layout-change',()=>{updateInjection();schedulePreview();renderCommands();});
+<<<<<<< HEAD
+    commandObserver=new MutationObserver(changedCommandRows);
+=======
     const chat=document.getElementById('chat');if(chat)new MutationObserver(renderCommands).observe(chat,{childList:true,subtree:true,characterData:true});
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     updateInjection();renderCommands();loadBackgroundContext();
     return Object.freeze({preview:()=>buildScenePrompt(inventory(previewSpeaker||speaker()),settings()),getStatus:()=>({enabled:settings().enabled,mode:settings().mode,scope:settings().scope,automatic:settings().apiAutoAfterReply,pending:Boolean(pendingApi),busy:apiBusy,status:statusText}),applyLastReply,analyzeLastReply:()=>analyzeLastReply()});
 }

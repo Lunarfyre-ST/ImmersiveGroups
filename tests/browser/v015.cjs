@@ -2,7 +2,11 @@ const assert=require('assert/strict'),path=require('path');
 module.exports=async function verifySettingsReorganization(context,url){
  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(url);await page.waitForFunction(()=>window.ImmersiveGroups?.getStatus().status==='ready');
  const tabs=page.locator('.ig-settings-tabs [role=tab]');
+<<<<<<< HEAD
+ assert.deepEqual(await tabs.allTextContents(),['Layout','Controls','Characters','Sprites','Animations','Backgrounds','Gallery','Automation','Legacy / Prome','About']);
+=======
  assert.deepEqual(await tabs.allTextContents(),['Layout','Controls','Characters','Sprites','Backgrounds','Gallery','Automation','Advanced / Prome','About']);
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
  assert.equal(await page.locator('#ig-tab-chat').getAttribute('aria-selected'),'true');
  await page.locator('#ig-tab-chat').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.locator('#ig-tab-controls').getAttribute('aria-selected'),'true');
  await page.keyboard.press('End');assert.equal(await page.locator('#ig-tab-about').getAttribute('aria-selected'),'true');

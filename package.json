@@ -1,6 +1,10 @@
 {
   "name": "immersivegroups",
+<<<<<<< HEAD
+  "version": "0.2.8",
+=======
   "version": "0.2.5",
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
   "private": true,
   "type": "module",
   "description": "Combined character scene controls and image galleries for SillyTavern, based on Prome and LocalImage.",

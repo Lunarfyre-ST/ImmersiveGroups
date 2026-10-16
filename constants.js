@@ -94,6 +94,16 @@ const defaultTintPresets = [
 
 export const defaultSettings = {
 	enableVN_UI: false,
+    outfitFadeEnabled: false,
+    outfitFadeMode: 'cross',
+    outfitFadeLinked: true,
+    outfitFadeOut: 200,
+    outfitFadeIn: 200,
+    backgroundFadeEnabled: false,
+    backgroundFadeMode: 'cross',
+    backgroundFadeLinked: true,
+    backgroundFadeOut: 350,
+    backgroundFadeIn: 350,
 	letterboxMode: 0,
 	letterboxColor: "rgba(0, 0, 0, 1)",
 	letterboxSize: 8,

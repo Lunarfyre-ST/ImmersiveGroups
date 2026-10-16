@@ -3,6 +3,7 @@ import { extension_settings } from '../../../../extensions.js';
 import { mountPresetControls, resetVisualSettings } from './preset-controls.js';
 import { extensionName } from '../constants.js';
 import { layoutSettings, mobileLayout, writeLayoutSetting, setLayoutMode } from './responsive.js';
+import { mountAnimationControls } from './animation-controls.js';
 import { floatingPanel } from './floating-panel.js';
 
 export function setupLiveTuning(anchor, openOutfits) {
@@ -13,6 +14,10 @@ export function setupLiveTuning(anchor, openOutfits) {
     <details data-live-buttons><summary>Buttons</summary><div data-live-button-sliders></div><div data-live-toggles></div><div data-live-choices></div>
     <label><input type="checkbox" data-live-center> Center character buttons</label><small>Character and outfit colors are in the library’s outfit tools.</small></details>
     <details data-live-offsets><summary>Position &amp; outfit menus</summary><div data-live-offset-sliders></div><small>Positive X moves right; positive Y moves down. Popup offsets are limited to the visible screen. Values are separate for PC and Mobile.</small><button type="button" class="menu_button" data-live-reset-offsets>Reset offsets</button></details>
+<<<<<<< HEAD
+    <details data-live-animations><summary>Animations</summary><div data-live-animation-controls></div></details>
+=======
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     <details data-live-presets><summary>Presets &amp; reset</summary></details>
     <button type="button" class="menu_button" data-live-outfits>Manage outfits</button>`;
     const popup=floatingPanel(anchor,panel,{pinPosition:true}),controls=[],toggles=[],choices=[];
@@ -47,6 +52,10 @@ export function setupLiveTuning(anchor, openOutfits) {
         for(const [value,text] of entries)input.append(new Option(text,value));field.append(document.createTextNode(label),input);
         input.addEventListener('change',()=>write(key,input.value));panel.querySelector('[data-live-choices]').append(field);choices.push({key,input});
     }
+<<<<<<< HEAD
+    mountAnimationControls(panel.querySelector('[data-live-animation-controls]'));
+=======
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     const presets=mountPresetControls(panel.querySelector('[data-live-presets]'),{profile:activeLayout,live:true});
     panel.querySelector('[data-live-reset-offsets]').addEventListener('click',()=>resetVisualSettings('offsets',activeLayout()));
     function sync(){

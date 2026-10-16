@@ -57,10 +57,8 @@ function initSettings() {
     };
 
 
-    Object.assign(gallerySettingsRoot(context), {
-        ...defaultSettings,
-        ...gallerySettingsRoot(context),
-    });
+    const root=gallerySettingsRoot(context);
+    for(const [key,value] of Object.entries(defaultSettings))if(!Object.prototype.hasOwnProperty.call(root,key)||root[key]===undefined)Object.defineProperty(root,key,{value,writable:true,enumerable:true,configurable:true});
 
     // Normalize invalid legacy settings before migrating string assignments.
     const settings = gallerySettingsRoot(context);
@@ -162,13 +160,6 @@ function getCurrentGroup() {
 
     const group = context.groups?.find(g => String(g.id) === String(context.groupId));
     if (!group) return null;
-
-    console.log(`[${EXTENSION_NAME}] getCurrentGroup - raw group object:`, JSON.stringify({
-        id: group.id,
-        name: group.name,
-        chat_id: group.chat_id,
-        keys: Object.keys(group)
-    }));
 
     return {
         id: group.id,
@@ -358,7 +349,7 @@ function getImagePath(charName, imageName) {
     // when two intentionally distinct names differ only in capitalization.
     const keys = Object.keys(assignments).filter(key => key.toLowerCase() === imageName.toLowerCase());
     const key = Object.hasOwn(assignments, imageName) ? imageName : keys.length === 1 ? keys[0] : null;
-    const aliasKeys = key === null ? Object.keys(assignments).filter(k => Array.isArray(assignments[k]?.aliases) && assignments[k].aliases.some(a => a.toLowerCase() === imageName.toLowerCase())) : [];
+    const aliasKeys = key === null ? Object.keys(assignments).filter(k => Array.isArray(assignments[k]?.aliases) && assignments[k].aliases.some(a => typeof a==='string' && a.toLowerCase() === imageName.toLowerCase())) : [];
     const assignment = key !== null ? assignments[key] : aliasKeys.length === 1 ? assignments[aliasKeys[0]] : null;
     if (!assignment) {
         return '';
@@ -742,7 +733,7 @@ function registerMessageHandler() {
  * Open the gallery modal
  */
 function openGallery() {
-    galleryViewToken++;
+    const viewToken=++galleryViewToken;
     const charName = getCurrentCharacterName();
     if (!charName) {
         console.warn(`[${EXTENSION_NAME}] No character selected`);
@@ -775,32 +766,32 @@ function openGallery() {
             onAssign={(name, path, description) => {
                 assignImage(charName, name, path, description);
                 // Re-render to update assignments display
-                openGallery();
+                if(viewToken===galleryViewToken)openGallery();
             }}
             onUnassign={(name) => {
                 unassignImage(charName, name);
-                openGallery();
+                if(viewToken===galleryViewToken)openGallery();
             }}
             onUpdateDescription={(name, description) => {
                 updateImageDescription(charName, name, description);
-                openGallery();
+                if(viewToken===galleryViewToken)openGallery();
             }}
             onSaveSettings={(settings) => {
                 saveCharacterSettings(charName, settings);
-                openGallery();
+                if(viewToken===galleryViewToken)openGallery();
             }}
             onAddPrompt={(name, template) => {
                 const id = addCustomPrompt(name, template);
-                openGallery();
+                if(viewToken===galleryViewToken)openGallery();
                 return id;
             }}
             onEditPrompt={(id, name, template) => {
                 updateCustomPrompt(id, name, template);
-                openGallery();
+                if(viewToken===galleryViewToken)openGallery();
             }}
             onDeletePrompt={(id) => {
                 deleteCustomPrompt(id);
-                openGallery();
+                if(viewToken===galleryViewToken)openGallery();
             }}
         />
     );
@@ -808,7 +799,7 @@ function openGallery() {
 
 /** Shared images are independent of character/persona names and chat selection. */
 function openGeneralGallery() {
-    galleryViewToken++;
+    const viewToken=++galleryViewToken;
     if (!galleryContainer) {
         galleryContainer = document.createElement('div');
         galleryContainer.id = 'local-image-gallery-root';
@@ -828,10 +819,10 @@ function openGeneralGallery() {
             assignments={getCharacterAssignments(GENERAL_KEY)}
             characterSettings={getCharacterSettings(GENERAL_KEY)}
             customPrompts={getCustomPrompts()}
-            onAssign={(name, path, description) => { assignImage(GENERAL_KEY, name, path, description); openGeneralGallery(); }}
-            onUnassign={(name) => { unassignImage(GENERAL_KEY, name); openGeneralGallery(); }}
-            onUpdateDescription={(name, description) => { updateImageDescription(GENERAL_KEY, name, description); openGeneralGallery(); }}
-            onSaveSettings={(settings) => { saveCharacterSettings(GENERAL_KEY, settings); openGeneralGallery(); }}
+            onAssign={(name, path, description) => { assignImage(GENERAL_KEY, name, path, description); if(viewToken===galleryViewToken)openGeneralGallery(); }}
+            onUnassign={(name) => { unassignImage(GENERAL_KEY, name); if(viewToken===galleryViewToken)openGeneralGallery(); }}
+            onUpdateDescription={(name, description) => { updateImageDescription(GENERAL_KEY, name, description); if(viewToken===galleryViewToken)openGeneralGallery(); }}
+            onSaveSettings={(settings) => { saveCharacterSettings(GENERAL_KEY, settings); if(viewToken===galleryViewToken)openGeneralGallery(); }}
         />
     );
 }
@@ -840,7 +831,7 @@ function openGeneralGallery() {
  * Open the gallery modal for persona/user
  */
 function openPersonaGallery() {
-    galleryViewToken++;
+    const viewToken=++galleryViewToken;
     const personaName = getCurrentPersonaName();
     if (!personaName) {
         console.warn(`[${EXTENSION_NAME}] No persona selected`);
@@ -872,32 +863,32 @@ function openPersonaGallery() {
             customPrompts={customPrompts}
             onAssign={(name, path, description) => {
                 assignImage(personaName, name, path, description);
-                openPersonaGallery();
+                if(viewToken===galleryViewToken)openPersonaGallery();
             }}
             onUnassign={(name) => {
                 unassignImage(personaName, name);
-                openPersonaGallery();
+                if(viewToken===galleryViewToken)openPersonaGallery();
             }}
             onUpdateDescription={(name, description) => {
                 updateImageDescription(personaName, name, description);
-                openPersonaGallery();
+                if(viewToken===galleryViewToken)openPersonaGallery();
             }}
             onSaveSettings={(settings) => {
                 saveCharacterSettings(personaName, settings);
-                openPersonaGallery();
+                if(viewToken===galleryViewToken)openPersonaGallery();
             }}
             onAddPrompt={(name, template) => {
                 const id = addCustomPrompt(name, template);
-                openPersonaGallery();
+                if(viewToken===galleryViewToken)openPersonaGallery();
                 return id;
             }}
             onEditPrompt={(id, name, template) => {
                 updateCustomPrompt(id, name, template);
-                openPersonaGallery();
+                if(viewToken===galleryViewToken)openPersonaGallery();
             }}
             onDeletePrompt={(id) => {
                 deleteCustomPrompt(id);
-                openPersonaGallery();
+                if(viewToken===galleryViewToken)openPersonaGallery();
             }}
             isPersona={true}
         />
@@ -918,7 +909,7 @@ function closeGallery() {
  * Open the group gallery modal
  */
 function openGroupGallery() {
-    galleryViewToken++;
+    const viewToken=++galleryViewToken;
     const group = getCurrentGroup();
     if (!group) {
         console.warn(`[${EXTENSION_NAME}] No group selected`);
@@ -938,7 +929,7 @@ function openGroupGallery() {
     // Gather all member assignments
     const memberAssignments = {};
     for (const memberName of memberNames) {
-        memberAssignments[memberName] = getCharacterAssignments(memberName);
+        Object.defineProperty(memberAssignments,memberName,{value:getCharacterAssignments(memberName),enumerable:true,writable:true,configurable:true});
     }
 
     // Group assignments use the group name as the key
@@ -960,32 +951,32 @@ function openGroupGallery() {
             onClose={closeGallery}
             onAssignGroup={(name, path, description) => {
                 assignImage(group.name, name, path, description);
-                openGroupGallery();
+                if(viewToken===galleryViewToken)openGroupGallery();
             }}
             onUnassignGroup={(name) => {
                 unassignImage(group.name, name);
-                openGroupGallery();
+                if(viewToken===galleryViewToken)openGroupGallery();
             }}
             onUpdateGroupDescription={(name, description) => {
                 updateImageDescription(group.name, name, description);
-                openGroupGallery();
+                if(viewToken===galleryViewToken)openGroupGallery();
             }}
             onSaveGroupSettings={(settings) => {
                 saveCharacterSettings(group.name, settings);
-                openGroupGallery();
+                if(viewToken===galleryViewToken)openGroupGallery();
             }}
             onAddPrompt={(name, template) => {
                 const id = addCustomPrompt(name, template);
-                openGroupGallery();
+                if(viewToken===galleryViewToken)openGroupGallery();
                 return id;
             }}
             onEditPrompt={(id, name, template) => {
                 updateCustomPrompt(id, name, template);
-                openGroupGallery();
+                if(viewToken===galleryViewToken)openGroupGallery();
             }}
             onDeletePrompt={(id) => {
                 deleteCustomPrompt(id);
-                openGroupGallery();
+                if(viewToken===galleryViewToken)openGroupGallery();
             }}
         />
     );
@@ -1422,13 +1413,13 @@ function openGalleryStudio(options={}) {
     render();refreshGeneralFileIndex().then(render);
 }
 function openGalleryFolder(entity) {
-    galleryViewToken++;
+    const viewToken=++galleryViewToken;
     const ctx=SillyTavern.getContext(),group=getCurrentGroup();
     if(entity===GENERAL_KEY){openGeneralGallery();return;}
     if(group&&entity===group.name){openGroupGallery();return;}
     if(entity===getCurrentPersonaName()){openPersonaGallery();return;}
     if(!galleryContainer){galleryContainer=document.createElement('div');galleryContainer.id='local-image-gallery-root';document.body.appendChild(galleryContainer);galleryRoot=createRoot(galleryContainer);}
-    galleryRoot.render(<Gallery key={entity} characterName={entity} assignments={getCharacterAssignments(entity)} characterSettings={getCharacterSettings(entity)} customPrompts={getCustomPrompts()} onClose={closeGallery} onOpenGeneral={openGeneralGallery} onOpenExtensionSettings={openExtensionSettings} onOpenLibrary={openGalleryStudio} onAssign={(name,path,description)=>{assignImage(entity,name,path,description);openGalleryFolder(entity);}} onUnassign={name=>{unassignImage(entity,name);openGalleryFolder(entity);}} onUpdateDescription={(name,description)=>{updateImageDescription(entity,name,description);openGalleryFolder(entity);}} onSaveSettings={settings=>saveCharacterSettings(entity,settings)} />);
+    galleryRoot.render(<Gallery key={entity} characterName={entity} assignments={getCharacterAssignments(entity)} characterSettings={getCharacterSettings(entity)} customPrompts={getCustomPrompts()} onClose={closeGallery} onOpenGeneral={openGeneralGallery} onOpenExtensionSettings={openExtensionSettings} onOpenLibrary={openGalleryStudio} onAssign={(name,path,description)=>{assignImage(entity,name,path,description);if(viewToken===galleryViewToken)openGalleryFolder(entity);}} onUnassign={name=>{unassignImage(entity,name);if(viewToken===galleryViewToken)openGalleryFolder(entity);}} onUpdateDescription={(name,description)=>{updateImageDescription(entity,name,description);if(viewToken===galleryViewToken)openGalleryFolder(entity);}} onSaveSettings={settings=>saveCharacterSettings(entity,settings)} />);
 }
 function gallerySceneContext() {
     const ctx=SillyTavern.getContext(),policy=currentDisplayPolicy();
@@ -1520,23 +1511,13 @@ export function initGallery() {
                 const messages=Array.isArray(data?.chat)?data.chat:data?.messages;
                 if (getSettings().enabled === false || !Array.isArray(messages)) return;
 
-                // Strip commands from conversation content, preserving prompt instructions.
-                for (const message of messages) {
-                    if (!message || typeof message !== 'object') continue;
-                    // System/developer instructions contain the image command usage examples.
-                    if (message.role === 'system' || message.role === 'developer') continue;
-                    if (typeof message.content === 'string') {
-                        message.content = stripImageTags(message.content);
-                    }
-                    // Handle array content (for multimodal messages)
-                    if (Array.isArray(message.content)) {
-                        for (const part of message.content) {
-                            if (part?.type === 'text' && typeof part.text === 'string') {
-                                part.text = stripImageTags(part.text);
-                            }
-                        }
-                    }
-                }
+                // Copy message objects and text parts: other extensions/native chat
+                // may retain references to the original prompt payload.
+                const key=Array.isArray(data.chat)?'chat':'messages';
+                data[key]=messages.map(message=>{
+                    if(!message||typeof message!=='object'||['system','developer'].includes(message.role))return message;
+                    return {...message,content:typeof message.content==='string'?stripImageTags(message.content):Array.isArray(message.content)?message.content.map(part=>part?.type==='text'&&typeof part.text==='string'?{...part,text:stripImageTags(part.text)}:part):message.content};
+                });
                 console.log(`[${EXTENSION_NAME}] Stripped ::img:: tags from prompt`);
             });
         }

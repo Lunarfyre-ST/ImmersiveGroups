@@ -792,3 +792,15 @@ body.waifuMode :is(#visual-novel-wrapper,#ig-mobile-sprites) > .expression-holde
 .ig-scene-automation [data-scene-background-options] > label { display:flex; align-items:flex-start; flex-wrap:nowrap; gap:8px; margin:8px 0; }
 .ig-scene-automation [data-scene-background-status] { margin:8px 0; }
 .ig-scene-automation [data-scene-api-options] > label:has(input[type=checkbox]) { flex-wrap:nowrap; align-items:flex-start; }
+<<<<<<< HEAD
+
+/* A compact, wrapping summary directly below the live layout indicator. */
+.ig-automation-summary { display:flex; flex-wrap:wrap; gap:5px; font-size:.78em; line-height:1.5; }
+.ig-automation-summary > span { padding:3px 7px; border:1px solid var(--SmartThemeBorderColor); border-radius:7px; overflow-wrap:anywhere; }
+.ig-automation-summary > span[data-enabled="true"] { background:rgba(103,163,135,.12); border-color:rgba(103,163,135,.35); }
+
+.ig-animation-group > label { margin-block:8px; }
+.ig-animation-group select { width:100%; max-width:100%; }
+.ig-live-tuning > [data-live-animations] { border-inline-start:3px solid #b397c688; padding-inline-start:10px; }
+=======
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60

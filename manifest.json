@@ -6,7 +6,11 @@
   "js": "index.js",
   "css": "style.css",
   "author": "Lunarfyre-ST and contributors; based on Bronya-Rand / Prometheus and mechamarmot",
+<<<<<<< HEAD
+  "version": "0.2.8",
+=======
   "version": "0.2.5",
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
   "auto_update": false,
   "homePage": "https://github.com/Lunarfyre-ST/ImmersiveGroups"
 }

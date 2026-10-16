@@ -26,7 +26,7 @@ function getChatAvatar(mes) {
 	if (!mes.is_user) {
 		if (mes.force_avatar) {
 			avatarImg = mes.force_avatar;
-		} else if (this_chid === undefined) {
+		} else if (!context.characters?.[this_chid]) {
 			avatarImg = system_avatar;
 		} else {
 			if (context.characters[this_chid].avatar !== "none") {
@@ -53,7 +53,7 @@ export async function getChatHistory() {
 		const chatHistory = context.chat;
 		// skip first message in chat if it's a group chat
 
-		for (const mes of chatHistory) {
+		for (const [index,mes] of chatHistory.entries()) {
 			let messageText = mes.mes;
 
 			// setup the chat history item
@@ -78,7 +78,7 @@ export async function getChatHistory() {
 				mes.name,
 				mes.is_system,
 				mes.is_user,
-				context.chat.indexOf(mes),
+				index,
 			);
 			promeChatHistoryItemTemplate
 				.find(".promeChatHistoryItemSenderText")

@@ -1,16 +1,37 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
 import { extension_settings } from '../../../../extensions.js';
+<<<<<<< HEAD
+import { eventSource, event_types } from '../../../../../script.js';
+import { automationSettings } from './scene-automation-model.js';
+import { mountAnimationControls } from './animation-controls.js';
+import { setupSceneAnimations } from './scene-animations.js';
+=======
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 import { mountPresetControls, resetVisualSettings } from './preset-controls.js';
 import { extensionName } from '../constants.js';
 import { setupResponsive, mobileLayout, editingLayout, layoutKeys } from './responsive.js';
 
 export function setupSettingsShell() {
     setupResponsive();
+<<<<<<< HEAD
+    setupSceneAnimations();
+    mountAnimationControls(document.querySelector('[data-ig-animation-controls]'));
+=======
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     mountPresetControls(document.querySelector('[data-ig-presets]'),{profile:editingLayout});
     for(const button of document.querySelectorAll('[data-ig-reset]'))button.addEventListener('click',()=>resetVisualSettings(button.dataset.igReset,editingLayout()));
     for(const link of document.querySelectorAll('[data-ig-document]')){link.href=new URL('../'+link.dataset.igDocument,import.meta.url).href;link.rel='noopener noreferrer';}
     const live=document.createElement('small');live.className='ig-layout-status';document.querySelector('.ig-settings-toolbar')?.append(live);
+    const status=document.createElement('div');status.className='ig-automation-summary';status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.setAttribute('aria-label','Automation configuration');live.after(status);
+    function showAutomation(){
+        const root=extension_settings[extensionName],s=automationSettings(root.sceneAutomation),g=root.gallery||{};
+        const placement={auto:'Auto',before:'Start of message',after:'End of message'}[g.prompt?.placement]||'End of message';
+        const fields=[['automation',`Automation: ${s.enabled?'On':'Off'}`,s.enabled,'Master switch for outfit and background automation. Gallery instructions have their own switch.'],['mode',`Mode: ${s.mode==='api'?'API':'Prompt'}`,s.enabled,'Configured scene automation mode.'],['outfits',`Outfits: ${s.enabled&&s.outfits?s.scope==='speaker'?'Speaker':'All':'Off'}`,s.enabled&&s.outfits,'Active outfit automation scope.'],['background',`Background: ${s.enabled&&s.backgrounds?'On':'Off'}`,s.enabled&&s.backgrounds,'Background automation.'],['gallery',`Gallery: ${g.enabled!==false&&g.prompt?.enabled?'On':'Off'} | ${placement}`,g.enabled!==false&&g.prompt?.enabled,'Gallery image instructions and requested command placement. Image rendering has its own switch in Gallery.']];
+        for(const [key,text,on,title] of fields){let pill=status.querySelector(`[data-ig-summary="${key}"]`);if(!pill){pill=document.createElement('span');pill.dataset.igSummary=key;status.append(pill);}if(pill.textContent!==text)pill.textContent=text;pill.dataset.enabled=String(Boolean(on));pill.title=title;}
+    }
+    for(const name of ['ig-automation-state-change','ig-gallery-change','ig-layout-change'])window.addEventListener(name,showAutomation);
+    eventSource.on(event_types.SETTINGS_UPDATED,showAutomation);showAutomation();
     const showLayout=()=>{
         const s=extension_settings[extensionName], active=mobileLayout()?'mobile':'desktop';
         const forced=s.layoutMode==='desktop'||s.layoutMode==='mobile';
@@ -35,7 +56,12 @@ export function setupSettingsShell() {
     for(const control of document.querySelectorAll('[data-prome-stage-setting]')){
         if(layoutKeys.has(control.dataset.promeStageSetting))continue;
         const label=control.closest('label');if(!label||marked.has(label))continue;marked.add(label);
+<<<<<<< HEAD
+        const badge=document.createElement('small');badge.className='ig-profile-badge ig-shared-badge';badge.textContent='Shared';
+        if(label.classList.contains('prome-number-setting'))label.firstElementChild.append(badge);else label.append(badge);
+=======
         const badge=document.createElement('small');badge.className='ig-profile-badge ig-shared-badge';badge.textContent='Shared';label.append(badge);
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     }
     for(const id of ['prome-profile-cm','prome-stage-enabled','prome-stable-slots','prome-profiles-enabled','prome-sprite-defocus-tint','prome-limit-quick-replies','prome-sheld-height-number','prome-mobile-layout-width-number']){
         const control=document.getElementById(id),label=control?.closest('label')||document.querySelector(`label[for="${id}"]`);if(!label||marked.has(label))continue;marked.add(label);

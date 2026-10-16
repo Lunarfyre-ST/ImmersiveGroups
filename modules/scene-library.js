@@ -3,26 +3,45 @@
 import { extension_settings, getContext } from '../../../../extensions.js';
 import { isGenerating, eventSource, event_types } from '../../../../../script.js';
 import { scanOutfitFolders, uploadOutfitImages } from './outfit-files.js';
+<<<<<<< HEAD
+import { spriteFolder } from './outfit-files-model.js';
+import { taskQueue } from './task-queue.js';
+import { extensionName } from '../constants.js';
+import { catalogFor, setCharacterColors, outfitOptions, hiddenOutfit, editOutfit, removeOutfit, moveOutfit, rememberOutfit, discoverOutfits, importFolderNames, onCatalogChange, validFolder, quarantinedOutfits } from './outfit-catalog.js';
+=======
 import { extensionName } from '../constants.js';
 import { catalogFor, setCharacterColors, outfitOptions, hiddenOutfit, editOutfit, removeOutfit, moveOutfit, rememberOutfit, discoverOutfits, importFolderNames, onCatalogChange, validFolder } from './outfit-catalog.js';
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 import { selectProfileCharacter } from './height-profiles.js';
 import { backgroundSceneContext, getBackgroundPath, ensureBackgrounds, readBackgrounds, updateBackground, pickBackground } from './scene-backgrounds.js';
 
 export function setupSceneLibrary(services){
     const characters=()=>getContext().characters?.filter(c=>c?.avatar)||[];
+<<<<<<< HEAD
+    const assets=new Map(),inspect=taskQueue(3);
+=======
     const assets=new Map();
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     const changed=()=>window.dispatchEvent(new Event('ig-scene-library-change'));
     async function inspectOutfit(folder){
         const previous=assets.get(folder);if(previous)return previous.pending||previous;
         const record={imageState:'checking',hasImages:null,src:''};assets.set(folder,record);
+<<<<<<< HEAD
+        record.pending=inspect(async()=>{try{
+=======
         record.pending=(async()=>{try{
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
             if(!validFolder(folder))throw Error('Invalid folder');
             const response=await fetch(`/api/sprites/get?name=${encodeURIComponent(folder)}`);if(!response.ok)throw Error('Sprite folder unavailable');
             const data=await response.json();if(!Array.isArray(data))throw Error('Invalid sprite list');
             const candidates=data.filter(s=>{try{const url=new URL(s?.path,location.href);return url.origin===location.origin&&url.pathname.startsWith('/characters/')&&/\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(url.pathname);}catch{return false;}});
             const sprite=candidates.find(s=>s.label==='neutral')||candidates[0];Object.assign(record,{imageState:'checked',hasImages:Boolean(sprite),src:sprite?new URL(sprite.path,location.href).href:''});
         }catch{Object.assign(record,{imageState:'error',hasImages:null,src:''});}
+<<<<<<< HEAD
+        delete record.pending;if(assets.get(folder)===record)changed();return record;});return record.pending;
+=======
         delete record.pending;if(assets.get(folder)===record)changed();return record;})();return record.pending;
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     }
     const active=()=>new Set(services.characters().map(c=>c.avatar));
     const getEntries=()=>{
@@ -36,13 +55,22 @@ export function setupSceneLibrary(services){
         refresh:force=>{if(force)assets.clear();return force?readBackgrounds():ensureBackgrounds();},
         checkOutfitImages:async(force=false)=>{if(force)assets.clear();const folders=[...new Set(getEntries().filter(e=>e.kind==='outfit').map(e=>e.folder))];let index=0;async function worker(){while(index<folders.length)await inspectOutfit(folders[index++]);}await Promise.all([worker(),worker(),worker()]);},
         getColors:avatar=>({...catalogFor(avatar).colors}),setColors:setCharacterColors,
+<<<<<<< HEAD
+        getMismatchedOutfits:quarantinedOutfits,
+        restoreSharedOutfit:(avatar,folder)=>{const c=characters().find(c=>c.avatar===avatar);if(!c)throw new Error('Character is no longer available.');return rememberOutfit(c,folder,{explicit:true});},
+=======
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
         updateOutfit:(entry,patch)=>editOutfit(entry.avatar,entry.folder,patch),
         removeOutfit:entry=>removeOutfit(entry.avatar,entry.folder),moveOutfit:(entry,delta)=>moveOutfit(entry.avatar,entry.folder,delta),
         wear:entry=>{if(isGenerating())throw new Error('Wait for roleplay generation to finish before changing outfits manually.');return services.changeOutfit(entry.avatar,entry.folder);},
         addOutfit:(avatar,folder,label)=>{const c=characters().find(c=>c.avatar===avatar);if(!c||!validFolder(folder))throw new Error('Choose a character and enter a valid sprite folder.');const added=rememberOutfit(c,folder,{label,explicit:true});if(!added&&label)editOutfit(avatar,folder,{label});},
         discover:avatar=>{const c=characters().find(c=>c.avatar===avatar);if(!c)throw new Error('Choose a character.');return discoverOutfits(c,active().has(avatar)?services.currentFolder(c):c.name,true);},
         importFolders:(avatar,files)=>{const c=characters().find(c=>c.avatar===avatar);if(!c)throw new Error('Choose a character.');return importFolderNames(c,files,active().has(avatar)?services.currentFolder(c):c.name);},
+<<<<<<< HEAD
+        updateBackground,chooseBackground:pickBackground,scanFolders:files=>scanOutfitFolders(characters(),files),uploadSprites:async(folder,...args)=>{folder=spriteFolder(folder);try{return await uploadOutfitImages(folder,...args);}finally{assets.delete(folder);await inspectOutfit(folder);changed();}},
+=======
         updateBackground,chooseBackground:pickBackground,scanFolders:files=>scanOutfitFolders(characters(),files),uploadSprites:async(...args)=>{const result=await uploadOutfitImages(...args);assets.delete(args[0]);await inspectOutfit(args[0]);changed();return result;},
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
         previewOutfit:async folder=>(await inspectOutfit(folder)).src
     });
     window.ImmersiveGroupsSceneLibrary=api;

@@ -2,6 +2,7 @@
 // Gallery subsystem derived from LocalImage by mechamarmot; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
 /* global SillyTavern */
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { safeImageSource } from './gallery-model';
 
 /**
  * Get request headers for ST API calls
@@ -74,7 +75,8 @@ function Gallery({ characterName, onClose, assignments, characterSettings, custo
     const [error, setError] = useState(null);
     const [showSettings, setShowSettings] = useState(false);
     const [fileSort, setFileSort] = useState(characterSettings?.fileSort || 'date-desc');
-    const fileInputRef = useRef(null);
+    const fileInputRef = useRef(null),imageRequest=useRef(null),mounted=useRef(true);
+    useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;imageRequest.current?.abort();};},[]);
 
     const folder = folderName || characterName;
     const entityType = isPersona ? 'Persona' : 'Character';
@@ -84,11 +86,13 @@ function Gallery({ characterName, onClose, assignments, characterSettings, custo
      * Fetch images from the server
      */
     const fetchImages = useCallback(async () => {
+        if(!mounted.current)return;
+        imageRequest.current?.abort();const request=new AbortController();imageRequest.current=request;
         setLoading(true);
         setError(null);
         try {
             const response = await fetch('/api/images/list', {
-                method: 'POST',
+                method: 'POST', signal:request.signal,
                 headers: getRequestHeaders(),
                 body: JSON.stringify({
                     folder: folder,
@@ -99,25 +103,25 @@ function Gallery({ characterName, onClose, assignments, characterSettings, custo
 
             if (response.ok) {
                 const data = await response.json();
-                const imageList = data.map((file) => ({
-                    name: file,
-                    src: `user/images/${folder}/${file}`,
-                }));
+                if(request.signal.aborted||imageRequest.current!==request||!mounted.current)return;
+                if(!Array.isArray(data))throw new Error('Invalid gallery file list');
+                const imageList=data.filter(file=>typeof file==='string'&&!/[\\/]/.test(file)).map(file=>({name:file,path:`user/images/${folder}/${file}`,src:safeImageSource(`user/images/${folder}/${file}`)})).filter(image=>image.src);
                 setImages(imageList);
             } else {
                 setImages([]);
             }
         } catch (e) {
+            if(request.signal.aborted||imageRequest.current!==request||!mounted.current)return;
             console.error('Failed to fetch images:', e);
             setError('Failed to load images');
             setImages([]);
         } finally {
-            setLoading(false);
+            if(mounted.current&&imageRequest.current===request)setLoading(false);
         }
     }, [folder, fileSort]);
 
     useEffect(() => {
-        fetchImages();
+        fetchImages();return()=>imageRequest.current?.abort();
     }, [fetchImages]);
 
     /**
@@ -213,7 +217,7 @@ function Gallery({ characterName, onClose, assignments, characterSettings, custo
                 method: 'POST',
                 headers: getRequestHeaders(),
                 body: JSON.stringify({
-                    path: image.src,
+                    path: image.path || image.src,
                 }),
             });
 
@@ -225,7 +229,7 @@ function Gallery({ characterName, onClose, assignments, characterSettings, custo
             const assignmentName = Object.keys(assignments || {}).find(key => {
                 const val = assignments[key];
                 const path = typeof val === 'string' ? val : val?.path;
-                return path === image.src;
+                return safeImageSource(path) === image.src;
             });
             if (assignmentName) {
                 onUnassign(assignmentName);
@@ -245,7 +249,7 @@ function Gallery({ characterName, onClose, assignments, characterSettings, custo
         const currentName = Object.keys(assignments || {}).find(key => {
             const val = assignments[key];
             const path = typeof val === 'string' ? val : val?.path;
-            return path === image.src;
+            return safeImageSource(path) === image.src;
         });
         const currentAssignment = currentName ? assignments[currentName] : null;
         const currentDesc = currentAssignment && typeof currentAssignment === 'object' ? currentAssignment.description : '';
@@ -274,7 +278,7 @@ function Gallery({ characterName, onClose, assignments, characterSettings, custo
         const currentName = Object.keys(assignments || {}).find(key => {
             const val = assignments[key];
             const path = typeof val === 'string' ? val : val?.path;
-            return path === image.src;
+            return safeImageSource(path) === image.src;
         });
         if (!currentName) return;
 
@@ -295,7 +299,7 @@ function Gallery({ characterName, onClose, assignments, characterSettings, custo
         const name = Object.keys(assignments).find(key => {
             const val = assignments[key];
             const path = typeof val === 'string' ? val : val?.path;
-            return path === imageSrc;
+            return safeImageSource(path) === imageSrc;
         });
         if (!name) return { name: null, description: '' };
         const assignment = assignments[name];

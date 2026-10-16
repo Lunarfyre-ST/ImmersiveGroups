@@ -70,3 +70,20 @@ The library navigation redesign, dedicated outfit form with optional ZIP upload,
 ## 0.2.5 additions — 2026-10-16
 
 Fresh-install defaults, automation lock status notices, 165 cm character defaults with legacy-conversion safeguards, import guidance and the reorganized sprite-shadow panel are ImmersiveGroups changes maintained by Lunarfyre-ST and contributors.
+<<<<<<< HEAD
+
+## 0.2.6 additions — 2026-10-16
+
+Archive byte limits, normalized upload targets, serialized sprite imports, safer prompt ownership and image sources, guarded gallery completion, bounded preview checks, row-scoped command rendering and history/sorting optimizations are ImmersiveGroups changes. Existing upstream and dependency notices are retained.
+
+## 0.2.7 additions — 2026-10-16
+
+The accessible chat-history control, scene animation settings and cancellation, native-background visual crossfades, live automation summary and explicit split-control color inheritance are ImmersiveGroups additions maintained by Lunarfyre-ST and contributors. Existing upstream and dependency notices are retained.
+
+## 0.2.8 additions — 2026-10-16
+
+In-place outfit crossfades, selectable transition styles, linked fade timings, animation resets and synchronized Scene tuning animation controls are ImmersiveGroups additions maintained by Lunarfyre-ST and contributors. Existing upstream and dependency notices are retained.
+
+The 0.2.8 outfit ownership guards, preserved mismatch quarantine and explicit shared-outfit recovery are also ImmersiveGroups changes.
+=======
+>>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
