@@ -6,7 +6,7 @@ What began as a quick patch for multiple outfits in the PromeVN extension quickl
 
 The goal is a more cohesive light novel experience: keep a group of characters on screen, change their outfits, set the scene, and optionally let the model choose suitable outfits, backgrounds and premade gallery images.
 
-**Current version: 0.2.8.** Outfit/background automation works through either the main roleplay prompt or a separate API call. Gallery images have their own working prompt; coordinated image selection through the separate scene-analysis API remains planned.
+**Current version: 0.3.0.** Outfit/background automation works through either the main roleplay prompt or a separate API call. Background-linked outfits can coordinate changes from a background command alone. Gallery images have their own optional prompt; the separate scene-analysis API currently handles outfits and backgrounds.
 
 > [!WARNING]
 > **Beta project with limited real-world testing.** Back up your SillyTavern `data` folder before installing or updating. Use at your own risk. Features, settings and migration behavior may change during development. Automated checks do not replace testing across actual SillyTavern setups, browsers and phones.
@@ -85,13 +85,15 @@ Built on Prome-VN's visual novel foundation, ImmersiveGroups adds the following 
 
 - **Smooth outfit changes:** selector-based changes preload the image and update that character in place. Existing Quick Reply outfit changes can still trigger native sprite reloads.
 - **Outfit management:** visible Add outfit and Scan outfit folders actions, a dedicated form with its own character selector and optional ZIP upload, and memory for outfits used through Quick Replies. Rename, hide, reorder and describe outfits without renaming their files. Common-folder discovery is available manually or as an opt-in.
+- **Shared outfit names and All selector:** give matching outfits the same shared name, then optionally change every active character from one selector. Only unambiguous names shared by the whole active group appear. Visibility and color are configurable in **Controls** or **Scene tuning → Buttons**, with separate PC/mobile profiles.
+- **Expression browsing:** preview an outfit’s expressions with arrows or an emotion dropdown, including total sprite and per-emotion variant counts. Previewing does not change the chat’s sprites.
 - **Sprite ZIP uploads:** import images directly into an outfit folder. Existing filenames are preserved by numbering duplicates, such as `neutral-1` becoming `neutral-2`.
 - **Character styling:** customize character button backgrounds, Speak button colors and text colors, plus per-outfit text colors. Button backgrounds stay independent when controls are together; optionally inherit the Speak button color when selectors and Speak buttons are separated.
 
   <img src="docs/Preview-Colors.jpg" alt="Per-character button background, Speak button and text color controls" width="320">
 
-- **Outfit ownership safeguards:** automatically learned folders that clearly belong to another known character are rejected. Previously saved mismatches are set aside with their descriptions preserved, keeping them out of selectors and automation. Intentional shared outfits can be restored explicitly in the library’s Tools panel. Image files are not moved or deleted.
-- **Working automation locks:** locked characters are omitted from model outfit context and automatic changes are rejected. Manual outfit selection remains available. Lock buttons are hidden by default; highlighted status notes distinguish disabled automation, Prompt mode and manual/automatic API analysis.
+- **Outfit ownership safeguards:** automatically learned folders that clearly belong to another known character are rejected. Previously saved mismatches are set aside with their descriptions preserved, keeping them out of selectors and automation. Intentional shared outfits can be restored explicitly in the library’s Tools panel, or mismatched entries can be discarded without deleting their sprite files.
+- **Working automation locks:** locked characters are omitted from outfit-command context and automatic changes are rejected, including background-linked outfit changes. Manual selection, including the All selector, remains available. Descriptions-only context can still describe their current outfits. Lock buttons are hidden by default; highlighted status notes distinguish disabled automation, Prompt mode and manual/automatic API analysis.
 - **Muted-member handling:** muted group members disappear on desktop and mobile, and the remaining sprites readjust.
 
 ### Sprite customization
@@ -135,35 +137,41 @@ Built on Prome-VN's visual novel foundation, ImmersiveGroups adds the following 
 
 ### Unified asset library
 
-- **One library:** browse outfits, backgrounds and gallery images together or use their individual tabs, with one scrolling gallery area. Forms and tools open in desktop side panels or mobile sheets.
+- **One library:** browse outfits, backgrounds and gallery images together or use their individual tabs, with a **Groups** tab for reusable character presets and one scrolling gallery area. Forms and tools open in desktop side panels or mobile sheets.
 
   ![Unified asset library with outfit, background and image tabs](docs/Preview-Library.jpg)
 
-- **Shared search:** search names, descriptions, folders, galleries and character bindings.
-- **Filtering:** narrow results by character, current chat, descriptions, outfit visibility, linked/starred backgrounds or image gallery. The Filters panel shows options relevant to the selected asset type and reports the active filter count. Hide Basic outfits or filter outfits with or without images.
-- **Sorting:** sort by name, asset type, character/gallery, missing descriptions or description length. Character activity/recent sorting uses available SillyTavern metadata, with current-chat fallbacks; activity is not an exact global message count.
+- **Shared search:** search names, descriptions, folders, shared outfit names, galleries and character/group bindings.
+- **Filtering:** narrow results by character, named group, current chat, descriptions, outfit visibility, linked/starred backgrounds, missing background files or image gallery. The Filters panel shows options relevant to the selected asset type and reports the active filter count. Hide Basic outfits or filter outfits with or without images.
+- **Sorting:** sort by name, missing descriptions or description length, with asset-type sorting available in **All** only. Character activity/recent sorting uses available SillyTavern metadata, with current-chat fallbacks; activity is not an exact global message count.
+- **Compact outfit reordering:** **Reorder outfits** switches to Library order and replaces large preview cards with compact name rows and up/down arrows. Search and character filters remain available.
 - **Visible descriptions:** edit scene descriptions directly under each entry. Edits save when leaving the field or closing the library.
-- **Character and group bindings:** make images follow one or more characters into group chats, or bind them to specific groups. Optional all-required matching is available.
+- **Reusable group presets:** name a set of characters in **Groups**, optionally add a description, then bind backgrounds or images to that preset. Every saved member must be present; extra chat members are allowed. Presets follow members across chats and are independent of SillyTavern group IDs.
+- **Scoped bindings:** character lists default to the current chat, with search and an **All characters** option. Existing links outside the displayed list are preserved. Individual image bindings and specific SillyTavern-group bindings remain available.
 - **Existing-image aliases:** renaming an image command retains the previous name as an alias for older messages.
 
 ### Images and backgrounds
 
 - **Integrated Gallery:** local image handling based on SillyTavern-LocalImage, including a shared General gallery.
+- **File-gallery search:** search filenames, assigned image names and descriptions in the image-management galleries, including member images in group galleries.
 - **Optional image prompt:** give the roleplay model exact image commands, descriptions and availability rules without making a separate API call.
 - **Optional loading limits:** image cooldowns and per-message/per-round caps. Suppressed commands leave a blank instead of visible command text.
 - **Image sizing and formatting:** adjustable maximum image height, proportional width fitting and formatting-preserving rendering, including images between paragraphs and across swipes.
 - **Quick Image Send:** search and insert image commands from the shared Backgrounds / Send image menu. Send an image-only message when the draft is empty, or insert a command into your draft.
 - **Background organization:** star favorites, bind locations to characters and save scene descriptions. The compact scene menu separates linked and starred backgrounds.
-- **Linked-background arrows:** optional previous/next buttons beside Scene tuning cycle through backgrounds linked to every active character, without a filename bar.
+- **Linked-background arrows:** optional previous/next buttons beside Scene tuning cycle through backgrounds whose individual links cover every active character, or whose named group is fully present, without a filename bar.
+- **Missing-background cleanup:** discard stale catalog entries or relink them to renamed files, preserving descriptions, stars, bindings and saved defaults. **Tools → Review missing backgrounds** refreshes the list and reveals missing entries.
+- **Background-linked outfits:** optionally associate a background with a shared outfit name, such as bedroom → pyjama or outside → winter. Selecting that background manually, on chat load or through a command changes matching unlocked characters in place, without another model call. Missing/ambiguous matches are skipped, and valid explicit outfit commands take precedence.
 - **Optional chat-load backgrounds:** restore a remembered choice or apply character/group defaults, with adjustable delay, ordered rules and respect for native background locks.
 
 ### Scene automation and context
 
 - **At-a-glance status:** a compact summary below the live layout indicator shows scene automation on/off, Prompt/API mode, outfit scope, background automation and Gallery image instructions/placement. Gallery image prompting has its own switch.
 - **Prompt mode:** inject outfit/background catalogs and descriptions into the main roleplay request. The model writes applicable scene commands with its reply, avoiding a separate analysis call.
-- **API mode:** analyze the latest reply through the current main API, another connection profile or a custom/local OpenAI-compatible endpoint. Manual testing and optional automatic analysis are available.
+- **Descriptions-only Prompt mode:** include current outfit, background and matching group descriptions as scene reference without offering or executing outfit/background commands. Select which scene details to include; locked characters can remain described. Gallery image instructions keep their own switch.
+- **API mode:** analyze the latest reply through the current main API, another connection profile or a custom/local OpenAI-compatible endpoint. Manual testing and optional automatic analysis are available. Depending on the provider and request setup, separate analysis calls can disrupt prompt caching and substantially increase request costs.
 - **Character scope:** include all active, unlocked characters for group-wide outfit changes, or only the speaking character to reduce outfit context and restrict its targets.
-- **Shared background context:** by default, offer only backgrounds linked to every active character. This stays group-wide even when outfit context is speaker-only, with no fallback to unlinked backgrounds.
+- **Shared background context:** by default, offer backgrounds whose individual links cover every active character, or whose named group’s saved members are all present. This stays group-wide even when outfit context is speaker-only, with no fallback to unlinked backgrounds.
 - **Prompt controls:** configurable injection depth, editable instructions, catalog limits, preview and token count. A character estimate is shown if tokenizer counting is unavailable.
 - **Command placement:** independent Before, After or Automatic placement choices for scene commands and Gallery image commands.
 - **API history:** choose how many recent user/assistant messages to send. The default is one; the slider covers 1–5, with larger typed values supported.
@@ -205,11 +213,28 @@ Use **Scan outfit folders** to choose your local `SillyTavern/data/default-user/
 
 Open **Filters** for **Hide Basic outfits**, **Outfit images** and other category-specific options. The image filter checks sprite lists; failed checks are not treated as empty folders. **Tools → Check outfit images** retries stale or failed results. These library filters do not change which outfits are available in character selectors or model context.
 
-**Tools** also contains **Find common outfit folders** and **Import folder names**. Automatic common-folder discovery and automatic Basic hiding are **off by default** on fresh installs; existing preferences remain in effect. **Character appearance** opens the character-button color controls. Each outfit’s **More** menu contains ordering, font color and catalog removal; removal keeps the files.
+**Tools** also contains **Find common outfit folders** and **Import folder names**. Automatic common-folder discovery and automatic Basic hiding are **off by default** on fresh installs; existing preferences remain in effect. **Character appearance** opens the character-button color controls. Use **Reorder outfits** for compact name rows and arrow controls; **Done reordering** returns to preview cards. Each outfit’s **More** menu also contains ordering, font color and catalog removal; removal keeps the files.
 
-If an outfit appears under the wrong character, check **Tools → Mismatched outfits set aside** or the **Review mismatched outfits** button. The extension preserves mismatched entries and their descriptions without changing the image files. Use **Restore as shared outfit** only when sharing that folder is intentional; you can also assign a shared folder explicitly through **Add outfit**.
+If an outfit appears under the wrong character, check **Tools → Mismatched outfits set aside** or the **Review mismatched outfits** button. The extension preserves mismatched entries and their descriptions without changing the image files. Use **Restore as shared outfit** only when sharing that folder is intentional, or **Discard mismatched entry (keeps files)** to remove the saved mismatch. You can also assign a shared folder explicitly through **Add outfit**.
 
 Each outfit has an **Upload sprite ZIP** button, and the Add outfit form can upload one when creating an entry. Supported ZIP images include PNG, JPG/JPEG, GIF, WebP, AVIF and BMP. Imports preserve existing filenames by adding numbered variants. SillyTavern's native expression cache may need a page reload to discover newly added expressions in an already-cached folder.
+
+### Reuse character groups
+
+Open **Library → Groups → Add group**. Enter a name, choose members or copy them from the current chat / a SillyTavern group, then save. Select that preset in a background or image’s **Named groups** bindings. Every saved member must be present for it to match; extra characters are allowed.
+
+Character binding lists start with **Current chat**. Switch to **All characters** to review other links or use the search box to find someone.
+
+### Coordinate outfits with backgrounds
+
+1. On each outfit card, set the same **Shared outfit name** for matching clothes, such as `pyjama`, `winter` or `bathrobe`. Leave it blank to use the display name.
+2. For manual group changes, enable **All characters outfit selector** in **Controls** or **Scene tuning → Buttons**. It appears with at least two active characters and offers only names they all share.
+3. On a background card, choose **Linked outfit name**, then enable **Backgrounds → Apply outfits linked to backgrounds**.
+4. To automate using fewer commands, enable background commands and leave outfit commands off. One background command can apply the linked outfits without including an outfit catalog or making an additional model call.
+
+The All selector and background-linked outfit changes start **off**. Automatic linked changes respect outfit locks and descriptions-only mode; manual All selections work like individual manual selections. Duplicate matches for the same character are skipped rather than guessed.
+
+For missing or renamed backgrounds, open **Library → Tools → Review missing backgrounds**. **Discard missing entry** removes stale metadata and saved references; **Relink renamed background** transfers details to an available file. Neither deletes image files.
 
 ### Use gallery images
 
@@ -225,10 +250,16 @@ Image names contain no spaces or colons. Add descriptions and bindings, then opt
 
 See [Gallery documentation](docs/GALLERY.md) for more detail.
 
+### Share scene descriptions without automation
+
+In **Automation**, enable **scene context / automation**, choose **Prompt mode**, then check **Descriptions only — no automation commands**. Select current outfit and/or background descriptions to include, and inspect **Preview context & token count**. Matching group descriptions are included as scene reference too.
+
+This mode does not offer or execute outfit/background commands, including background-linked outfit changes. It can describe locked characters. Turn off Gallery image instructions separately if you also want no image commands.
+
 ### Enable outfit and background automation
 
-1. Add useful outfit and background descriptions in the asset library. Link shared backgrounds to **every active character** who should use them.
-2. Open **Automation**, enable model outfit/background commands and choose which changes are allowed. Background changes have their own switch.
+1. Add useful outfit and background descriptions in the asset library. Link shared backgrounds to **every active character**, or bind them to a named preset whose members are all present.
+2. Open **Automation**, enable **scene context / automation**, leave **Descriptions only** unchecked and choose which changes are allowed. Background changes have their own switch.
 3. Choose **All active, unlocked characters** or **Speaking character only** for outfit context.
 4. Start with **Prompt mode** and inspect **Preview context & token count**. Injection depth defaults to 1; depth 0 is nearest the reply.
 5. Generate a new reply. For API mode, configure a destination and use **Analyze & apply last reply** to test it; enable **Automatically analyze new replies** when ready.
@@ -246,16 +277,13 @@ Automatic API analysis runs once after a solo reply or a completed group round, 
 
 Outfit locks and model background locks block automatic changes while leaving manual selection available. Loading a chat or choosing an existing swipe does not replay historical scene commands. A new generated swipe is a fresh reply and can trigger automation.
 
-## Progress and planned features
+## Planned features
 
-**Available now:** outfit/background Prompt mode, manual and automatic API analysis, all-character/speaker-only outfit scopes, working locks, background descriptions and linked context, a unified asset library, independent Gallery image prompting, configurable outfit/background animations, live animation tuning and outfit ownership safeguards.
-
-**Still planned:**
-
-- Coordinated Gallery image selection through the separate scene-analysis API, alongside outfit and background decisions.
-- Continued improvements to mobile usability, settings organization, group-chat compatibility and real-model reliability.
-
-All-character context supports multiple outfit changes and provides a larger, more stable catalog. Speaker-only context uses fewer outfit tokens and changes with each speaker. Actual caching, speed, cost and command reliability depend on the model and provider.
+- **Clearer documentation:** improve the README and setup guides with shorter instructions and more images placed beside the features they explain.
+- **Better settings and menus:** simplify navigation and make common controls easier to find and adjust, especially on mobile.
+- **More animations and interaction:** expand visual transitions and interactive scene controls.
+- **Token-friendly approaches:** build on 0.3.0’s first iteration of background-linked outfit changes, which can remove the need for separate outfit prompts in suitable workflows. Continue reducing unnecessary context and commands.
+- **Wider testing and bug fixes:** as my own workflow becomes smoother and issues become rarer, broader testing will increasingly depend on more users trying different setups. Reports from other browsers, phones, models and group-chat workflows will help find issues I no longer encounter.
 
 ## Credits and origins
 
