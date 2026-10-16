@@ -268,7 +268,7 @@ It is a modified project built on the work of:
 
 Much of the underlying functionality comes from these original extensions. Credit for that work belongs to their authors and contributors; ImmersiveGroups adds the integration, modifications and new features described above. This project is independently maintained and is not an official release of either original extension.
 
-Thanks also to the [SillyTavern](https://github.com/SillyTavern/SillyTavern) project and its contributors. See [CREDITS.md](CREDITS.md) for additional attribution and dependency notices.
+Thanks also to the [SillyTavern](https://github.com/SillyTavern/SillyTavern) project and its contributors. Sprite ZIP imports use JSZip by Stuart Knightley and contributors. See [CREDITS.md](CREDITS.md) for additional attribution and dependency notices.
 
 ## License
 
