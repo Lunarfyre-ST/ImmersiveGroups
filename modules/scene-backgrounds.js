@@ -6,6 +6,8 @@ import { floatingPanel } from './floating-panel.js';
 import { layoutSettings } from './responsive.js';
 import { setupBackgroundDefaults } from './background-defaults.js';
 import { backgroundChoices, nextLinkedBackground } from './background-model.js';
+import { bindingGroups } from './binding-groups-model.js';
+import { knownBackgrounds, forgetBackground, relinkBackground } from './background-catalog-model.js';
 import * as backgrounds from '../../../../backgrounds.js';
 import { extensionName } from '../constants.js';
 
@@ -20,17 +22,27 @@ export function backgroundSceneContext() {
     const lockedUrl = typeof chat_metadata?.custom_background === 'string' ? chat_metadata.custom_background : '';
     const activeUrl = lockedUrl || backgrounds.background_settings?.url || '';
     const current = lockedUrl ? files.find(file => activeUrl.includes(getBackgroundPath(file))) || null : backgrounds.background_settings?.name || null;
-    const known = [...new Set([...files, ...(settings().backgroundFavorites || []), ...Object.keys(settings().backgroundDescriptions || {})])];
+    const known = knownBackgrounds(files,settings());
     return { current, locked: Boolean(lockedUrl), automationLocked: Boolean(settings().backgroundAutomationLocked), url: activeUrl,
-        library: known.map(file => ({file, available:files.includes(file), description:description(file), characterBindings:[...bindings(file)], favorite:(settings().backgroundFavorites || []).includes(file)})) };
+        library: known.map(file => ({file, available:files.includes(file), description:description(file), characterBindings:[...bindings(file)], presetBindings:own(settings().backgroundGroupBindings,file)&&Array.isArray(settings().backgroundGroupBindings[file])?[...settings().backgroundGroupBindings[file]]:[], favorite:(settings().backgroundFavorites || []).includes(file)})) };
 }
 const el = (tag,text='') => {const n=document.createElement(tag);n.textContent=text;return n;};
 function status(text) { dialog.querySelector('[data-bg-status]').textContent=text; }
 function saveLibrary(){saveSettingsDebounced();window.dispatchEvent(new Event('ig-background-catalog-change'));}
+export function discardBackground(file){
+    if(!filesLoaded)throw new Error('Refresh the background library first.');
+    if(files.includes(file))throw new Error('Only missing entries can be discarded. Delete files through SillyTavern first.');
+    forgetBackground(settings(),file);saveLibrary();favorites();refreshLinkedArrows();
+}
+export function relinkBackgroundEntry(oldFile,newFile){
+    if(!filesLoaded||files.includes(oldFile)||!files.includes(newFile))throw new Error('Refresh the library and select an available replacement for a missing entry.');
+    relinkBackground(settings(),oldFile,newFile);saveLibrary();favorites();refreshLinkedArrows();
+}
 export function updateBackground(file,patch){
     if(!backgroundSceneContext().library.some(entry=>entry.file===file))throw new Error('Background is no longer in the library.');
     if(typeof patch.description==='string')Object.defineProperty(settings().backgroundDescriptions,file,{value:patch.description.slice(0,12000),enumerable:true,writable:true,configurable:true});
     if(Array.isArray(patch.characterBindings))Object.defineProperty(settings().backgroundBindings,file,{value:[...new Set(patch.characterBindings.filter(a=>typeof a==='string'))],enumerable:true,writable:true,configurable:true});
+    if(Array.isArray(patch.presetBindings))Object.defineProperty(settings().backgroundGroupBindings,file,{value:[...new Set(patch.presetBindings.filter(id=>bindingGroups(settings().bindingGroups).some(g=>g.id===id)))],enumerable:true,writable:true,configurable:true});
     if(typeof patch.favorite==='boolean'){const list=settings().backgroundFavorites||[];settings().backgroundFavorites=patch.favorite?[...new Set([...list,file])]:list.filter(f=>f!==file);}
     saveLibrary();favorites();refreshLinkedArrows();
 }
@@ -129,11 +141,13 @@ async function openLibrary() {
 export function setupBackgrounds(services) {
     api=services;const s=settings();if(!Array.isArray(s.backgroundFavorites))s.backgroundFavorites=[];if(!s.backgroundBindings||typeof s.backgroundBindings!=='object'||Array.isArray(s.backgroundBindings))s.backgroundBindings={};
     if(!s.backgroundDescriptions||typeof s.backgroundDescriptions!=='object'||Array.isArray(s.backgroundDescriptions))s.backgroundDescriptions={};
+    if(!s.backgroundGroupBindings||typeof s.backgroundGroupBindings!=='object'||Array.isArray(s.backgroundGroupBindings))s.backgroundGroupBindings={};
     panel=el('div');panel.className='ig-background-controls';
     linkedNav=el('div');linkedNav.id='ig-linked-background-nav';linkedNav.setAttribute('aria-label','Linked background navigation');linkedNav.hidden=true;
     for(const [direction,label] of [[-1,'Previous linked background'],[1,'Next linked background']]){const button=el('button',direction<0?'‹':'›');button.type='button';button.className='prome-stage-button';button.setAttribute('aria-label',label);button.title=label;button.addEventListener('click',()=>{const file=nextLinkedBackground(files,settings(),api.characters().map(c=>c.avatar),linkedCursor||backgroundSceneContext().current,direction);if(file)try{pickBackground(file);}catch(error){console.warn('[ImmersiveGroups]',error.message);}});linkedNav.append(button);}
     document.getElementById('prome-stage-manage').after(linkedNav);
     window.addEventListener('ig-background-catalog-change',refreshLinkedArrows);
+    window.addEventListener('ig-binding-groups-change',()=>{favorites();refreshLinkedArrows();});
     document.addEventListener('click',event=>{const node=event.target.closest?.('.bg_example');if(node){linkedCursor=node.getAttribute('bgfile')||'';requestAnimationFrame(refreshLinkedArrows);}},true);
     const toggle=el('button');toggle.type='button';toggle.className='prome-stage-button';toggle.title='Backgrounds & images';toggle.setAttribute('aria-label','Backgrounds and images');toggle.innerHTML='<i class="fa-solid fa-image" aria-hidden="true"></i>';panel.append(toggle);api.top.append(panel);
     picker=el('section');picker.className='ig-background-popover';picker.setAttribute('aria-label','Backgrounds and images');picker.innerHTML=`<header><strong>Backgrounds &amp; images</strong><button type="button" data-media-close aria-label="Close backgrounds and images">×</button></header>

@@ -88,3 +88,7 @@ The 0.2.8 outfit ownership guards, preserved mismatch quarantine and explicit sh
 The 0.2.8 repository repair also adds merge-marker detection, JSON validation and browser-test syntax checks to the build validation.
 
 HTML-aware image-command recognition uses parse5 by Ivan Nikulin and contributors (MIT), with the entities decoder by Felix Böhm and contributors (BSD-2-Clause). These dependencies are bundled in Gallery; their license texts are included in `licenses/Parse5-MIT.txt` and `licenses/Entities-BSD-2-Clause.txt`. This repair replaces regex-based HTML filtering with parser-based text recognition and prevents excluded examples from joining into new commands.
+
+## 0.2.9 additions — 2026-10-16
+
+Reusable named character groups, group-aware background/image bindings, chat-scoped searchable binding lists, missing-background metadata cleanup and relinking, and descriptions-only prompt context are ImmersiveGroups changes. Outfits retain their individual character ownership. The prior CodeQL repairs remain included.

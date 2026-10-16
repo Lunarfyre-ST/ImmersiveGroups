@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { backgroundIsLinked, expandedBindings } from './binding-groups-model.js';
 export function backgroundChoices(files,settings,activeAvatars,filter='') {
     const own=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k);
     const bindings=file=>own(settings.backgroundBindings,file)&&Array.isArray(settings.backgroundBindings[file])?settings.backgroundBindings[file]:[];
     const selected=filter?[filter]:activeAvatars;
-    const linked=files.filter(file=>selected.length>0&&selected.every(avatar=>bindings(file).includes(avatar)));
-    const starred=[...new Set(Array.isArray(settings.backgroundFavorites)?settings.backgroundFavorites:[])].filter(file=>files.includes(file)&&(!filter||!bindings(file).length||bindings(file).includes(filter)));
+    const presets=file=>own(settings.backgroundGroupBindings,file)&&Array.isArray(settings.backgroundGroupBindings[file])?settings.backgroundGroupBindings[file]:[];
+    const linked=files.filter(file=>filter?expandedBindings(bindings(file),presets(file),settings.bindingGroups).includes(filter):backgroundIsLinked({characterBindings:bindings(file),presetBindings:presets(file)},selected,settings.bindingGroups));
+    const starred=[...new Set(Array.isArray(settings.backgroundFavorites)?settings.backgroundFavorites:[])].filter(file=>files.includes(file)&&(!filter||(!bindings(file).length&&!presets(file).length)||expandedBindings(bindings(file),presets(file),settings.bindingGroups).includes(filter)));
     return {linked,starred};
 }
 

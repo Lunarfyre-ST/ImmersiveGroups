@@ -5,7 +5,7 @@ import { extensionName } from '../constants.js';
 import { getSceneContext, stageCharacters, requestAutomaticOutfit } from './stage-controls.js';
 import { onCatalogChange } from './outfit-catalog.js';
 import { ensureBackgrounds, requestAutomaticBackground } from './scene-backgrounds.js';
-import { automationSettings, SCENE_PROMPT_KEY, buildSceneInventory, buildScenePrompt, messageSpeaker, parseSceneCommands, allowedSceneCommand, stripSceneCommands, stripSceneHistoryPrompt, plannerMessages, recentPlannerMessages, DEFAULT_ALL_INSTRUCTIONS, DEFAULT_SPEAKER_INSTRUCTIONS } from './scene-automation-model.js';
+import { automationSettings, isCommandless, SCENE_PROMPT_KEY, buildSceneInventory, buildScenePrompt, messageSpeaker, parseSceneCommands, allowedSceneCommand, stripSceneCommands, stripSceneHistoryPrompt, plannerMessages, recentPlannerMessages, DEFAULT_ALL_INSTRUCTIONS, DEFAULT_SPEAKER_INSTRUCTIONS } from './scene-automation-model.js';
 import { renderSceneCommandText } from './scene-command-view.js';
 import { callScenePlanner } from './scene-api.js';
 
@@ -31,7 +31,7 @@ function renderCommands(rows){
         if(commandChat!==chat){commandObserver?.disconnect();commandChat=chat;allCommandRows=true;}
         const targets=allCommandRows?chat?.querySelectorAll('.mes_text')||[]:[...commandRows];
         allCommandRows=false;commandRows.clear();commandObserver?.disconnect();
-        try{for(const row of targets)if(row.isConnected)renderSceneCommandText(row,s.enabled&&s.hideCommands);}
+        try{for(const row of targets)if(row.isConnected)renderSceneCommandText(row,s.enabled&&!isCommandless(s)&&s.hideCommands);}
         finally{if(commandChat?.isConnected)commandObserver?.observe(commandChat,{childList:true,subtree:true,characterData:true});}
     });
 }
@@ -52,7 +52,7 @@ function updateInjection(avatar=speaker(),skip=false){
 }
 async function prepare(avatar){if(settings().backgrounds)await ensureBackgrounds();return inventory(avatar);}
 function snapshot(message,index,offered,automatic=false){return {key:chatKey(),epoch,message,index,automatic,text:message.mes,swipe:message.swipe_id,inventory:offered,chatId:getContext().getCurrentChatId?.(),groupId:getContext().groupId};}
-function validSnapshot(snap){const c=getContext(),s=settings();return s.enabled&&(!snap.recent||snap.recent.every(r=>c.chat?.includes(r.message)&&r.message.mes===r.text&&r.message.swipe_id===r.swipe))&&(!snap.automatic||(s.mode==='api'&&s.apiAutoAfterReply&&c.chat?.at(-1)===snap.message))&&snap.epoch===epoch&&snap.key===chatKey()&&c.chat?.[snap.index]===snap.message&&snap.message.mes===snap.text&&snap.message.swipe_id===snap.swipe;}
+function validSnapshot(snap){const c=getContext(),s=settings();return s.enabled&&!isCommandless(s)&&(!snap.recent||snap.recent.every(r=>c.chat?.includes(r.message)&&r.message.mes===r.text&&r.message.swipe_id===r.swipe))&&(!snap.automatic||(s.mode==='api'&&s.apiAutoAfterReply&&c.chat?.at(-1)===snap.message))&&snap.epoch===epoch&&snap.key===chatKey()&&c.chat?.[snap.index]===snap.message&&snap.message.mes===snap.text&&snap.message.swipe_id===snap.swipe;}
 async function execute(text,snap){
     const parsed=parseSceneCommands(text),results=[];
     for(const command of parsed.commands){
@@ -88,7 +88,7 @@ async function begin(type,options={},dryRun=false){
     try{offered=await prepare(avatar);}catch(error){status(`Could not load scene context: ${error.message}`);updateInjection('',true);return;}
     if(marker!==epoch||key!==chatKey())return;
     updateInjection(avatar);
-    if(!dryRun&&(s.mode==='prompt'||s.apiAutoAfterReply))ticket={epoch:marker,key,mode:s.mode,inventory:offered,initial};
+    if(!dryRun&&!isCommandless(s)&&(s.mode==='prompt'||s.apiAutoAfterReply))ticket={epoch:marker,key,mode:s.mode,inventory:offered,initial};
     if(dryRun)status('Prompt preview prepared; scene commands will not execute for a dry run.');
 }
 async function completed(id,type){
@@ -111,7 +111,7 @@ async function completed(id,type){
 }
 async function applyLastReply(){
     if(isGenerating()||apiBusy)throw new Error('Wait for the current generation to finish.');
-    if(!settings().enabled)throw new Error('Enable scene commands first.');
+    if(!settings().enabled||isCommandless(settings()))throw new Error('Enable scene commands and turn off descriptions-only mode first.');
     const last=lastReply();if(!last)throw new Error('No assistant reply is available.');
     const marker=epoch,key=chatKey(),offered=await prepare(messageSpeaker(last.message,stageCharacters()));
     if(marker!==epoch||key!==chatKey())throw new Error('Chat changed.');return execute(last.message.mes,snapshot(last.message,last.index,offered));
@@ -134,7 +134,7 @@ async function runAutomaticApi(){
 }
 async function analyzeLastReply(automatic=null){
     if(isGenerating()||apiBusy)throw new Error('Wait for the current generation or automation request to finish.');
-    const s=settings();if(!s.enabled)throw new Error('Enable scene commands first.');
+    const s=settings();if(!s.enabled||isCommandless(s))throw new Error('Enable scene commands and turn off descriptions-only mode first.');
     if(automatic&&(!s.apiAutoAfterReply||s.mode!=='api'||!validSnapshot(automatic)||lastReply()?.message!==automatic.message))return;
     pendingApi=null;clearTimeout(autoTimer);autoTimer=null;
     const last=lastReply();if(!last)throw new Error('No assistant reply is available.');
@@ -165,15 +165,20 @@ function syncUi(){
     for(const input of panel.querySelectorAll('[data-scene-setting]')){
         const key=input.dataset.sceneSetting;
         if(document.activeElement!==input){if(input.type==='checkbox')input.checked=Boolean(s[key]);else input.value=s[key];}
-        if(key!=='enabled')input.disabled=!s.enabled||(key==='backgroundLinkedOnly'&&!s.backgrounds);
+        if(key!=='enabled')input.disabled=!s.enabled||(key==='backgroundLinkedOnly'&&!s.backgrounds)||(isCommandless(s)&&['backgroundLinkedOnly','hideCommands','includeDescriptions','commandPlacement','instructionsAll','instructionsSpeaker'].includes(key));
+        if(key==='commandless')input.disabled=!s.enabled||s.mode!=='prompt';
     }
+    panel.querySelector('[data-scene-outfits-label]').textContent=isCommandless(s)?' Include current outfit descriptions':' Allow outfit changes';
+    panel.querySelector('[data-scene-backgrounds-label]').textContent=isCommandless(s)?' Include current background description':' Allow background changes';
+    panel.querySelector('[data-scene-commandless-options]').hidden=s.mode!=='prompt';
+    panel.querySelector('[data-scene-setting=scope] option[value=all]').textContent=isCommandless(s)?'All active characters':'All active, unlocked characters';
     const offered=inventory(previewSpeaker||speaker()),background=getSceneContext().backgrounds;
-    panel.querySelector('[data-scene-background-status]').textContent=!s.backgrounds?'Background changes are off.':background.locked||background.automationLocked?'Background changes are locked; no background commands are offered.':`${offered.backgrounds.length} background${offered.backgrounds.length===1?'':'s'} in context${s.backgroundLinkedOnly?' — linked to every active character.':' — shared links and unlinked backgrounds.'}${!offered.backgrounds.length&&s.backgroundLinkedOnly?' No shared links found. Add character bindings in the background library; unlinked backgrounds are not used as a fallback.':''}`;
+    panel.querySelector('[data-scene-background-status]').textContent=isCommandless(s)?'Descriptions only: current outfit and background details are included when selected. Locks prevent changes, not scene reference.':!s.backgrounds?'Background changes are off.':background.locked||background.automationLocked?'Background changes are locked; no background commands are offered.':`${offered.backgrounds.length} background${offered.backgrounds.length===1?'':'s'} in context${s.backgroundLinkedOnly?' — linked to every active character.':' — shared links and unlinked backgrounds.'}${!offered.backgrounds.length&&s.backgroundLinkedOnly?' No shared links found. Add character bindings in the background library; unlinked backgrounds are not used as a fallback.':''}`;
     panel.querySelector('[data-scene-prompt-options]').hidden=s.mode!=='prompt';
     panel.querySelector('[data-scene-api-options]').hidden=s.mode!=='api';
     panel.querySelector('[data-scene-custom-options]').hidden=s.apiTransport!=='custom';
     panel.querySelector('[data-scene-profile-options]').hidden=s.apiTransport!=='profile';
-    for(const button of panel.querySelectorAll('[data-scene-run],[data-scene-apply]'))button.disabled=!s.enabled||apiBusy;
+    for(const button of panel.querySelectorAll('[data-scene-run],[data-scene-apply]'))button.disabled=!s.enabled||isCommandless(s)||apiBusy;
     panel.querySelector('[data-scene-cancel]').disabled=!apiBusy&&!pendingApi;
     panel.querySelector('[data-scene-api-state]').textContent=s.apiAutoAfterReply?`Automatic analysis is on: one call after each solo reply or completed group round, using up to ${s.apiRecentMessages} recent message${s.apiRecentMessages===1?'':'s'}.`:'Automatic analysis is off. Use Analyze & apply last reply to test manually.';
     const select=panel.querySelector('[data-scene-profile]'),profiles=extension_settings.connectionManager?.profiles||[],signature=JSON.stringify(profiles.map(p=>[p.id,p.name]));
@@ -191,19 +196,19 @@ async function previewPrompt(){
         counter.textContent='Counting tokens…';
         if(typeof ctx.getTokenCountAsync==='function'){try{count=await ctx.getTokenCountAsync(text,0);}catch{approx=true;}}
         if(!Number.isFinite(count)){count=Math.ceil(text.length/4);approx=true;}
-        if(serial!==tokenSerial||key!==chatKey())return;counter.textContent=`${approx?'Approximately ':''}${count} tokens${approx?' (character estimate)':' (current SillyTavern tokenizer)'}. ${offered.characters.length} outfit targets; ${offered.backgrounds.length} backgrounds.${s.enabled?'':' Preview only — automation is off.'}`;
+        if(serial!==tokenSerial||key!==chatKey())return;counter.textContent=`${approx?'Approximately ':''}${count} tokens${approx?' (character estimate)':' (current SillyTavern tokenizer)'}. ${isCommandless(s)?`${offered.descriptionContext?.characters.length||0} current outfits; ${offered.descriptionContext?.background?1:0} current backgrounds (reference only)`: `${offered.characters.length} outfit targets; ${offered.backgrounds.length} backgrounds` }.${s.enabled?'':' Preview only — automation is off.'}`;
     }catch(error){if(serial===tokenSerial)panel.querySelector('[data-scene-preview]').textContent=error.message;}
 }
 function schedulePreview(){clearTimeout(previewTimer);previewTimer=setTimeout(()=>{syncUi();if(panel.querySelector('[data-scene-preview-section]').open)previewPrompt();},120);}
 function loadBackgroundContext(){if(settings().enabled&&settings().backgrounds)ensureBackgrounds().then(()=>{updateInjection();syncUi();schedulePreview();}).catch(error=>status(`Background context: ${error.message}`));}
 function setupUi(){
     panel=document.createElement('section');panel.id='ig-scene-automation';panel.className='ig-gallery-section ig-scene-automation';
-    panel.innerHTML=`<h4>Scene commands &amp; context</h4><label><input type="checkbox" data-scene-setting="enabled"> Enable model outfit / background commands</label><small>Off by default. Only fresh replies execute commands automatically; opening a chat does not replay its history. Manual outfit and background selectors keep working.</small>
+    panel.innerHTML=`<h4>Scene commands &amp; context</h4><label><input type="checkbox" data-scene-setting="enabled"> Enable scene context / automation</label><small>Off by default. Only fresh replies execute commands automatically; opening a chat does not replay its history. Manual outfit and background selectors keep working.</small>
     <div class="ig-settings-grid"><label>Mode<select data-scene-setting="mode"><option value="prompt">Prompt — commands in the RP reply</option><option value="api">API — separate scene analysis</option></select></label><label>Outfit context<select data-scene-setting="scope"><option value="all">All active, unlocked characters</option><option value="speaker">Speaking character only</option></select></label></div>
-    <label><input type="checkbox" data-scene-setting="outfits"> Allow outfit changes</label><label><input type="checkbox" data-scene-setting="backgrounds"> Allow background changes</label>
-    <div id="ig-scene-gallery-prompt"></div><div data-scene-background-options><label><input type="checkbox" data-scene-setting="backgroundLinkedOnly"> Linked backgrounds only (default)</label><small>Only backgrounds linked to every active character are offered to the model, including in speaking-character-only outfit mode. Uncheck to also include unlinked backgrounds. Stars affect sorting, not eligibility. Manual background choices remain available.</small><small data-scene-background-status role="status"></small><button type="button" class="menu_button" data-scene-background-library>Manage background links &amp; descriptions</button></div>
+    <div data-scene-commandless-options><label><input type="checkbox" data-scene-setting="commandless"> Descriptions only — no automation commands (Prompt mode)</label><small>Shares current worn outfits, current background and matching named groups as scene reference. The outfit/background selections below control what is included. Locked characters remain described. No scene commands execute in this mode. Gallery image instructions keep their own switch.</small></div><label><input type="checkbox" data-scene-setting="outfits"><span data-scene-outfits-label> Allow outfit changes</span></label><label><input type="checkbox" data-scene-setting="backgrounds"><span data-scene-backgrounds-label> Allow background changes</span></label>
+    <div id="ig-scene-gallery-prompt"></div><div data-scene-background-options><label><input type="checkbox" data-scene-setting="backgroundLinkedOnly"> Linked backgrounds only (default)</label><small>Offer backgrounds with individual links covering every active character, or a named group whose saved members are all present. This also applies in speaking-character-only outfit mode. Uncheck to also include unlinked backgrounds. Stars affect sorting, not eligibility. Manual background choices remain available.</small><small data-scene-background-status role="status"></small><button type="button" class="menu_button" data-scene-background-library>Manage background links &amp; descriptions</button></div>
     <label><input type="checkbox" data-scene-setting="hideCommands"> Hide scene commands in displayed messages</label><label><input type="checkbox" data-scene-setting="includeDescriptions"> Include outfit / background descriptions</label>
-    <div data-scene-prompt-options><label>Scene command placement<select data-scene-setting="commandPlacement"><option value="before">Always before</option><option value="after">Always after</option><option value="auto">Automatic — let the LLM decide</option></select></label><label>Injection depth<input class="text_pole" type="number" min="0" max="10000" step="1" data-scene-setting="depth"></label><small>Inserted as a system message through SillyTavern’s extension-prompt hook. Depth 0 is nearest the reply; default 1. A movable Prompt Manager entry is planned.</small></div>
+    <div data-scene-prompt-options><label>Scene command placement<select data-scene-setting="commandPlacement"><option value="before">Always before</option><option value="after">Always after</option><option value="auto">Automatic — let the LLM decide</option></select></label><label>Injection depth<input class="text_pole" type="number" min="0" max="10000" step="1" data-scene-setting="depth"></label><small>Inserted as a system message through SillyTavern’s extension-prompt hook. Depth 0 is nearest the reply; default 1. The preview below shows the injected text and token count.</small></div>
     <details><summary>Prompt instructions &amp; catalog size</summary><label>All-character outfit instructions<textarea class="text_pole" rows="3" maxlength="6000" data-scene-setting="instructionsAll"></textarea></label><label>Speaker-only outfit instructions<textarea class="text_pole" rows="3" maxlength="6000" data-scene-setting="instructionsSpeaker"></textarea></label><label>Outfits per character<input type="number" class="text_pole" min="1" max="100" data-scene-setting="maxOutfits"></label><label>Backgrounds in context<input type="number" class="text_pole" min="1" max="100" data-scene-setting="maxBackgrounds"></label><button type="button" class="menu_button" data-scene-reset-instructions>Restore scene instructions</button></details>
     <details data-scene-preview-section><summary>Preview context &amp; token count</summary><label>Preview speaker<select data-scene-speaker aria-label="Scene preview speaker"></select></label><small>Preview only. Actual group generations use the member SillyTavern drafted; API trials use the last reply’s author.</small><button type="button" class="menu_button" data-scene-preview-refresh>Refresh preview</button><small data-scene-tokens></small><pre data-scene-preview></pre></details>
     <div data-scene-api-options><h4>Separate API analysis</h4><small>Sends the selected number of recent messages and the scene catalog, then applies valid returned commands. The final assistant reply determines the resulting scene. Your active connection profile stays unchanged.</small><label><input type="checkbox" data-scene-setting="apiAutoAfterReply"> Automatically analyze new replies</label><small data-scene-api-state></small><small>Off by default. Waits for roleplay generation to finish; runs once per group round. Opening chats, selecting existing swipes, quiet generations and prompt previews do not trigger a call. Uses the destination configured below.</small>
@@ -218,7 +223,7 @@ function setupUi(){
         root().sceneAutomation=automationSettings({...settings(),[key]:value});saveSettingsDebounced();cancel();syncUi();updateInjection();renderCommands();schedulePreview();
         window.dispatchEvent(new Event('ig-automation-state-change'));
         if(['enabled','backgrounds'].includes(key))loadBackgroundContext();
-        if(key==='enabled')status(settings().enabled?'Scene commands enabled.':'Scene automation is off.');
+        if(['enabled','commandless','mode'].includes(key))status(!settings().enabled?'Scene automation is off.':isCommandless(settings())?'Descriptions-only scene context enabled. No scene commands will execute.':'Scene commands enabled.');
     });
     panel.querySelector('[data-scene-background-library]').addEventListener('click',()=>document.getElementById('ig-open-backgrounds')?.click());
     panel.querySelector('[data-scene-speaker]').addEventListener('change',event=>{previewSpeaker=event.target.value;previewPrompt();});
@@ -244,16 +249,16 @@ export function setupSceneAutomation(){
     for(const name of ['MESSAGE_SWIPED','MESSAGE_EDITED','MESSAGE_DELETED'])if(event_types[name])eventSource.on(event_types[name],()=>{cancel();renderCommands();updateInjection();schedulePreview();});
     if(event_types.SETTINGS_UPDATED)eventSource.on(event_types.SETTINGS_UPDATED,()=>{updateInjection();schedulePreview();renderCommands();});
     if(event_types.CHAT_COMPLETION_PROMPT_READY)eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY,data=>{
-        if(!settings().enabled||apiBusy)return;
+        if(!settings().enabled||isCommandless(settings())||apiBusy)return;
         const key=Array.isArray(data?.chat)?'chat':Array.isArray(data?.messages)?'messages':null;if(!key)return;
         data[key]=data[key].map(message=>{
             if(message.role==='system'||message.role==='developer')return message;
             return {...message,content:typeof message.content==='string'?stripSceneCommands(message.content):Array.isArray(message.content)?message.content.map(part=>part?.type==='text'?{...part,text:stripSceneCommands(part.text)}:part):message.content};
         });
     });
-    if(event_types.GENERATE_AFTER_COMBINE_PROMPTS)eventSource.on(event_types.GENERATE_AFTER_COMBINE_PROMPTS,data=>{if(settings().enabled&&!apiBusy&&typeof data?.prompt==='string')data.prompt=stripSceneHistoryPrompt(data.prompt);});
+    if(event_types.GENERATE_AFTER_COMBINE_PROMPTS)eventSource.on(event_types.GENERATE_AFTER_COMBINE_PROMPTS,data=>{if(settings().enabled&&!isCommandless(settings())&&!apiBusy&&typeof data?.prompt==='string')data.prompt=stripSceneHistoryPrompt(data.prompt);});
     onCatalogChange(()=>{updateInjection();schedulePreview();});
-    window.addEventListener('ig-background-catalog-change',()=>{updateInjection();schedulePreview();});
+    for(const event of ['ig-background-catalog-change','ig-binding-groups-change'])window.addEventListener(event,()=>{cancel();updateInjection();schedulePreview();});
     window.addEventListener('ig-layout-change',()=>{updateInjection();schedulePreview();renderCommands();});
     commandObserver=new MutationObserver(changedCommandRows);
     updateInjection();renderCommands();loadBackgroundContext();

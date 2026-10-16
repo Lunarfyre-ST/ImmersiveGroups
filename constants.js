@@ -169,6 +169,8 @@ export const defaultSettings = {
     backgroundAutomationLocked: false,
     backgroundFavorites: [],
     backgroundBindings: {},
+    backgroundGroupBindings: {},
+    bindingGroups: [],
     backgroundDescriptions: {},
     speakerDimThird: 50,
     speakerDimFourth: 75,

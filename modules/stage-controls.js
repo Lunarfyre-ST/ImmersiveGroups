@@ -331,6 +331,7 @@ function bindSettings() {
 }
 export function getSceneContext() {
     return { chatId:getContext().getCurrentChatId?.(),groupId:getContext().groupId,
+        bindingGroups:config().bindingGroups||[],
         capabilities:{outfits:true,backgrounds:true,localImages:false},
         characters:sceneOutfitContext(stageCharacters(),currentFolder),
         backgrounds:backgroundSceneContext() };

@@ -8,7 +8,9 @@ import { taskQueue } from './task-queue.js';
 import { extensionName } from '../constants.js';
 import { catalogFor, setCharacterColors, outfitOptions, hiddenOutfit, editOutfit, removeOutfit, moveOutfit, rememberOutfit, discoverOutfits, importFolderNames, onCatalogChange, validFolder, quarantinedOutfits } from './outfit-catalog.js';
 import { selectProfileCharacter } from './height-profiles.js';
-import { backgroundSceneContext, getBackgroundPath, ensureBackgrounds, readBackgrounds, updateBackground, pickBackground } from './scene-backgrounds.js';
+import { backgroundSceneContext, getBackgroundPath, ensureBackgrounds, readBackgrounds, updateBackground, pickBackground, discardBackground, relinkBackgroundEntry } from './scene-backgrounds.js';
+import { bindingGroups, saveBindingGroup, removeBindingGroup, expandedBindings, backgroundIsEligible, backgroundIsLinked } from './binding-groups-model.js';
+import { saveSettingsDebounced } from '../../../../../script.js';
 
 export function setupSceneLibrary(services){
     const characters=()=>getContext().characters?.filter(c=>c?.avatar)||[];
@@ -32,9 +34,13 @@ export function setupSceneLibrary(services){
         const records=Object.keys(s.outfitCatalog||{}).map(avatar=>known.find(c=>c.avatar===avatar)||{avatar,name:avatar.replace(/\.[^/.]+$/,'')+' (unavailable)'});
         const outfits=records.flatMap(c=>outfitOptions(c,true).map(entry=>({kind:'outfit',id:JSON.stringify(['outfit',c.avatar,entry.folder]),name:entry.label,description:entry.description||'',folder:entry.folder,avatar:c.avatar,entity:c.name,characterBindings:[c.avatar],fontColor:entry.fontColor||'',basic:entry.folder===c.name||entry.folder===c.avatar.replace(/\.[^/.]+$/,''),imageState:assets.get(entry.folder)?.imageState||'unchecked',hasImages:assets.get(entry.folder)?.hasImages??null,hidden:hiddenOutfit(c,entry),inChat:present.has(c.avatar),current:present.has(c.avatar)&&services.currentFolder(c)===entry.folder})));
         const background=backgroundSceneContext(),avatars=[...present];
-        return [...outfits,...background.library.map(entry=>({kind:'background',id:JSON.stringify(['background',entry.file]),name:entry.file,entity:'Backgrounds',src:getBackgroundPath(entry.file),...entry,inChat:entry.available&&(!entry.characterBindings.length||(avatars.length>0&&avatars.every(a=>entry.characterBindings.includes(a)))),linked:avatars.length>0&&avatars.every(a=>entry.characterBindings.includes(a)),current:background.current===entry.file}))];
+        return [...outfits,...background.library.map(entry=>({kind:'background',id:JSON.stringify(['background',entry.file]),name:entry.file,entity:'Backgrounds',src:entry.available?getBackgroundPath(entry.file):'',...entry,filterCharacters:expandedBindings(entry.characterBindings,entry.presetBindings,s.bindingGroups),inChat:backgroundIsEligible(entry,avatars,s.bindingGroups,false),linked:backgroundIsLinked(entry,avatars,s.bindingGroups),current:background.current===entry.file}))];
     };
     const api=Object.freeze({getEntries,getCharacters:characters,getActiveAvatars:()=>[...active()],outfitRoot:avatar=>{const c=characters().find(c=>c.avatar===avatar);return c?(active().has(avatar)?services.currentFolder(c).split('/')[0]:c.name):'';},selectCharacter:selectProfileCharacter,
+        getGroups:()=>bindingGroups(extension_settings[extensionName].bindingGroups),
+        saveGroup:patch=>{const result=saveBindingGroup(extension_settings[extensionName],patch);saveSettingsDebounced();window.dispatchEvent(new Event('ig-binding-groups-change'));changed();return result;},
+        removeGroup:id=>{removeBindingGroup(extension_settings[extensionName],id);saveSettingsDebounced();window.dispatchEvent(new Event('ig-binding-groups-change'));changed();},
+        discardBackground,relinkBackground:relinkBackgroundEntry,
         refresh:force=>{if(force)assets.clear();return force?readBackgrounds():ensureBackgrounds();},
         checkOutfitImages:async(force=false)=>{if(force)assets.clear();const folders=[...new Set(getEntries().filter(e=>e.kind==='outfit').map(e=>e.folder))];let index=0;async function worker(){while(index<folders.length)await inspectOutfit(folders[index++]);}await Promise.all([worker(),worker(),worker()]);},
         getColors:avatar=>({...catalogFor(avatar).colors}),setColors:setCharacterColors,

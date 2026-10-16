@@ -205,9 +205,12 @@ export function importFolderNames(character, files, active = '') {
     if (added) changed(); return added;
 }
 export function sceneOutfitContext(characters, currentFolder) {
-    return characters.map(character => ({ avatar: character.avatar, name: character.name,
-        currentOutfit: currentFolder(character), outfitLocked: Boolean(catalogFor(character.avatar).locked),
-        outfits: outfitOptions(character).map(({folder,label,description}) => ({folder,name:label,description})) }));
+    return characters.map(character => {
+        const folder=currentFolder(character),current=outfitOptions(character,true).find(o=>o.folder===folder);
+        return { avatar: character.avatar, name: character.name,
+        currentOutfit: folder,currentOutfitName:current?.label||'',currentOutfitDescription:current?.description||'',outfitLocked: Boolean(catalogFor(character.avatar).locked),
+        outfits: outfitOptions(character).map(({folder,label,description}) => ({folder,name:label,description})) };
+    });
 }
 
 export function setCharacterColors(avatar, patch) {
