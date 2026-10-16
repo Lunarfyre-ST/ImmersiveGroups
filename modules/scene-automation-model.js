@@ -82,10 +82,16 @@ export function parseSceneCommands(text){
     const commands=[],issues=[];let fence='',reasoning=0,comment=false,count=0;
     for(const line of String(text||'').replace(/\r\n/g,'\n').split('\n')){
         const trimmed=line.trim(),marker=trimmed.match(/^(`{3,}|~{3,})/);
-        if(marker){if(!fence)fence=marker[1][0];else if(fence===marker[1][0])fence='';continue;}
+        if(marker&&!reasoning&&!comment){if(!fence)fence=marker[1][0];else if(fence===marker[1][0])fence='';continue;}
         if(fence)continue;
         const blocked=reasoning>0||comment;
-        for(const tag of line.matchAll(/<(\/?)(think|analysis)\b[^>]*>|<!--|-->/gi)){if(tag[0]==='<!--')comment=true;else if(tag[0]==='-->')comment=false;else reasoning=Math.max(0,reasoning+(tag[1]?-1:1));}
+        // HTML accepts both comment endings. Tags/fences inside comments are
+        // inert and must not change the surrounding reasoning/fence state.
+        for(const tag of line.matchAll(/<(\/?)(think|analysis)\b[^>]*>|<!--|--!?>/gi)){
+            if(tag[0]==='<!--')comment=true;
+            else if(tag[0]==='-->'||tag[0]==='--!>')comment=false;
+            else if(!comment)reasoning=Math.max(0,reasoning+(tag[1]?-1:1));
+        }
         if(blocked||reasoning||comment||!/^::(?:outfit|background)\b/.test(trimmed))continue;
         if(++count>12){issues.push('Too many scene commands.');break;}
         if(trimmed.length>2000){issues.push('Scene command is too long.');continue;}

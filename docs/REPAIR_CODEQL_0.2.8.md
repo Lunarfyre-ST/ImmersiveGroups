@@ -14,7 +14,9 @@ Excluded Markdown examples become barriers rather than deleted text, preventing 
 
 The rebuilt Gallery bundle contains parse5 and its entities decoder. Both licenses, dependency declarations and the updated lockfile are included. No npm installation is needed to use the repaired extension.
 
-Validation: local build/import checks, all 64 unit tests, deliberate conflict/syntax fixtures that must fail validation, and browser regressions for malformed HTML, fragment joining, inert parsing, image limits and formatting. GitHub's plugin does not expose the linked security-alert pages; the fix addresses the matching source patterns, and a new hosted CodeQL scan is required after pushing to confirm alert closure.
+The remaining alert #1 was subsequently identified at `modules/scene-automation-model.js`, in the separate scene-command parser. Its comment token recognizer now handles both `-->` and `--!>` endings. Reasoning tags and Markdown fences inside comments no longer change the surrounding parser state. Commands inside comments or reasoning remain ignored, and standalone commands after a closed comment remain eligible. This file is included in this revised repair ZIP.
+
+Validation: local build/import checks, all 66 unit tests, deliberate conflict/syntax fixtures that must fail validation, and browser regressions for malformed HTML, fragment joining, inert parsing, image limits, formatting and scene-command comment handling. The exact remaining alert location was supplied by the user and checked against the current repository source. A new hosted CodeQL scan is required after pushing to confirm alert closure.
 
 ## Restored files
 

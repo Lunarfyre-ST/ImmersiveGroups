@@ -2,6 +2,16 @@ const assert=require('assert/strict'),path=require('path'),{build}=require('esbu
 module.exports=async function verifySanitization(context,url){
  const page=await context.newPage(),errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.url().includes('/parser-probe/'))requests.push(r.url());});
  await page.goto(url);await page.waitForFunction(()=>window.ImmersiveGroups?.getStatus().status==='ready');
+ const sceneChecks=await page.evaluate(async()=>{
+  const {parseSceneCommands,backgroundCommand,outfitCommand}=await import('/scripts/extensions/third-party/ImmersiveGroups/modules/scene-automation-model.js');
+  const visible=backgroundCommand('town.jpg'),hidden=outfitCommand('alex.png','Alex/outfit2'),before=JSON.stringify(ctx.chat);
+  return {endings:['-->','--!>'].map(end=>parseSceneCommands(`<!--\n${hidden}\n${end}\n${visible}`)),
+   inert:parseSceneCommands(`<!--\n<think>\n\x60\x60\x60\n${hidden}\n--!>\n${visible}`),
+   reasoning:parseSceneCommands(`<analysis>\n<!--\n</analysis>\n--!>\n${hidden}\n</analysis>\n${visible}`),
+   untouched:JSON.stringify(ctx.chat)===before};
+ });
+ const expected={commands:[{type:'background',file:'town.jpg'}],issues:[]};
+ assert.deepEqual(sceneChecks,{endings:[expected,expected],inert:expected,reasoning:expected,untouched:true});
  const bundle=await build({entryPoints:[path.resolve(__dirname,'../../gallery/src/gallery-model.js')],bundle:true,write:false,format:'iife',globalName:'IGSecurityModel',platform:'browser',target:'es2022'});
  await page.addScriptTag({content:bundle.outputFiles[0].text});
  const checks=await page.evaluate(()=>{
