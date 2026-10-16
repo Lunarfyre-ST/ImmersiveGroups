@@ -18,6 +18,14 @@ test('migration is idempotent and existing combined preferences win',()=>{
 test('fresh install has an independent gallery and leaves native settings alone',()=>{
     const settings={disabledExtensions:['third-party/Other'],expressionOverrides:[{name:'A',path:'A/outfit1'}]};const result=migrateSettings(settings);assert.deepEqual(result.settings.gallery,{});assert.deepEqual(settings.expressionOverrides,[{name:'A',path:'A/outfit1'}]);assert.deepEqual(settings.disabledExtensions,['third-party/Other']);
 });
+test('new scene setups use the current height schema; existing profiles still migrate',()=>{
+    assert.equal(migrateSettings({}).settings.heightSchemaVersion,3);
+    assert.equal(migrateSettings({'SillyTavern-LocalImage':{enabled:true}}).settings.heightSchemaVersion,3);
+    assert.equal(migrateSettings({'Prome-VN-Extension':{heightProfiles:{a:{scalePercent:75}}}}).settings.heightSchemaVersion,undefined);
+    const settings={ImmersiveGroups:{schemaVersion:1,heightSchemaVersion:2,heightProfiles:{a:{heightCm:180}}}};
+    assert.equal(migrateSettings(settings).settings.heightSchemaVersion,2);
+    assert.equal(settings.ImmersiveGroups.heightProfiles.a.heightCm,180);
+});
 test('special gallery/character names stay own properties',()=>{
     const old=JSON.parse('{"heightProfiles":{"__proto__":{"scalePercent":75}},"__proto__":{"custom":true}}');const settings={'Prome-VN-Extension':old};const {settings:root}=migrateSettings(settings);assert.equal(Object.getPrototypeOf(root),Object.prototype);assert.equal(root.heightProfiles.__proto__.scalePercent,75);assert.equal({}.custom,undefined);
 });

@@ -7,6 +7,8 @@ ImmersiveGroups is an independent modified project combining two SillyTavern ext
 | Prome Visual Novel Extension | Bronya-Rand; the original UI also credits Prometheus | 1.2.4 | https://github.com/Bronya-Rand/Prome-VN-Extension |
 | SillyTavern-LocalImage | mechamarmot | 1.6.0 | https://github.com/mechamarmot/SillyTavern-LocalImage |
 
+ImmersiveGroups is maintained by [Lunarfyre-ST](https://github.com/Lunarfyre-ST). Combined project and source: [Lunarfyre-ST/ImmersiveGroups](https://github.com/Lunarfyre-ST/ImmersiveGroups).
+
 ## Scene subsystem
 
 `prome.js` is based on Prome's original entry point. `constants.js`, `listeners.js`, `utils.js`, scene modules, `html/` and `styles/scene.css` retain or extend its behavior. Later modifications include chat presentation safeguards, Quick Reply limits, Sheld tuning, sprite height profiles, stable outfit swaps, outfit metadata/colors, responsive controls, ranked dimming and background favorites.
@@ -60,3 +62,11 @@ Paired bottom controls, muted-member desktop visibility, configurable command pl
 ## 0.2.3 additions — 2026-10-16
 
 Compact background navigation beside Scene tuning, explicit checkbox labels, persistent Basic-outfit library filtering, verified outfit-image filters and visible directory scanning are ImmersiveGroups changes.
+
+## 0.2.4 additions — 2026-10-16
+
+The library navigation redesign, dedicated outfit form with optional ZIP upload, category-specific filter panels, separate maintenance and appearance panels, responsive whole-button sizing and clearer card actions are ImmersiveGroups changes.
+
+## 0.2.5 additions — 2026-10-16
+
+Fresh-install defaults, automation lock status notices, 165 cm character defaults with legacy-conversion safeguards, import guidance and the reorganized sprite-shadow panel are ImmersiveGroups changes maintained by Lunarfyre-ST and contributors.
