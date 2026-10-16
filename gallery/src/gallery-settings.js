@@ -16,10 +16,11 @@ function number(parent,label,object,key,min,max,fallback){
 function section(title){const n=el('section');n.className='ig-gallery-section';n.append(el('h4',title));content.append(n);return n;}
 function buildContent(){
     const s=api.getSettings();content=el('div');content.className='ig-gallery-settings';content.id='ig-gallery-settings-content';
-    const intro=el('div');intro.className='ig-gallery-intro';intro.append(el('h3','Gallery'),el('p','Shared and character images, scene descriptions, prompt guidance and display limits.'));
+    const intro=el('div');intro.className='ig-gallery-intro';intro.append(el('h3','Gallery'),el('p','One asset library for outfits, backgrounds and images; Gallery image display and loading limits are configured here.'));
     const promptLink=el('button','Image prompt settings → Automation');promptLink.type='button';promptLink.className='menu_button';promptLink.addEventListener('click',()=>{const tab=document.getElementById('ig-tab-context');if(tab)tab.click();else galleryPrompt.scrollIntoView({block:'start'});});intro.append(promptLink);content.append(intro);
     const prompt=section('Gallery image prompt');galleryPrompt=prompt;prompt.id='ig-gallery-model-prompt';checkbox(prompt,' Enable image instructions and the available-image list',s.prompt,'enabled');
     prompt.append(el('small','Available now. Off by default. Uses your current chat, image descriptions and character/group bindings. Copies exact commands into model context before generation; no extra API call.'));
+    const position=el('label','Image command placement'),select=el('select');select.setAttribute('aria-label','Image command placement');select.dataset.gallerySetting='placement';for(const [value,label] of [['before','Always before'],['after','Always after'],['auto','Automatic — let the LLM decide']])select.append(new Option(label,value));select.value=s.prompt.placement||'after';select.addEventListener('change',()=>{s.prompt.placement=select.value;api.saveSettings();});position.append(select);prompt.append(position);
     const advanced=el('details');advanced.className='ig-gallery-prompt-advanced';advanced.append(el('summary','Instructions & prompt preview'));prompt.append(advanced);
     const instructions=el('textarea');instructions.className='text_pole';instructions.rows=7;instructions.value=s.prompt.instructions;instructions.setAttribute('aria-label','Gallery model instructions');instructions.dataset.gallerySetting='instructions';
     instructions.addEventListener('change',()=>{s.prompt.instructions=instructions.value.slice(0,12000)||DEFAULT_INSTRUCTIONS;instructions.value=s.prompt.instructions;api.saveSettings();});advanced.append(instructions);
@@ -43,7 +44,7 @@ function attach(){
         if(!button){button=el('button','Gallery');button.type='button';button.id='ig-tab-gallery';button.dataset.igTab='gallery';button.setAttribute('role','tab');button.setAttribute('aria-selected','false');button.setAttribute('aria-controls','ig-pane-gallery');button.tabIndex=-1;nav.insertBefore(button,nav.querySelector('[data-ig-tab="context"]')||nav.querySelector('[data-ig-tab="about"]')); }
         if(!pane){pane=el('section');pane.id='ig-pane-gallery';pane.dataset.igPane='gallery';pane.setAttribute('role','tabpanel');pane.setAttribute('aria-labelledby','ig-tab-gallery');pane.tabIndex=0;pane.hidden=true;panes.append(pane);}
         if(content.parentElement!==pane)pane.append(content);
-        const automation=shell.querySelector('#ig-automation-gallery')||content;if(galleryPrompt.parentElement!==automation)automation.append(galleryPrompt);
+        const automation=shell.querySelector('#ig-scene-gallery-prompt')||shell.querySelector('#ig-automation-gallery')||content;if(galleryPrompt.parentElement!==automation)automation.append(galleryPrompt);
         document.getElementById('localimage-extension-settings')?.remove();
     }else if(!content.isConnected){
         const target=document.getElementById('extensions_settings')||document.getElementById('extensions_settings2');if(!target)return;
@@ -57,7 +58,7 @@ export function installGallerySettings(services){
     function syncDependencies(){
         const s=api.getSettings();
         for(const [toggle,key] of [['repeatEnabled','cooldownRounds'],['perMessageEnabled','maxPerMessage'],['perRoundEnabled','maxPerRound']]){const input=content.querySelector(`[data-gallery-setting="${key}"]`);if(input)input.disabled=!s.limits[toggle];}
-        for(const input of galleryPrompt.querySelectorAll('textarea,input[type=number]'))input.disabled=!s.prompt.enabled;
+        for(const input of galleryPrompt.querySelectorAll('textarea,input[type=number],select'))input.disabled=!s.prompt.enabled;
     }
     content.addEventListener('change',syncDependencies);galleryPrompt.addEventListener('change',syncDependencies);syncDependencies();
     if(!mountObserver){let queued=false;mountObserver=new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;attach();});});mountObserver.observe(document.body,{childList:true,subtree:true});}

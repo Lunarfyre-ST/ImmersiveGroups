@@ -46,7 +46,7 @@ function render() {
         actions.append(action('Move up','fa-chevron-up',()=>{moveOutfit(c.avatar,entry.folder,-1);render();}),action('Move down','fa-chevron-down',()=>{moveOutfit(c.avatar,entry.folder,1);render();}),action('Remove from catalog (keeps files)','fa-trash-can',()=>{removeOutfit(c.avatar,entry.folder);render();}));
         main.append(visible,name,actions);
         const path = el('code','prome-outfit-path',entry.folder);
-        const extra = el('details','prome-outfit-note'); extra.append(el('summary','','Scene description (for future automation)'));
+        const extra = el('div','prome-outfit-note'); extra.append(el('label','','Scene description (for model context)'));
         const note = el('textarea','text_pole'); note.value=entry.description||''; note.maxLength=1000; note.rows=2; note.setAttribute('aria-label','Outfit scene description'); note.placeholder='When this outfit fits the scene…';
         note.addEventListener('change',()=>editOutfit(c.avatar,entry.folder,{description:note.value})); extra.append(note);
         const font=el('label','ig-color-field','Outfit font color'),color=el('input');color.type='color';color.value=entry.fontColor||'#e8e9ee';color.setAttribute('aria-label','Outfit font color');color.addEventListener('input',()=>editOutfit(c.avatar,entry.folder,{fontColor:color.value}));
@@ -59,6 +59,7 @@ export function openOutfitEditor(avatar = '') {
     if (!dialog) return;
     if(avatar)selectProfileCharacter(avatar);
     selected = document.getElementById('prome-profile-character')?.value || avatar || selected;
+    if(window.ImmersiveGroupsGallery?.openLibrary)return window.ImmersiveGroupsGallery.openLibrary({type:'outfit',character:selected});
     render(); status('');
     if (!dialog.open) dialog.showModal();
     dialog.scrollTop = 0;
@@ -71,7 +72,7 @@ export function setupOutfitEditor(api) {
     dialog.innerHTML=`<div class="prome-outfit-dialog-header"><div><h3>Outfit library</h3><small>Display names, visibility and scene notes</small></div><button type="button" class="prome-icon-button" data-editor-close aria-label="Close outfit library"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>
     <div class="prome-outfit-dialog-body"><label class="prome-editor-character">Character <select data-editor-character></select><small data-editor-count></small></label>
     <div class="prome-outfit-tools"><button type="button" class="menu_button" data-editor-scan data-editor-requires-character>Find outfits</button><button type="button" class="menu_button" data-editor-import data-editor-requires-character>Import folder names</button><input type="file" webkitdirectory multiple data-editor-files hidden></div>
-    <p class="prome-help">Find outfits checks common names. Import folder names reads custom names from your character’s sprite folder. No images are uploaded.</p>
+    <p class="prome-help">Outfits are saved per character across all chats and groups. Find outfits checks common names. Import folder names reads custom names from your character’s sprite folder. No images are uploaded.</p>
     <p data-editor-status class="prome-editor-status" role="status"></p><p data-editor-empty>No active character.</p><div data-editor-colors class="ig-editor-colors"></div><div data-editor-list class="prome-outfit-editor-list"></div>
     <form data-editor-add class="prome-outfit-add"><h4>Add an outfit</h4><label>Sprite folder<input class="text_pole" data-editor-folder required maxlength="200" placeholder="Nerys/outfit3"></label><label>Display name<input class="text_pole" data-editor-label maxlength="80" placeholder="Pyjamas"></label><button type="submit" class="menu_button" data-editor-requires-character>Add folder</button></form>
     <small class="prome-help">Renaming changes the display label. Hiding and removing entries keep the files on disk. Hidden outfits remain available through existing Quick Replies; removed entries stay excluded from automatic discovery.</small></div>`;

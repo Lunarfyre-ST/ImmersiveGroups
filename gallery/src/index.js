@@ -4,9 +4,10 @@
 import { createRoot } from 'react-dom/client';
 import Gallery from './Gallery';
 import GroupGallery from './GroupGallery';
-import GalleryStudio from './GalleryStudio';
+import GalleryStudio from './UnifiedLibrary';
 import { DEFAULT_INSTRUCTIONS, PROMPT_DEFAULTS, LIMIT_DEFAULTS, catalogEntries, availableInChat, saveCatalogEntry, buildDisplayPolicy, buildGalleryPrompt, safeImageSource } from './gallery-model';
 import { installGallerySettings } from './gallery-settings';
+import { mountQuickImageMenu } from './quick-image-menu';
 
 const EXTENSION_NAME = 'ImmersiveGroups Gallery';
 const PROMPT_KEY = 'ImmersiveGroups.Gallery';
@@ -16,7 +17,7 @@ function gallerySettingsRoot(context) {
 }
 const GENERAL_KEY = '__localimage_general__';
 const GENERAL_FOLDER = 'LocalImage-General';
-const UI_DEFAULTS = { showFloatingButton: true, showCharacterButton: true, showPersonaButton: true, buttonSize: 40, buttonSide: 'right', buttonOffsetX: 20, buttonOffsetBottom: 100, imageMaxHeight: 0 };
+const UI_DEFAULTS = { quickSendPlacement: 'scene', showFloatingButton: false, showCharacterButton: true, showPersonaButton: true, buttonSize: 40, buttonSide: 'right', buttonOffsetX: 20, buttonOffsetBottom: 100, imageMaxHeight: 0 };
 
 const BUTTON_ID = 'local_image_button';
 const FLOATING_BUTTON_ID = 'local_image_floating_button';
@@ -26,6 +27,8 @@ let galleryRoot = null;
 let galleryViewToken = 0;
 let galleryContainer = null;
 let floatingPanelExpanded = false;
+let floatingQuickMenu=null,sceneShortcutObserver=null;
+const sceneImageMenus=new Set();
 let localImageUiError = '';
 let localImageRendererReady = false;
 let localImageUnresolved = [];
@@ -112,6 +115,8 @@ function saveSettings() {
     applyGalleryShortcutSettings();
     updateFloatingPanel();
     updateGalleryPrompt();
+    for(const menu of sceneImageMenus)menu.refresh();
+    window.dispatchEvent(new Event('ig-gallery-change'));
 }
 
 /**
@@ -1099,9 +1104,9 @@ function sendAsNarrator(message) {
     const textarea = document.getElementById('send_textarea');
     const sendButton = document.getElementById('send_but');
 
-    if (!textarea || !sendButton) {
+    if (!textarea || !sendButton || textarea.value.trim()) {
         console.error(`[${EXTENSION_NAME}] Could not find send textarea or button`);
-        return;
+        return false;
     }
 
     // Set the message with /sys prefix
@@ -1113,20 +1118,27 @@ function sendAsNarrator(message) {
     // Click the send button
     sendButton.click();
 
-    console.log(`[${EXTENSION_NAME}] Sent narrator message: ${message}`);
+    return true;
 }
 
 /**
- * Get all entities (persona + characters) that have images assigned
- * @returns {Array} Array of { name, type, images } objects
+ * Keep an image shortcut available when scene controls are switched off.
  */
-function getEntitiesWithImages() {
-    const ctx=SillyTavern.getContext(),entities=new Map();
-    for(const entry of catalogEntries(getSettings(),generalImageFiles).filter(e=>availableInChat(e,ctx))){
-        if(!entities.has(entry.entity))entities.set(entry.entity,{name:entry.entity,label:entry.gallery===GENERAL_KEY?'General':entry.entity,type:entry.gallery===GENERAL_KEY?'general':'character',images:[]});
-        entities.get(entry.entity).images.push(entry.name);
-    }
-    return [...entities.values()].map(e=>({...e,images:e.images.sort((a,b)=>a.localeCompare(b))}));
+function sceneShortcutAvailable(){const bar=document.getElementById('prome-stage-controls');return Boolean(bar&&!bar.hidden);}
+function observeSceneShortcut(){if(sceneShortcutObserver)return;const bar=document.getElementById('prome-stage-controls');if(bar){sceneShortcutObserver=new MutationObserver(applyGalleryShortcutSettings);sceneShortcutObserver.observe(bar,{attributes:true,attributeFilter:['hidden']});}}
+function availableQuickImages() {
+    const ctx=SillyTavern.getContext();
+    return catalogEntries(getSettings(),generalImageFiles).filter(entry=>availableInChat(entry,ctx));
+}
+function mountImageMenu(container) {
+    return mountQuickImageMenu(container,{readEntries:availableQuickImages,readContext:()=>SillyTavern.getContext(),send:sendAsNarrator,
+        openLibrary:()=>{window.dispatchEvent(new Event('ig-close-scene-panels'));floatingPanelExpanded=false;closeFloatingPanel();openGalleryStudio();},
+        openGeneral:()=>{window.dispatchEvent(new Event('ig-close-scene-panels'));floatingPanelExpanded=false;closeFloatingPanel();openGeneralGallery();},
+        openSettings:()=>{window.dispatchEvent(new Event('ig-close-scene-panels'));floatingPanelExpanded=false;closeFloatingPanel();openExtensionSettings();}});
+}
+function mountSceneImageMenu(container) {
+    const menu=mountImageMenu(container);sceneImageMenus.add(menu);
+    return {refresh:menu.refresh,destroy(){sceneImageMenus.delete(menu);menu.destroy();}};
 }
 
 /**
@@ -1137,7 +1149,7 @@ function createFloatingButton() {
     const existing = document.getElementById(FLOATING_BUTTON_ID);
     if (existing) existing.remove();
 
-    const button = document.createElement('div');
+    const button = document.createElement('button');button.type='button';button.setAttribute('aria-label','Quick Image Send');button.setAttribute('aria-controls',FLOATING_PANEL_ID);button.setAttribute('aria-expanded','false');
     button.id = FLOATING_BUTTON_ID;
     button.className = 'local-image-floating-button';
     button.innerHTML = '<i class="fa-solid fa-images"></i>';
@@ -1150,8 +1162,12 @@ function createFloatingButton() {
     });
 
     document.body.appendChild(button);
-    applyGalleryShortcutSettings();
+    observeSceneShortcut();applyGalleryShortcutSettings();
     window.addEventListener('resize', applyGalleryShortcutSettings);
+    window.addEventListener('ig-layout-change',applyGalleryShortcutSettings);
+    document.addEventListener('ig-floating-open',()=>closeFloatingPanel());
+    document.addEventListener('pointerdown',event=>{const panel=document.getElementById(FLOATING_PANEL_ID);if(panel&&!panel.contains(event.target)&&!button.contains(event.target))closeFloatingPanel();},true);
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&floatingPanelExpanded){event.preventDefault();closeFloatingPanel();button.focus({preventScroll:true});}});
     window.visualViewport?.addEventListener('resize', applyGalleryShortcutSettings);
     console.log(`[${EXTENSION_NAME}] Floating button created`);
 }
@@ -1173,14 +1189,14 @@ function toggleFloatingPanel() {
  * Create and show the floating panel
  */
 function createFloatingPanel() {
-    // Remove existing if any
-    closeFloatingPanel();
-
-    const entities = getEntitiesWithImages();
+    // Remove existing if any; preserve this requested open state.
+    closeFloatingPanel(true);
+    window.dispatchEvent(new Event('ig-close-scene-panels'));
+    document.getElementById(FLOATING_BUTTON_ID)?.setAttribute('aria-expanded','true');
 
     const panel = document.createElement('div');
     panel.id = FLOATING_PANEL_ID;
-    panel.className = 'local-image-floating-panel';
+    panel.className = 'local-image-floating-panel';panel.setAttribute('role','dialog');panel.setAttribute('aria-label','Quick Image Send');
 
     // Header with close button
     const header = document.createElement('div');
@@ -1201,80 +1217,21 @@ function createFloatingPanel() {
         closeFloatingPanel();
     });
 
-    const toolbar = document.createElement('div');
-    toolbar.className = 'local-image-panel-toolbar';
-    for (const [label, action] of [['Image library', openGalleryStudio], ['General', openGeneralGallery], ['Settings', openExtensionSettings]]) {
-        const button = document.createElement('button');
-        button.className = 'menu_button';
-        button.textContent = label;
-        button.addEventListener('click', action);
-        toolbar.appendChild(button);
-    }
-    panel.appendChild(toolbar);
-
-    // Content area with entity rows
-    const content = document.createElement('div');
-    content.className = 'floating-panel-content';
-
-    for (const entity of entities) {
-        const row = document.createElement('div');
-        row.className = 'floating-panel-row';
-
-        const label = document.createElement('span');
-        label.className = 'floating-panel-label';
-        label.textContent = entity.label || entity.name;
-        if (entity.type === 'persona') {
-            const suffix = document.createElement('small');
-            suffix.textContent = ' (you)';
-            label.appendChild(suffix);
-        }
-        row.appendChild(label);
-
-        const controls = document.createElement('div');
-        controls.className = 'floating-panel-controls';
-
-        const select = document.createElement('select');
-        select.className = 'floating-panel-select';
-        select.dataset.entityName = entity.name;
-
-        for (const imageName of entity.images) {
-            const option = document.createElement('option');
-            option.value = imageName;
-            option.textContent = imageName;
-            select.appendChild(option);
-        }
-        controls.appendChild(select);
-
-        const sendBtn = document.createElement('button');
-        sendBtn.className = 'floating-panel-send';
-        sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-        sendBtn.title = 'Send image';
-        sendBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const selectedImage = select.value;
-            if (selectedImage) {
-                sendAsNarrator(`::img ${entity.name} ${selectedImage}::`);
-            }
-        });
-        controls.appendChild(sendBtn);
-
-        row.appendChild(controls);
-        content.appendChild(row);
-    }
-
-    panel.appendChild(content);
+    const content=document.createElement('div');panel.append(content);floatingQuickMenu=mountImageMenu(content);
     document.body.appendChild(panel);
     // Position using top instead of bottom to avoid transform issues
     positionFloatingPanel(panel);
 
-    console.log(`[${EXTENSION_NAME}] Floating panel created with ${entities.length} entities`);
+    console.log(`[${EXTENSION_NAME}] Quick Image Send opened`);
 }
 
 /**
  * Close and remove the floating panel
  */
-function closeFloatingPanel() {
+function closeFloatingPanel(keepExpanded=false) {
+    if(!keepExpanded)floatingPanelExpanded=false;
+    document.getElementById(FLOATING_BUTTON_ID)?.setAttribute('aria-expanded','false');
+    floatingQuickMenu?.destroy();floatingQuickMenu=null;
     const panel = document.getElementById(FLOATING_PANEL_ID);
     if (panel) {
         panel.remove();
@@ -1286,8 +1243,9 @@ function closeFloatingPanel() {
  */
 function updateFloatingPanel() {
     if (floatingPanelExpanded) {
-        createFloatingPanel();
+        if(document.getElementById(FLOATING_PANEL_ID))floatingQuickMenu?.refresh();else createFloatingPanel();
     }
+    for(const menu of sceneImageMenus)menu.refresh();
 }
 
 /**
@@ -1300,7 +1258,10 @@ function normalizeShortcutSettings(value = {}) {
         return Number.isFinite(parsed) ? Math.min(max, Math.max(min, Math.round(parsed))) : UI_DEFAULTS[key];
     };
     return {
-        showFloatingButton: value.showFloatingButton !== false,
+        // New combined installs use the scene menu; legacy icon preferences remain
+        // available by selecting Floating or Both. No saved positioning values are lost.
+        quickSendPlacement: ['scene','floating','both','hidden'].includes(value.quickSendPlacement)?value.quickSendPlacement:'scene',
+        showFloatingButton: ['floating','both'].includes(value.quickSendPlacement),
         showCharacterButton: value.showCharacterButton !== false,
         showPersonaButton: value.showPersonaButton !== false,
         buttonSize: number('buttonSize', 24, 80),
@@ -1330,8 +1291,9 @@ function applyGalleryShortcutSettings() {
     const ui = normalizeShortcutSettings(getSettings().ui);
     for (const img of document.querySelectorAll('#chat img.localimage-inserted')) applyImageHeight(img);
     const floating = document.getElementById(FLOATING_BUTTON_ID);
+    const showFloating=ui.showFloatingButton||(ui.quickSendPlacement==='scene'&&!sceneShortcutAvailable());
     if (floating) {
-        floating.style.display = ui.showFloatingButton ? '' : 'none';
+        floating.style.display = showFloating ? '' : 'none';
         const width = window.visualViewport?.width || window.innerWidth;
         const height = window.visualViewport?.height || window.innerHeight;
         const horizontal = Math.min(ui.buttonOffsetX, Math.max(0, width - ui.buttonSize - 4));
@@ -1347,7 +1309,7 @@ function applyGalleryShortcutSettings() {
     if (character) character.style.display = ui.showCharacterButton ? '' : 'none';
     const persona = document.getElementById(PERSONA_BUTTON_ID);
     if (persona) persona.style.display = ui.showPersonaButton ? '' : 'none';
-    if (!ui.showFloatingButton) {
+    if (!showFloating) {
         floatingPanelExpanded = false;
         closeFloatingPanel();
     } else {
@@ -1374,14 +1336,14 @@ function createShortcutControls() {
     const controls = document.createElement('div');
     controls.className = 'localimage-shortcut-controls';
     controls.innerHTML = `
-        <div class="local-image-panel-toolbar"><button type="button" class="menu_button" data-localimage-action="studio">Open image library</button></div>
+        <div class="local-image-panel-toolbar"><button type="button" class="menu_button" data-localimage-action="studio">Open asset library</button></div>
         <label><input type="checkbox" data-localimage-enabled> Render image commands</label>
         <label>Maximum image height (px; 0 = unlimited)<input class="text_pole" type="number" min="0" max="4000" step="1" data-localimage-ui="imageMaxHeight"></label>
         <small>Images fit the message width and keep their proportions.</small>
         <details><summary>Gallery shortcuts</summary>
         <label><input type="checkbox" data-localimage-ui="showCharacterButton"> Show character gallery icon</label>
         <label><input type="checkbox" data-localimage-ui="showPersonaButton"> Show persona gallery icon</label>
-        <label><input type="checkbox" data-localimage-ui="showFloatingButton"> Show floating Quick Image Send icon</label>
+        <label>Quick Image Send<select data-localimage-ui="quickSendPlacement" aria-label="Quick Image Send placement"><option value="scene">Backgrounds / images menu</option><option value="both">Scene menu + floating icon</option><option value="floating">Floating icon only</option><option value="hidden">Hide shortcuts</option></select></label>
         <fieldset data-localimage-floating><legend>Floating icon position</legend>
         <label>Icon size (px; default 40)<input class="text_pole" type="number" min="24" max="80" step="1" data-localimage-ui="buttonSize"></label>
         <label>Screen edge<select class="text_pole" data-localimage-ui="buttonSide"><option value="right">Right</option><option value="left">Left</option></select></label>
@@ -1449,11 +1411,14 @@ function openExtensionSettings() {
 function installExtensionSettings() {
     installGallerySettings({getSettings,saveSettings,createShortcutControls,openGalleryStudio,preview:()=>buildGalleryPrompt({...getSettings(),prompt:{...getSettings().prompt,enabled:true}},SillyTavern.getContext(),generalImageFiles,currentDisplayPolicy())});
 }
-function openGalleryStudio() {
+function openGalleryStudio(options={}) {
     const token=++galleryViewToken;
+    const type=['outfit','background','image'].includes(options?.type)?options.type:'all';
+    const initialView={type,character:typeof options?.character==='string'?options.character:'',search:'',gallery:'',description:'all',visibility:'all',outfitImages:'all',backgrounds:'all',...(type!=='all'?{currentOnly:false}:{})};
+    window.dispatchEvent(new Event('ig-close-scene-panels'));
     closeShortcutSettings();
     if(!galleryContainer){galleryContainer=document.createElement('div');galleryContainer.id='local-image-gallery-root';document.body.appendChild(galleryContainer);galleryRoot=createRoot(galleryContainer);}
-    const render=()=>{if(token!==galleryViewToken)return;galleryRoot.render(<GalleryStudio getSettings={getSettings} getEntries={()=>catalogEntries(getSettings(),generalImageFiles)} getContext={()=>SillyTavern.getContext()} onClose={closeGallery} onSave={(entry,patch)=>{saveCatalogEntry(getSettings(),entry,patch);saveSettings();render();}} onSaveView={view=>{getSettings().galleryView=view;saveSettings();}} onSaveGalleryDescription={(gallery,note)=>{Object.defineProperty(getSettings().galleryDescriptions,gallery,{value:note.slice(0,1000),enumerable:true,writable:true,configurable:true});saveSettings();render();}} onOpenFolder={folder=>{closeGallery();openGalleryFolder(folder);}} />);};
+    const render=()=>{if(token!==galleryViewToken)return;galleryRoot.render(<GalleryStudio key={token} initialView={initialView} getSceneLibrary={()=>window.ImmersiveGroupsSceneLibrary} onRefresh={async()=>{await refreshGeneralFileIndex();await window.ImmersiveGroupsSceneLibrary?.refresh(true);}} getSettings={getSettings} getEntries={()=>catalogEntries(getSettings(),generalImageFiles)} getContext={()=>SillyTavern.getContext()} onClose={closeGallery} onSave={(entry,patch)=>{saveCatalogEntry(getSettings(),entry,patch);saveSettings();render();}} onSaveView={view=>{getSettings().libraryView={...view,search:'',character:''};getSettings().galleryView={sort:view.sort,currentChatOnly:view.currentOnly};saveSettings();}} onSaveGalleryDescription={(gallery,note)=>{Object.defineProperty(getSettings().galleryDescriptions,gallery,{value:note.slice(0,1000),enumerable:true,writable:true,configurable:true});saveSettings();render();}} onOpenFolder={folder=>{closeGallery();openGalleryFolder(folder);}} />);};
     render();refreshGeneralFileIndex().then(render);
 }
 function openGalleryFolder(entity) {
@@ -1475,14 +1440,16 @@ let galleryStarted = false;
 export function initGallery() {
     if (galleryStarted) return;
     galleryStarted = true;
-    document.documentElement?.setAttribute('data-localimage-patch', 'v16');
-    console.log(`[${EXTENSION_NAME}] Loaded Gallery v16 (native formatting preserved)`);
+    document.documentElement?.setAttribute('data-localimage-patch', 'v17');
+    console.log(`[${EXTENSION_NAME}] Loaded Gallery v17 (native formatting preserved)`);
     initSettings();
     // Start the renderer before the auxiliary settings panel. A UI error must
     // never prevent native render/swipe subscriptions from being installed.
     registerMessageHandler();
     updateGalleryPrompt();
-    window.ImmersiveGroupsGallery=Object.freeze({version:1,getSceneContext:gallerySceneContext,openLibrary:openGalleryStudio});
+    window.ImmersiveGroupsGallery=Object.freeze({version:1,getSceneContext:gallerySceneContext,openLibrary:openGalleryStudio,mountQuickSend:mountSceneImageMenu,getShortcutState:()=>({showInScene:['scene','both'].includes(normalizeShortcutSettings(getSettings().ui).quickSendPlacement)})});
+    window.dispatchEvent(new Event('ig-gallery-change'));
+    document.addEventListener('immersivegroups:ready',()=>{observeSceneShortcut();applyGalleryShortcutSettings();},{once:true});
     setTimeout(() => {
         try { installExtensionSettings(); }
         catch (error) {

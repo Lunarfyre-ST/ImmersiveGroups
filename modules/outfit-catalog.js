@@ -29,16 +29,34 @@ export function catalogFor(avatar) {
 }
 export function onCatalogChange(listener) { listeners.add(listener); return () => listeners.delete(listener); }
 function changed() { saveSettingsDebounced(); for (const listener of listeners) listener(); }
+function rememberFolder(avatar, folder) {
+    const config=settings();
+    if(!config.outfitFolders||typeof config.outfitFolders!=='object'||Array.isArray(config.outfitFolders))config.outfitFolders={};
+    const list=own(config.outfitFolders,avatar)&&Array.isArray(config.outfitFolders[avatar])?config.outfitFolders[avatar]:[];
+    if(list.includes(folder))return false;
+    Object.defineProperty(config.outfitFolders,avatar,{value:[...list,folder],enumerable:true,writable:true,configurable:true});return true;
+}
 export function rememberOutfit(character, raw, { label, source = 'observed', notify = true, explicit = false } = {}) {
-    const folder = cleanFolder(raw); if (!folder) return false;
+    const folder = cleanFolder(raw); if (!folder || !character?.avatar) return false;
     const record = catalogFor(character.avatar);
     if (record.ignored.includes(folder) && !explicit) return false;
     if (explicit) record.ignored = record.ignored.filter(f => f !== folder);
     const existing = record.outfits.find(entry => entry.folder === folder);
-    if (existing) return false;
+    const remembered=rememberFolder(character.avatar,folder);
+    if (existing) {if(remembered){if(notify)changed();else saveSettingsDebounced();}return false;}
     record.outfits.push({ folder, label: label?.trim().slice(0,80) || folderLabel(folder, character), hidden: null, description: '', source });
     if (notify) changed();
     return true;
+}
+// Native overrides are global per avatar, including Quick Reply changes. Read
+// them before/after chat transitions even when that character has no loaded sprite.
+export function rememberNativeOutfits() {
+    const ctx=getContext();let dirty=false;
+    for(const override of Array.isArray(extension_settings.expressionOverrides)?extension_settings.expressionOverrides:[]) {
+        const character=ctx.characters?.find(c=>c.avatar?.replace(/\.[^/.]+$/,'')===override?.name);
+        if(character)dirty=rememberOutfit(character,override.path,{notify:false})||dirty;
+    }
+    if(dirty)changed();
 }
 export function seedOutfits(character, active = '') {
     let dirty = false;
@@ -96,10 +114,13 @@ export async function discoverOutfits(character, active = '', force = false) {
     const config = settings();
     if (!config.outfitDiscoveryDone || typeof config.outfitDiscoveryDone !== 'object' || Array.isArray(config.outfitDiscoveryDone)) config.outfitDiscoveryDone = {};
     if (inFlight.has(key)) return inFlight.get(key);
-    if (!force && own(config.outfitDiscoveryDone, key) && config.outfitDiscoveryDone[key]) return { skipped: true, found: 0 };
+    const candidates = discoveryCandidates(character, active),signature=JSON.stringify(candidates);
+    const previous=own(config.outfitDiscoveryDone,key)?config.outfitDiscoveryDone[key]:null,record=catalogFor(key);
+    // A legacy boolean cannot tell which root was scanned, or whether its catalog
+    // survived an import. Retry it once, and retry missing entries without reviving removals.
+    if(!force&&previous?.signature===signature&&Array.isArray(previous.folders)&&previous.folders.every(folder=>record.outfits.some(e=>e.folder===folder)||record.ignored.includes(folder)))return {skipped:true,found:0};
     const work = (async () => {
-        const candidates = discoveryCandidates(character, active);
-        let cursor = 0, found = 0, failed = 0, dirty = false;
+        let cursor = 0, found = 0, failed = 0, dirty = false;const folders=[];
         const worker = async () => {
             while (cursor < candidates.length) {
                 const folder = candidates[cursor++];
@@ -109,13 +130,13 @@ export async function discoverOutfits(character, active = '', force = false) {
                     const list = await response.json();
                     if (!Array.isArray(list)) { failed++; continue; }
                     if (list.some(s => typeof s?.path === 'string' && typeof s?.label === 'string')) {
-                        found++; dirty = rememberOutfit(character, folder, { source:'discovered', notify:false }) || dirty;
+                        found++;folders.push(folder);dirty = rememberOutfit(character, folder, { source:'discovered', notify:false }) || dirty;
                     }
                 } catch { failed++; }
             }
         };
         await Promise.all([worker(),worker(),worker()]);
-        if (!failed) Object.defineProperty(config.outfitDiscoveryDone,key,{value:true,enumerable:true,writable:true,configurable:true});
+        if (!failed) Object.defineProperty(config.outfitDiscoveryDone,key,{value:{signature,folders},enumerable:true,writable:true,configurable:true});
         if (dirty || !failed) changed();
         return { found, failed };
     })();

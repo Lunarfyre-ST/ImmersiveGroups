@@ -11,11 +11,11 @@ export function setupLiveTuning(anchor, openOutfits) {
     <label>Preview layout<select data-live-mode aria-label="Live layout mode"><option value="auto">Automatic</option><option value="desktop">PC (forced)</option><option value="mobile">Mobile (forced)</option></select></label>
     <small data-live-status role="status"></small><div data-live-sliders></div>
     <details data-live-buttons><summary>Buttons</summary><div data-live-button-sliders></div><div data-live-toggles></div><div data-live-choices></div>
-    <label><input type="checkbox" data-live-center> Center character buttons</label><small>Character and outfit colors are in Manage outfits.</small></details>
+    <label><input type="checkbox" data-live-center> Center character buttons</label><small>Character and outfit colors are in the library’s outfit tools.</small></details>
     <details data-live-offsets><summary>Position &amp; outfit menus</summary><div data-live-offset-sliders></div><small>Positive X moves right; positive Y moves down. Popup offsets are limited to the visible screen. Values are separate for PC and Mobile.</small><button type="button" class="menu_button" data-live-reset-offsets>Reset offsets</button></details>
     <details data-live-presets><summary>Presets &amp; reset</summary></details>
     <button type="button" class="menu_button" data-live-outfits>Manage outfits</button>`;
-    const popup=floatingPanel(anchor,panel),controls=[],toggles=[],choices=[];
+    const popup=floatingPanel(anchor,panel,{pinPosition:true}),controls=[],toggles=[],choices=[];
     const activeLayout=()=>mobileLayout()?'mobile':'desktop';
     const write=(key,value)=>writeLayoutSetting(key,value,activeLayout());
     anchor.addEventListener('click',()=>{sync();const opening=!popup.isOpen;popup.toggle();if(opening)panel.scrollTop=0;});
@@ -35,11 +35,11 @@ export function setupLiveTuning(anchor, openOutfits) {
         number.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();number.blur();}});
         field.append(pair);parent.append(field);controls.push({key,range,number,fallback,offset});
     }
-    for(const args of [['sheldHeightPercent','Chat window height (%) · 0 = auto',0,100,0],['spriteSpacingPercent','Sprite spacing (%)',20,160,100],['layoutSpriteScale','Fit adjustment (%) · default 0',-20,20,100,100,-99,500],['spriteOffsetY','All sprites vertical offset (px)',-200,200,0,0,-1000,1000]])slider(panel.querySelector('[data-live-sliders]'),...args);
+    for(const args of [['sheldHeightPercent','Chat window height (%) · 0 = auto',0,100,0],['spriteSpacingPercent','Sprite spacing (%)',20,160,100],['layoutSpriteScale','Fit calibration (%) · default 0',-20,20,100,100,-99,500],['spriteOffsetY','All sprites vertical offset (px)',-200,200,0,0,-1000,1000]])slider(panel.querySelector('[data-live-sliders]'),...args);
     for(const args of [['stageOffsetX','Character buttons X (px)',-100,100,0,0,-1000,1000],['stageOffsetY','Character buttons Y (px)',-100,100,0,0,-1000,1000],['outfitPopupOffsetX','Outfit menu X (px)',-100,100,0,0,-1000,1000],['outfitPopupOffsetY','Outfit menu Y (px)',-100,100,0,0,-1000,1000],['outfitMenuRows','Outfit menu visible rows',2,12,6]])slider(panel.querySelector('[data-live-offset-sliders]'),...args);
-    for(const args of [['stageControlHeight','Button height (px)',24,56,32],['stageFontSize','Button text size (px)',10,22,13],['stageOutfitWidth','Outfit width (px)',80,260,130],['stageGap','Button gap (px)',2,16,6],['stageIdleOpacity','Idle opacity (%)',20,100,75]])slider(panel.querySelector('[data-live-button-sliders]'),...args);
-    for(const [key,label] of [['stageShowSpeak','Show Speak buttons'],['stageShowOutfits','Show outfit selectors'],['stageShowNames','Show character names'],['stageShowLocks','Show outfit locks'],['stageNamesAbove','Names / Speak above outfits']]) {
-        const field=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.dataset.liveToggle=key;field.append(input,document.createTextNode(label));
+    for(const args of [['stageFitColumns','Fit character boxes per row',1,8,3],['stageSpeakHeight','Name / Speak height (px; 0 = inherit)',0,80,0],['stageSpeakWidth','Name / Speak width (px; 0 = auto)',0,400,0],['stageSpeakFontSize','Name / Speak text (px; 0 = inherit)',0,32,0],['stageNameLetters','Name abbreviation letters',1,5,3,0,1,40],['stageControlHeight','Button height (px)',24,56,32],['stageFontSize','Button text size (px)',10,22,13],['stageOutfitWidth','Outfit width (px)',80,260,130],['stageGap','Button gap (px)',2,16,6],['stageIdleOpacity','Idle opacity (%)',20,100,75]])slider(panel.querySelector('[data-live-button-sliders]'),...args);
+    for(const [key,label] of [['stageAutoFit','Fit character boxes to row'],['stageAbbreviate','Abbreviate character names'],['stageShowBackgroundArrows','Background arrows beside Scene tuning'],['stageShowSpeak','Show Speak buttons'],['stageShowOutfits','Show outfit selectors'],['stageShowNames','Show character names'],['stageShowLocks','Show outfit locks'],['stageNamesAbove','Names / Speak above outfits']]) {
+        const field=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.dataset.liveToggle=key;const text=document.createElement('span');text.textContent=label;field.append(input,text);
         input.addEventListener('change',()=>write(key,input.checked));panel.querySelector('[data-live-toggles]').append(field);toggles.push({key,input});
     }
     for(const [key,label,entries] of [['stageFlow','When space runs out',[['scroll','Scroll horizontally'],['wrap','Wrap into rows'],['stack','Stack characters']]],['stageSpeakPlacement','Speak buttons',[['top','Above chat'],['bottom','Below textbox']]],['stageOutfitPlacement','Outfit selectors',[['top','Above chat'],['bottom','Below textbox']]]]){

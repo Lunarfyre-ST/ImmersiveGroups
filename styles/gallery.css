@@ -1036,3 +1036,8 @@
 .localimage-shortcut-controls fieldset:disabled { opacity:.45; }
 .ig-gallery-section :is(input,textarea):disabled { opacity:.45; }
 .ig-gallery-section > details > summary { cursor:pointer; padding:6px 0; font-size:.9em; }
+.ig-gallery-binding-help { padding:8px 14px; margin:0; font-size:12px; line-height:1.45; background:#7a9ebb12; border-block:1px solid var(--SmartThemeBorderColor,#555); }
+.ig-image-bindings { border:1px solid #86ac9588; border-radius:7px; padding:12px; margin:12px 0; }
+.ig-image-bindings legend { padding:0 6px; }
+.ig-image-bindings > small { display:block; line-height:1.45; opacity:.8; }
+.ig-image-bindings .ig-binding-hint { padding:8px; margin-top:8px; background:#b895681a; border-inline-start:3px solid #b89568; }

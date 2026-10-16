@@ -4,7 +4,7 @@ import { extension_settings } from '../../../../extensions.js';
 import { saveSettingsDebounced } from '../../../../../script.js';
 import { extensionName } from '../constants.js';
 
-export const layoutKeys = new Set(['stageLayout','stageFlow','stageShowSpeak','stageShowOutfits','stageShowNames','stageShowLocks','stageShowManager','stageControlHeight','stageFontSize','stageOutfitWidth','stageGap','stageIdleOpacity','stageFadeTarget','stageNamesAbove','stageCenterCards','stageSpeakPlacement','stageOutfitPlacement','stageBackgroundPlacement','spriteSpacingPercent','layoutSpriteScale','spriteOffsetY','stageOffsetX','stageOffsetY','outfitPopupOffsetX','outfitPopupOffsetY','outfitMenuRows']);
+export const layoutKeys = new Set(['stageAutoFit','stageFitColumns','stageSpeakHeight','stageSpeakWidth','stageSpeakFontSize','stageAbbreviate','stageNameLetters','stageLayout','stageFlow','stageShowSpeak','stageShowOutfits','stageShowNames','stageShowLocks','stageShowManager','stageShowBackgroundArrows','stageControlHeight','stageFontSize','stageOutfitWidth','stageGap','stageIdleOpacity','stageFadeTarget','stageNamesAbove','stageCenterCards','stageSpeakPlacement','stageOutfitPlacement','stageBackgroundPlacement','spriteSpacingPercent','layoutSpriteScale','spriteOffsetY','stageOffsetX','stageOffsetY','outfitPopupOffsetX','outfitPopupOffsetY','outfitMenuRows']);
 export function mobileLayout() {
     const s = extension_settings[extensionName];
     if (s.layoutMode === 'desktop') return false;
