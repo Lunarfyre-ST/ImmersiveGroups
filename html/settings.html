@@ -1,21 +1,13 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
 <!-- Scene settings derived from Prome; reorganized for ImmersiveGroups. See CREDITS.md. -->
-<<<<<<< HEAD
 <div class="prome-vn-settings"><div class="inline-drawer"><div class="inline-drawer-toggle inline-drawer-header"><b><i class="fa-solid fa-users ig-settings-brand-icon" aria-hidden="true"></i> ImmersiveGroups</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div><div class="inline-drawer-content"><div class="prome-drawer-content">
-=======
-<div class="prome-vn-settings"><div class="inline-drawer"><div class="inline-drawer-toggle inline-drawer-header"><b>ImmersiveGroups</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div><div class="inline-drawer-content"><div class="prome-drawer-content">
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 <label class="checkbox_label" for="prome-enable-vn"><input type="checkbox" id="prome-enable-vn"> Enable character scene (VN mode)</label>
 <div class="ig-settings-shell"><p class="ig-start-help">Choose Layout to fit the chat, Characters to configure members, or Gallery for images. Changes save automatically.</p>
 <div class="ig-settings-toolbar"><label>Preview layout<select id="ig-layout-mode"><option value="auto">Automatic</option><option value="desktop">PC (forced)</option><option value="mobile">Mobile (forced)</option></select></label><label>Settings profile<select id="ig-edit-layout"><option value="auto">Follow active layout</option><option value="desktop">PC</option><option value="mobile">Mobile</option></select></label><details class="ig-profile-help"><summary>Profiles &amp; shared settings</summary><small>PC / Mobile badges mark separate profile settings. Shared settings apply to both. Preview changes the live layout; Settings profile chooses which values you edit.</small></details></div>
 <details class="ig-preset-toolbar" data-ig-presets><summary>Visual presets &amp; import/export</summary></details>
-<<<<<<< HEAD
 <div class="ig-settings-tabs" role="tablist" aria-label="ImmersiveGroups features"><button type="button" role="tab" id="ig-tab-chat" data-ig-tab="chat" aria-controls="ig-pane-chat">Layout</button><button type="button" role="tab" id="ig-tab-controls" data-ig-tab="controls" aria-controls="ig-pane-controls">Controls</button><button type="button" role="tab" id="ig-tab-outfits" data-ig-tab="outfits" aria-controls="ig-pane-outfits">Characters</button><button type="button" role="tab" id="ig-tab-sprites" data-ig-tab="sprites" aria-controls="ig-pane-sprites">Sprites</button><button type="button" role="tab" id="ig-tab-animations" data-ig-tab="animations" aria-controls="ig-pane-animations">Animations</button><button type="button" role="tab" id="ig-tab-backgrounds" data-ig-tab="backgrounds" aria-controls="ig-pane-backgrounds">Backgrounds</button><button type="button" role="tab" id="ig-tab-context" data-ig-tab="context" aria-controls="ig-pane-context">Automation</button><button type="button" role="tab" id="ig-tab-original" data-ig-tab="original" aria-controls="ig-pane-original">Legacy / Prome</button><button type="button" role="tab" id="ig-tab-about" data-ig-tab="about" aria-controls="ig-pane-about">About</button></div><div class="ig-settings-panes"><section role="tabpanel" tabindex="0" id="ig-pane-chat" data-ig-pane="chat" aria-labelledby="ig-tab-chat"><div class="prome-settings-section"><h4>Chat window</h4>
 <label class="checkbox_label" for="prome-sheld-last_mes"><input id="prome-sheld-last_mes" type="checkbox"> Show only the latest message</label>
 <small>Off: scroll through chat history in VN mode. On: display the latest message only. This changes visibility without editing or deleting messages.</small>
-=======
-<div class="ig-settings-tabs" role="tablist" aria-label="ImmersiveGroups features"><button type="button" role="tab" id="ig-tab-chat" data-ig-tab="chat" aria-controls="ig-pane-chat">Layout</button><button type="button" role="tab" id="ig-tab-controls" data-ig-tab="controls" aria-controls="ig-pane-controls">Controls</button><button type="button" role="tab" id="ig-tab-outfits" data-ig-tab="outfits" aria-controls="ig-pane-outfits">Characters</button><button type="button" role="tab" id="ig-tab-sprites" data-ig-tab="sprites" aria-controls="ig-pane-sprites">Sprites</button><button type="button" role="tab" id="ig-tab-backgrounds" data-ig-tab="backgrounds" aria-controls="ig-pane-backgrounds">Backgrounds</button><button type="button" role="tab" id="ig-tab-context" data-ig-tab="context" aria-controls="ig-pane-context">Automation</button><button type="button" role="tab" id="ig-tab-original" data-ig-tab="original" aria-controls="ig-pane-original">Advanced / Prome</button><button type="button" role="tab" id="ig-tab-about" data-ig-tab="about" aria-controls="ig-pane-about">About</button></div><div class="ig-settings-panes"><section role="tabpanel" tabindex="0" id="ig-pane-chat" data-ig-pane="chat" aria-labelledby="ig-tab-chat"><div class="prome-settings-section"><h4>Chat window</h4>
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 <label for="prome-sheld-height-number">Chat window height (%)</label>
 <div class="prome-layout-controls">
 <input aria-label="Chat window height" id="prome-sheld-height-slider" max="100" min="0" step="1" type="range" value="0">
@@ -120,10 +112,7 @@
 <label for="prome-shadow-opacity">Shadow opacity (%) <small>default 100</small></label><div class="prome-layout-controls"><input aria-label="Shadow opacity percent" id="prome-shadow-opacity" max="100" min="0" step="1" type="range" value="100"><input aria-label="Shadow opacity percent" class="text_pole" id="prome-shadow-opacity-number" max="100" min="0" step="1" type="number" value="100"><button class="menu_button" id="prome-shadow-opacity-reset" type="button">Reset</button></div><small>Changes the shadow only, not the sprite. Shared across PC and mobile.</small>
 </div></details></section>
 <section role="tabpanel" tabindex="0" id="ig-pane-backgrounds" data-ig-pane="backgrounds" aria-labelledby="ig-tab-backgrounds"><div class="prome-settings-section"><h4>Scene backgrounds</h4><label><input data-prome-stage-setting="stageShowBackground" type="checkbox"> Show background selector</label><label><input data-prome-stage-setting="stageShowBackgroundArrows" type="checkbox"> Show linked background arrows beside Scene tuning</label><label>Background selector placement<select data-prome-stage-setting="stageBackgroundPlacement"><option value="top">Above chat</option><option value="bottom">Below textbox</option></select></label><button class="menu_button" id="ig-open-backgrounds" type="button">Manage backgrounds &amp; favorites</button><p class="prome-help">Browse the full background list and star your favorites. The selector has shared linked backgrounds followed by starred entries. All characters requires a link to every active member. Scene descriptions can be included in Automation context. Optional character bindings filter favorites by character; optional chat-load defaults are configured below. Native background locks are respected.</p></div></section>
-<<<<<<< HEAD
 <section role="tabpanel" tabindex="0" id="ig-pane-animations" data-ig-pane="animations" aria-labelledby="ig-tab-animations"><div data-ig-animation-controls></div><small>Outfits blend in place after preloading; other characters stay untouched. Background transitions also apply to native background selections. A duration of 0 skips that part of the fade.</small></section>
-=======
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 <section role="tabpanel" tabindex="0" id="ig-pane-context" data-ig-pane="context" aria-labelledby="ig-tab-context"><div id="ig-automation-gallery"></div><details class="ig-advanced" id="ig-automation-roadmap"><summary>Automation roadmap</summary><div class="prome-settings-section"><h4>Available now</h4><p>Prompt mode appends validated outfit and background commands to the RP reply. All active characters and speaking-character-only scopes are supported, including outfit locks and background locks. Separate API analysis can run manually or automatically after replies using the main API, a connection profile or a custom endpoint.</p><h4>Work in progress — planned features</h4><p>A movable Chat Completions Prompt Manager entry and coordinated Gallery image selection are planned. Automatic API analysis is available as an opt-in and runs once after a completed group round.</p><p class="prome-help">All active characters supports group-wide outfit changes and offers a larger, more stable catalog; speaking-character-only context uses fewer tokens but changes with each speaker. Actual caching, cost and speed depend on your provider.</p></div></details></section>
 <section role="tabpanel" tabindex="0" id="ig-pane-original" data-ig-pane="original" aria-labelledby="ig-tab-original"><p class="prome-help">Original Prome visual options. Use Sprites for normal size adjustment; legacy scaling below multiplies those settings.</p><details>
 <summary data-i18n="Chat presentation">
@@ -135,16 +124,6 @@
 <div class="flex-container flexFlowRow alignitemscenter">
 <span data-i18n="Hide chat window">Hide chat window</span>
 <small data-i18n="(Message Box)">(Message Box)</small><small class="ig-keyboard-tip">(Ctrl + F1)</small>
-<<<<<<< HEAD
-=======
-</div>
-</label>
-<label class="checkbox_label" data-i18n="[title]Only Show Last Message in Chat (Requires Prome to be enabled)." for="prome-sheld-last_mes" title="Only Show Last Message in Chat (Requires Prome to be enabled).">
-<input id="prome-sheld-last_mes" type="checkbox">
-<div class="flex-container flexFlowRow alignitemscenter">
-<span data-i18n="Enable Traditional VN Mode">Enable Traditional VN Mode</span>
-<small data-i18n="(Requires Prome to be enabled)">(Requires Prome to be enabled)</small>
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 </div>
 </label>
 
@@ -463,21 +442,13 @@
 </div>
 </div>
 </details></section>
-<<<<<<< HEAD
 <section role="tabpanel" tabindex="0" id="ig-pane-about" data-ig-pane="about" aria-labelledby="ig-tab-about"><div class="prome-settings-section"><h3>ImmersiveGroups 0.2.8</h3><p>An independent combined extension with character scene controls and image galleries, maintained by <a href="https://github.com/Lunarfyre-ST" rel="noopener noreferrer" target="_blank">Lunarfyre-ST</a>.</p><p><a href="https://github.com/Lunarfyre-ST/ImmersiveGroups" rel="noopener noreferrer" target="_blank">ImmersiveGroups on GitHub</a></p><h4>Original projects</h4><p><a href="https://github.com/Bronya-Rand/Prome-VN-Extension" rel="noopener noreferrer" target="_blank">Prome Visual Novel Extension 1.2.4</a> — by Bronya-Rand, with the original UI credit also naming Prometheus.</p><p><a href="https://github.com/mechamarmot/SillyTavern-LocalImage" rel="noopener noreferrer" target="_blank">SillyTavern-LocalImage 1.6.0</a> — by mechamarmot.</p><p>ImmersiveGroups modifies and combines both projects. The original authors are credited for their work; this release does not imply their endorsement.</p><p>Distributed under GNU AGPL version 3, without warranty. Original license texts, dependency notices and modified source are included.</p><div class="local-image-panel-toolbar"><a data-ig-document="CREDITS.md" target="_blank">Credits &amp; changes</a><a data-ig-document="LICENSE" target="_blank">License</a><a data-ig-document="README.md" target="_blank">Source &amp; documentation</a></div></div></section></div></div>
-=======
-<section role="tabpanel" tabindex="0" id="ig-pane-about" data-ig-pane="about" aria-labelledby="ig-tab-about"><div class="prome-settings-section"><h3>ImmersiveGroups 0.2.5</h3><p>An independent combined extension with character scene controls and image galleries, maintained by <a href="https://github.com/Lunarfyre-ST" rel="noopener noreferrer" target="_blank">Lunarfyre-ST</a>.</p><p><a href="https://github.com/Lunarfyre-ST/ImmersiveGroups" rel="noopener noreferrer" target="_blank">ImmersiveGroups on GitHub</a></p><h4>Original projects</h4><p><a href="https://github.com/Bronya-Rand/Prome-VN-Extension" rel="noopener noreferrer" target="_blank">Prome Visual Novel Extension 1.2.4</a> — by Bronya-Rand, with the original UI credit also naming Prometheus.</p><p><a href="https://github.com/mechamarmot/SillyTavern-LocalImage" rel="noopener noreferrer" target="_blank">SillyTavern-LocalImage 1.6.0</a> — by mechamarmot.</p><p>ImmersiveGroups modifies and combines both projects. The original authors are credited for their work; this release does not imply their endorsement.</p><p>Distributed under GNU AGPL version 3, without warranty. Original license texts, dependency notices and modified source are included.</p><div class="local-image-panel-toolbar"><a data-ig-document="CREDITS.md" target="_blank">Credits &amp; changes</a><a data-ig-document="LICENSE" target="_blank">License</a><a data-ig-document="README.md" target="_blank">Source &amp; documentation</a></div></div></section></div></div>
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 <!-- Letterbox Configuration -->
 <!-- Sprite Configuration -->
 <!-- Tint Configuration -->
 <div class="prome_vn_block flex-container flexFlowColumn">
 <small class="flex-container justifyCenter alignitemscenter">
-<<<<<<< HEAD
 <span>ImmersiveGroups 0.2.8 · Credits in About</span>
-=======
-<span>ImmersiveGroups 0.2.5 · Credits in About</span>
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 </small>
 <small class="flex-container justifyCenter alignitemscenter flexFlowRow">
 <small class="menu_button menu_button_icon" id="prome-keybinds">

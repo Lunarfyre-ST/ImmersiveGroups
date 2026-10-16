@@ -13,12 +13,8 @@ function action(title, icon, callback) {
 }
 function renderColors(colors,c){
     colors.replaceChildren();if(!c){colors.append(el('small','','Open a character or group chat to customize colors.'));return;}
-<<<<<<< HEAD
     const inherit=el('label','ig-color-field'),check=el('input');check.type='checkbox';check.checked=catalogFor(c.avatar).colors?.inheritSpeak!==false;check.setAttribute('aria-label','Inherit Speak color when separated');check.addEventListener('change',()=>setCharacterColors(c.avatar,{inheritSpeak:check.checked}));inherit.append(check,document.createTextNode('Inherit Speak button color when controls are separated'));colors.append(inherit);
     for(const [key,label,fallback] of [['background' ,'Button background','#20232c'],['speak','Speak button','#513d2c'],['text','Button text','#e8e9ee']]){
-=======
-    for(const [key,label,fallback] of [['background','Button background','#20232c'],['speak','Speak button','#513d2c'],['text','Button text','#e8e9ee']]){
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
         const field=el('label','ig-color-field',label),input=el('input');input.type='color';input.value=catalogFor(c.avatar).colors?.[key]||fallback;input.setAttribute('aria-label',label);
         input.addEventListener('input',()=>setCharacterColors(c.avatar,{[key]:input.value}));
         const reset=el('button','menu_button','Theme default');reset.type='button';reset.addEventListener('click',()=>{setCharacterColors(c.avatar,{[key]:''});input.value=fallback;renderMainColors();});field.append(input,reset);colors.append(field);

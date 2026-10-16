@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Gallery subsystem derived from LocalImage by mechamarmot; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
+import { commandsInText } from './image-command-text.js';
+export { commandsInText } from './image-command-text.js';
 export const GENERAL_KEY = '__localimage_general__';
 export const DEFAULT_INSTRUCTIONS = `You may display an available image when it clearly matches the current scene.
 Use at most one image per reply. Copy a complete command from AVAILABLE IMAGE COMMANDS exactly, including both pairs of colons.
@@ -75,11 +77,16 @@ export function saveCatalogEntry(settings,entry,patch) {
     if(name!==entry.name)delete map[entry.name];
     return name;
 }
-// Code examples never consume display limits. A standalone inline command may render.
-export function commandsInText(text) {
-    if(typeof text!=='string')return [];
-    const cleaned=text.replace(/```[\s\S]*?(?:```|$)|~~~[\s\S]*?(?:~~~|$)/g,'').replace(/<(pre|a|script|style|textarea)\b[^>]*>[\s\S]*?<\/\1>/gi,'').replace(/`([^`\n]*)`/g,(all,inside)=>/^::img[ \t]+[^\r\n]+::$/i.test(inside.trim())?inside:'');
-    return [...cleaned.matchAll(/::img[ \t]+([^\r\n]*?)::/gi)];
+// Parsed commands are independent of display limits. Reuse them while a message
+// stays unchanged, avoiding repeated HTML parsing across a long chat on swipes.
+const parsedMessageCommands = new WeakMap();
+function messageCommands(message) {
+    const text = message?.mes;
+    if (!message || typeof message !== 'object') return [];
+    if (typeof text !== 'string' || !/::img[ \t]/i.test(text)) { parsedMessageCommands.delete(message); return []; }
+    let cached = parsedMessageCommands.get(message);
+    if (!cached || cached.text !== text) { cached = { text, commands: commandsInText(text) }; parsedMessageCommands.set(message, cached); }
+    return cached.commands;
 }
 export function buildDisplayPolicy(chat,settings,resolve) {
     const limits=limitsFor(settings),decisions=new Map(),lastShown=new Map(),roundCounts=new Map();
@@ -87,7 +94,7 @@ export function buildDisplayPolicy(chat,settings,resolve) {
     for(const [index,message] of (chat||[]).entries()){
         if(message?.is_user)round++;
         let count=0;const images=new Map();decisions.set(index,images);
-        for(const match of commandsInText(message?.mes)){
+        for(const match of messageCommands(message)){
             const image=resolve(match[1],message);if(!image)continue;
             let reason='';
             if(limits.repeatEnabled&&lastShown.has(image.src)&&round-lastShown.get(image.src)<=limits.cooldownRounds)reason='recently shown';

@@ -121,10 +121,7 @@
 
 .ig-library-import-help { font-size:13px; line-height:1.55; }
 .ig-library-import-help p { margin:0 0 12px; }
-<<<<<<< HEAD
 
 .ig-library-mismatches { padding:10px; border:1px solid rgba(var(--ig-accent-characters),.5); border-radius:7px; }
 .ig-library-mismatches article { display:flex; flex-direction:column; gap:6px; padding:10px 0; border-top:1px solid var(--SmartThemeBorderColor); }
 .ig-library-mismatches code { overflow-wrap:anywhere; }
-=======
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60

@@ -1,24 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
 import { extension_settings } from '../../../../extensions.js';
-<<<<<<< HEAD
 import { eventSource, event_types } from '../../../../../script.js';
 import { automationSettings } from './scene-automation-model.js';
 import { mountAnimationControls } from './animation-controls.js';
 import { setupSceneAnimations } from './scene-animations.js';
-=======
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 import { mountPresetControls, resetVisualSettings } from './preset-controls.js';
 import { extensionName } from '../constants.js';
 import { setupResponsive, mobileLayout, editingLayout, layoutKeys } from './responsive.js';
 
 export function setupSettingsShell() {
     setupResponsive();
-<<<<<<< HEAD
     setupSceneAnimations();
     mountAnimationControls(document.querySelector('[data-ig-animation-controls]'));
-=======
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     mountPresetControls(document.querySelector('[data-ig-presets]'),{profile:editingLayout});
     for(const button of document.querySelectorAll('[data-ig-reset]'))button.addEventListener('click',()=>resetVisualSettings(button.dataset.igReset,editingLayout()));
     for(const link of document.querySelectorAll('[data-ig-document]')){link.href=new URL('../'+link.dataset.igDocument,import.meta.url).href;link.rel='noopener noreferrer';}
@@ -56,12 +50,8 @@ export function setupSettingsShell() {
     for(const control of document.querySelectorAll('[data-prome-stage-setting]')){
         if(layoutKeys.has(control.dataset.promeStageSetting))continue;
         const label=control.closest('label');if(!label||marked.has(label))continue;marked.add(label);
-<<<<<<< HEAD
         const badge=document.createElement('small');badge.className='ig-profile-badge ig-shared-badge';badge.textContent='Shared';
         if(label.classList.contains('prome-number-setting'))label.firstElementChild.append(badge);else label.append(badge);
-=======
-        const badge=document.createElement('small');badge.className='ig-profile-badge ig-shared-badge';badge.textContent='Shared';label.append(badge);
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     }
     for(const id of ['prome-profile-cm','prome-stage-enabled','prome-stable-slots','prome-profiles-enabled','prome-sprite-defocus-tint','prome-limit-quick-replies','prome-sheld-height-number','prome-mobile-layout-width-number']){
         const control=document.getElementById(id),label=control?.closest('label')||document.querySelector(`label[for="${id}"]`);if(!label||marked.has(label))continue;marked.add(label);

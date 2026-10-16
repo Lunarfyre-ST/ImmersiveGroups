@@ -7,7 +7,6 @@ const entries=[{kind:'outfit',id:'o',name:'Pyjamas',entity:'Alex',folder:'Alex/s
 test('library search spans asset types, descriptions, paths and character names without changing records',()=>{
  const original=JSON.stringify(entries);assert.deepEqual(filterLibrary(entries,{search:'bath',sort:'library'},ctx).map(e=>e.id),['b','i']);assert.deepEqual(filterLibrary(entries,{search:'yo alex',sort:'library'},ctx).map(e=>e.id),['o']);assert.deepEqual(filterLibrary(entries,{search:'Alex/sleep'},ctx).map(e=>e.id),['o']);assert.equal(JSON.stringify(entries),original);
 });
-<<<<<<< HEAD
 test('ordinary library sorting avoids chat scans; activity sorts handle long chats and exact avatars',()=>{
  const rows=[{kind:'outfit',id:'a',name:'A',characterBindings:['a']},{kind:'outfit',id:'b',name:'B',characterBindings:['b']}];
  assert.deepEqual(filterLibrary(rows,{sort:'name-asc'},{characters:[],get chat(){throw Error('Unnecessary chat scan');}}).map(e=>e.id),['a','b']);
@@ -16,8 +15,6 @@ test('ordinary library sorting avoids chat scans; activity sorts handle long cha
  assert.deepEqual(filterLibrary(rows,{sort:'recent'},context).map(e=>e.id),['b','a']);assert.equal(reads,1);
  assert.deepEqual(filterLibrary(rows,{sort:'activity'},context).map(e=>e.id),['b','a']);assert.equal(reads,2);
 });
-=======
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 test('library filters preserve type-specific semantics across the All view',()=>{
  assert.deepEqual(filterLibrary(entries,{type:'outfit',character:'b.png'},ctx),[]);assert.deepEqual(filterLibrary(entries,{type:'background',backgrounds:'linked'},ctx).map(e=>e.id),['b']);assert.deepEqual(filterLibrary(entries,{visibility:'visible',sort:'library'},ctx).map(e=>e.id),['b','i']);assert.deepEqual(filterLibrary(entries,{backgrounds:'starred',sort:'library'},ctx).map(e=>e.id),['o','i']);assert.deepEqual(filterLibrary(entries,{description:'missing'},ctx),[]);
 });

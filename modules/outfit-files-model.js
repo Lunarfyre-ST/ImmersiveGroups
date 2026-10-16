@@ -4,7 +4,6 @@ export function uniqueSpriteName(filename,used){
     const leaf=String(filename).split(/[\\/]/).pop(),match=leaf.match(/^(.*)(\.[^.]+)$/);
     if(!match||!spriteImageName(leaf))throw new Error('Unsupported sprite image.');
     let stem=match[1].replace(/[^\p{L}\p{N}_ .-]/gu,'_').replace(/^\.+/,'').slice(0,100)||'sprite';
-<<<<<<< HEAD
     const root=stem.replace(/-\d+$/,''),ext=match[2].toLowerCase();let number=BigInt(stem.match(/-(\d+)$/)?.[1]||0);
     while(used.has(stem.toLowerCase()))stem=`${root}-${++number}`;
     used.add(stem.toLowerCase());return {stem,filename:stem+ext,label:stem.match(/^(.+?)(?:[-.].*)?$/)?.[1]||stem};
@@ -25,12 +24,6 @@ export function readZipImage(file,maxBytes=20*1024*1024){
         stream.on('error',fail);stream.on('end',()=>{if(done)return;done=true;resolve(new Blob(chunks));chunks=[];});stream.resume();
     });
 }
-=======
-    const root=stem.replace(/-\d+$/,''),ext=match[2].toLowerCase();let number=Number(stem.match(/-(\d+)$/)?.[1]||0);
-    while(used.has(stem.toLowerCase()))stem=`${root}-${++number}`;
-    used.add(stem.toLowerCase());return {stem,filename:stem+ext,label:stem.match(/^(.+?)(?:[-.].*)?$/)?.[1]||stem};
-}
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 export function scanFolderCandidates(characters,files){
     const found=new Map();
     for(const file of files){

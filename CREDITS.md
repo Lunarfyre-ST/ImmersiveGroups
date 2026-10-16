@@ -70,7 +70,6 @@ The library navigation redesign, dedicated outfit form with optional ZIP upload,
 ## 0.2.5 additions — 2026-10-16
 
 Fresh-install defaults, automation lock status notices, 165 cm character defaults with legacy-conversion safeguards, import guidance and the reorganized sprite-shadow panel are ImmersiveGroups changes maintained by Lunarfyre-ST and contributors.
-<<<<<<< HEAD
 
 ## 0.2.6 additions — 2026-10-16
 
@@ -85,5 +84,7 @@ The accessible chat-history control, scene animation settings and cancellation, 
 In-place outfit crossfades, selectable transition styles, linked fade timings, animation resets and synchronized Scene tuning animation controls are ImmersiveGroups additions maintained by Lunarfyre-ST and contributors. Existing upstream and dependency notices are retained.
 
 The 0.2.8 outfit ownership guards, preserved mismatch quarantine and explicit shared-outfit recovery are also ImmersiveGroups changes.
-=======
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
+
+The 0.2.8 repository repair also adds merge-marker detection, JSON validation and browser-test syntax checks to the build validation.
+
+HTML-aware image-command recognition uses parse5 by Ivan Nikulin and contributors (MIT), with the entities decoder by Felix Böhm and contributors (BSD-2-Clause). These dependencies are bundled in Gallery; their license texts are included in `licenses/Parse5-MIT.txt` and `licenses/Entities-BSD-2-Clause.txt`. This repair replaces regex-based HTML filtering with parser-based text recognition and prevents excluded examples from joining into new commands.

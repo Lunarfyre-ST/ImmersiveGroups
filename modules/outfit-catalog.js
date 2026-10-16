@@ -31,7 +31,6 @@ export function catalogFor(avatar) {
 }
 export function onCatalogChange(listener) { listeners.add(listener); return () => listeners.delete(listener); }
 function changed() { saveSettingsDebounced(); for (const listener of listeners) listener(); }
-<<<<<<< HEAD
 export function outfitFolderAllowed(character, folder) {
     return !foreignOutfitFolder(character, folder, getContext().characters || []) ||
         catalogFor(character.avatar).outfits.some(entry => entry.folder === folder && (entry.explicit === true || entry.source === 'manual'));
@@ -72,8 +71,6 @@ export function quarantinedOutfits() {
     const config = settings(), characters = getContext().characters || [];
     return Object.keys(config.outfitCatalog || {}).flatMap(avatar => (catalogFor(avatar).quarantinedOutfits || []).map(entry => ({ ...entry, avatar, character: characters.find(c => c.avatar === avatar)?.name || avatar })));
 }
-=======
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
 function rememberFolder(avatar, folder) {
     const config=settings();
     if(!config.outfitFolders||typeof config.outfitFolders!=='object'||Array.isArray(config.outfitFolders))config.outfitFolders={};
@@ -83,35 +80,23 @@ function rememberFolder(avatar, folder) {
 }
 export function rememberOutfit(character, raw, { label, source = 'observed', notify = true, explicit = false } = {}) {
     const folder = cleanFolder(raw); if (!folder || !character?.avatar) return false;
-<<<<<<< HEAD
     if (!explicit && !outfitFolderAllowed(character, folder)) return false;
-=======
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     const record = catalogFor(character.avatar);
     if (record.ignored.includes(folder) && !explicit) return false;
     if (explicit) record.ignored = record.ignored.filter(f => f !== folder);
     const existing = record.outfits.find(entry => entry.folder === folder);
     const remembered=rememberFolder(character.avatar,folder);
-<<<<<<< HEAD
     if (existing) {const approved=explicit&&existing.explicit!==true;if(explicit){existing.explicit=true;existing.source='manual';}if(remembered||approved){if(notify)changed();else saveSettingsDebounced();}return false;}
     const archived = explicit && Array.isArray(record.quarantinedOutfits) ? record.quarantinedOutfits.find(entry => entry.folder === folder) : null;
     if (archived) record.quarantinedOutfits = record.quarantinedOutfits.filter(entry => entry !== archived);
     record.outfits.push({ folder, hidden: null, description: '', ...archived, label: label?.trim().slice(0,80) || archived?.label || folderLabel(folder, character), source: explicit ? 'manual' : source, explicit });
-=======
-    if (existing) {if(remembered){if(notify)changed();else saveSettingsDebounced();}return false;}
-    record.outfits.push({ folder, label: label?.trim().slice(0,80) || folderLabel(folder, character), hidden: null, description: '', source });
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     if (notify) changed();
     return true;
 }
 // Native overrides are global per avatar, including Quick Reply changes. Read
 // them before/after chat transitions even when that character has no loaded sprite.
-<<<<<<< HEAD
 export function rememberNativeOutfits(repair = true) {
     if (repair) repairOutfitOwnership();
-=======
-export function rememberNativeOutfits() {
->>>>>>> 80eb6b24fe0276df89f7dec59ead36cc3c949b60
     const ctx=getContext();let dirty=false;
     for(const override of Array.isArray(extension_settings.expressionOverrides)?extension_settings.expressionOverrides:[]) {
         const character=ctx.characters?.find(c=>c.avatar?.replace(/\.[^/.]+$/,'')===override?.name);
