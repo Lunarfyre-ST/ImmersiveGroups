@@ -7,9 +7,11 @@ import { mountAnimationControls } from './animation-controls.js';
 import { setupSceneAnimations } from './scene-animations.js';
 import { mountPresetControls, resetVisualSettings } from './preset-controls.js';
 import { extensionName } from '../constants.js';
+import { EXTENSION_VERSION } from '../version.js';
 import { setupResponsive, mobileLayout, editingLayout, layoutKeys } from './responsive.js';
 
 export function setupSettingsShell() {
+    for(const label of document.querySelectorAll('[data-ig-version]'))label.textContent=EXTENSION_VERSION;
     setupResponsive();
     setupSceneAnimations();
     mountAnimationControls(document.querySelector('[data-ig-animation-controls]'));

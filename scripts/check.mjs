@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { EXTENSION_VERSION } from '../version.js';
 import { build, transform } from 'esbuild';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 async function files(dir){return (await Promise.all((await fs.readdir(dir,{withFileTypes:true})).filter(e=>!['node_modules','.git','gallery/dist'].includes(e.name)).map(async e=>e.isDirectory()?files(path.join(dir,e.name)):path.join(dir,e.name)))).flat();}
@@ -18,5 +19,7 @@ await build({entryPoints:[path.join(root,'index.js')],bundle:true,write:false,fo
 const manifest=JSON.parse(await fs.readFile(path.join(root,'manifest.json'),'utf8'));
 for(const file of [manifest.js,manifest.css])await fs.access(path.join(root,file));
 const html=await fs.readFile(path.join(root,'html/settings.html'),'utf8'),ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
+for(const filename of ['manifest.json','package.json','package-lock.json']){const data=JSON.parse(await fs.readFile(path.join(root,filename),'utf8'));if(data.version!==EXTENSION_VERSION||data.packages?.['']&&data.packages[''].version!==EXTENSION_VERSION)throw Error(`Release version mismatch in ${filename}. Run scripts/set-version.mjs.`);}
+const versionLabels=[...html.matchAll(/<span data-ig-version>([^<]+)<\/span>/g)];if(versionLabels.length<2||versionLabels.some(m=>m[1]!==EXTENSION_VERSION))throw Error('About/footer version mismatch. Run scripts/set-version.mjs.');
 if(new Set(ids).size!==ids.length)throw new Error('Duplicate settings element IDs');
 console.log(`Checked merge markers, JSON syntax, ${all.filter(f=>/\.(?:js|mjs|cjs)$/.test(f)).length} JavaScript files, combined imports, manifest assets and ${ids.length} unique settings IDs.`);

@@ -2,12 +2,13 @@
 // Combined project entry point. See CREDITS.md for upstream authors and origins.
 import * as extensions from '../../../extensions.js';
 import { migrateSettings, findLegacyConflicts } from './modules/migration.js';
+import { EXTENSION_VERSION } from './version.js';
 
 let sceneAutomation=null;
 const runtimeKey=Symbol.for('ImmersiveGroups.runtime');
 const rootUrl=new URL('.',import.meta.url);
 const current='third-party/'+decodeURIComponent(rootUrl.pathname.split('/').filter(Boolean).pop());
-const runtime=globalThis[runtimeKey] ||= {version:'0.3.3',status:'idle',components:{},errors:[]};
+const runtime=globalThis[runtimeKey] ||= {version:EXTENSION_VERSION,status:'idle',components:{},errors:[]};
 
 function showProblem(text) {
     console.error('[ImmersiveGroups]',text);

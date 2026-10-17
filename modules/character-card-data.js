@@ -4,4 +4,4 @@ export function validateCardJson(value){
     const name=value.data?.name||value.name;if(typeof name!=='string'||!name.trim()||name.length>200)throw Error('JSON character card has no valid name.');
     if(value.spec!==undefined&&!['chara_card_v2','chara_card_v3'].includes(value.spec))throw Error('Unsupported character card format.');return value;
 }
-export function safeCardJson(value){const data=structuredClone(validateCardJson(value));if(data?.data?.extensions?.risuai){delete data.data.extensions.risuai.additionalAssets;delete data.data.extensions.risuai.emotions;}return data;}
+export function safeCardJson(value){const data=structuredClone(validateCardJson(value));for(const owner of [data,data.data])if(owner?.extensions?.risuai){delete owner.extensions.risuai.additionalAssets;delete owner.extensions.risuai.emotions;}return data;}

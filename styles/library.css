@@ -183,3 +183,7 @@
 .ig-transfer-body input::placeholder{color:inherit;opacity:.65}
 .ig-transfer-option{display:grid;gap:2px;min-width:0}
 .ig-transfer-option>small{padding-inline-start:24px;font-size:11px;line-height:1.4}
+
+.ig-transfer-outfit-list{display:grid;gap:8px;max-height:300px;overflow:auto;overscroll-behavior:contain}
+.ig-transfer-outfit-row{display:grid;gap:4px;padding:8px;border:1px solid var(--SmartThemeBorderColor,#777);border-radius:6px;min-width:0}.ig-transfer-outfit-row code{font-size:11px;overflow-wrap:anywhere}
+.ig-transfer-conflict-warning{display:grid;gap:8px;padding:12px;border:1px solid #d7a66e;border-radius:6px;background:#bd824018;min-width:0}.ig-transfer-conflict-warning[hidden]{display:none}.ig-transfer-conflict-warning p{margin:0}.ig-transfer-conflict-warning ul{margin:0;padding-inline-start:20px;max-height:170px;overflow:auto;overflow-wrap:anywhere}

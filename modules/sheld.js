@@ -33,7 +33,9 @@ export function applySheldMode() {
         }
         migratedLegacyVisibility = true;
     }
-    // Older versions hid pagination. Keep history reachable in every mode.
+    // Pagination is useful only when history is visible. Keep native markup and
+    // handlers intact, including pagination inserted after a chat switch.
+    document.getElementById('chat')?.classList.toggle('ig-last-reply-only',Boolean(settings.enableVN_UI&&settings.showOnlyLastMessage));
     document.querySelectorAll("#chat #show_more_messages").forEach(node => node.classList.remove("displayNone"));
     const latest = rows.at(-1);
     for (const row of rows) {

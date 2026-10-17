@@ -4,7 +4,7 @@ import { mobileLayout, editingLayout, layoutSettings } from './responsive.js';
 import { getContext, extension_settings } from '../../../../extensions.js';
 import { saveSettingsDebounced, eventSource, event_types } from '../../../../../script.js';
 import { extensionName } from '../constants.js';
-import { bounded, heightFactor, tallestHeight, migrateHeightSettings, migrateFineTuning, REFERENCE_HEIGHT_CM } from './height-model.js';
+import { bounded, heightFactor, tallestHeight, migrateHeightSettings, migrateFineTuning, REFERENCE_HEIGHT_CM, withOutfitHeight } from './height-model.js';
 export { bounded } from './height-model.js';
 
 const owns=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k);
@@ -25,10 +25,19 @@ function characterFor(node){
     const avatar=node.dataset?.avatar||node.id?.replace(/^(?:ig-)?expression-/,'');
     return node.id==='expression-holder'?ctx.characters?.[ctx.characterId]:ctx.characters?.find(c=>c.avatar===avatar);
 }
+function activeFolder(character){
+    const stem=character.avatar.replace(/\.[^/.]+$/,'');
+    return extension_settings.expressionOverrides?.find(e=>e.name===stem)?.path||character.name;
+}
+function effectiveProfile(character,layout,folder=activeFolder(character)){
+    const entry=config().outfitCatalog?.[character.avatar]?.outfits?.find(o=>o.folder===folder);
+    try{return withOutfitHeight(profileFor(character.avatar,layout),entry);}catch{return profileFor(character.avatar,layout);}
+}
+function activeReference(){const characters=groupCharacters();return tallestHeight(Object.fromEntries(characters.map(c=>[c.avatar,effectiveProfile(c,'desktop')])),characters.map(c=>c.avatar));}
 export function spriteProfileFactor(node){
     if(!config().enableHeightProfiles)return 1;
     const character=characterFor(node);if(!character)return 1;
-    return heightFactor(profileFor(character.avatar),tallestHeight(config().heightProfiles,groupCharacters().map(c=>c.avatar)));
+    return heightFactor(effectiveProfile(character),activeReference());
 }
 export function spriteProfileOffset(node){const c=characterFor(node);return c?bounded(profileFor(c.avatar).offsetY,-1000,1000,0):0;}
 function scopeKey(){const c=getContext();return c.groupId!=null?`group:${c.groupId}`:`solo:${c.characters?.[c.characterId]?.avatar||''}`;}
@@ -60,12 +69,12 @@ function loadFields(){
     el('prome-profile-fine').value=Math.round(fine*100)/100;
     el('prome-profiles-enabled').checked=Boolean(config().enableHeightProfiles);
     el('prome-profile-y').value=profile.offsetY||0;el('prome-profile-y-slider').value=profile.offsetY||0;
-    const reference=tallestHeight(config().heightProfiles,groupCharacters().map(c=>c.avatar));
+    const reference=activeReference(),effective=effectiveProfile(character,editingLayout()),visualHeight=effective.heightCm||height;
     const base=config().scaleSprites?Number(config().maxSpriteScale)||1:1;
     const usingHeights=Boolean(config().enableHeightProfiles);
-    const factor=(usingHeights?heightFactor({...profile,heightCm:height},reference):1)*Number(layoutSettings(editingLayout()).layoutSpriteScale||100)*base;
+    const factor=(usingHeights?heightFactor({...profile,heightCm:visualHeight},reference):1)*Number(layoutSettings(editingLayout()).layoutSpriteScale||100)*base;
     el('prome-profiles-enabled').checked=Boolean(config().enableHeightProfiles);
-    el('prome-profile-preview').textContent=`Tallest reference: ${reference} cm. ${character.name}: ${usingHeights?Math.round(height/reference*100):100}% height × ${usingHeights?Math.round((1+fine/100)*10000)/100:100}% fine × ${layoutSettings(editingLayout()).layoutSpriteScale||100}% fit × ${Math.round(base*100)}% legacy = ${Math.round(factor)}% of the sprite frame${config().enableHeightProfiles?'':' (height scaling off)'}.`;
+    el('prome-profile-preview').textContent=`Tallest reference: ${reference} cm. ${character.name}${visualHeight!==height?' (outfit height override)':''}: ${usingHeights?Math.round(visualHeight/reference*100):100}% height × ${usingHeights?Math.round((1+fine/100)*10000)/100:100}% fine × ${layoutSettings(editingLayout()).layoutSpriteScale||100}% fit × ${Math.round(base*100)}% legacy = ${Math.round(factor)}% of the sprite frame${config().enableHeightProfiles?'':' (height scaling off)'}.`;
     el('prome-fine-range-status').textContent=Math.abs(fine)>20?`Typed adjustment: ${fine>0?'+':''}${Math.round(fine*100)/100}%. The slider stays within −20% to +20%.`:'Slider: −20% to +20%. Type a larger adjustment if needed; 0% leaves the scale unchanged.';
 }
 function writeProfile(key,value){
@@ -94,6 +103,7 @@ export function setupHeightProfiles(applyScale){
     for(const name of ['CHAT_CHANGED','GROUP_UPDATED','CHARACTER_MESSAGE_RENDERED','MESSAGE_SWIPED','SETTINGS_UPDATED'])if(event_types[name])eventSource.on(event_types[name],scheduleRefresh);
     new MutationObserver(records=>{if(records.some(r=>r.target?.closest?.('#visual-novel-wrapper,#expression-wrapper,#ig-mobile-sprites')))scheduleRefresh();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['src']});
     el('prome-height-profile-editor').addEventListener('focusout',scheduleRefresh);
+    window.addEventListener('ig-scene-library-change',scheduleRefresh);
     window.addEventListener('ig-editor-layout-change',()=>refreshProfileEditor(true));
     window.addEventListener('ig-layout-change',()=>{applyScale();refreshProfileEditor();});
     window.addEventListener('resize',applyScale.bind(null,null));window.visualViewport?.addEventListener('resize',applyScale.bind(null,null));

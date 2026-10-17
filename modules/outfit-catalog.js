@@ -4,6 +4,7 @@ import { extension_settings, getContext } from '../../../../extensions.js';
 import { saveSettingsDebounced } from '../../../../../script.js';
 import { extensionName } from '../constants.js';
 import { foreignOutfitFolder, characterFolderRoots, outfitRoot } from './outfit-ownership.js';
+import { outfitHeightOverride } from './height-model.js';
 
 const own = (object, key) => Object.prototype.hasOwnProperty.call(object || {}, key);
 const settings = () => extension_settings[extensionName];
@@ -131,6 +132,7 @@ export function outfitOptions(character, includeHidden = false) {
 export function editOutfit(avatar, folder, patch) {
     const record = catalogFor(avatar), entry = record.outfits.find(e => e.folder === folder);
     if (!entry) return;
+    if (own(patch,'heightOverrideCm')) entry.heightOverrideCm=outfitHeightOverride(patch.heightOverrideCm);
     if (typeof patch.label === 'string') entry.label = patch.label.trim().slice(0,80) || folder.split('/').pop();
     if (typeof patch.description === 'string') entry.description = patch.description.trim().slice(0,1000);
     if (typeof patch.commonName === 'string') entry.commonName = patch.commonName.trim().slice(0,80);

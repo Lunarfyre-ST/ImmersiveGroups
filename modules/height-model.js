@@ -5,6 +5,14 @@ export function bounded(value,min,max,fallback) {
 }
 const own=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k);
 export const REFERENCE_HEIGHT_CM=165;
+export function outfitHeightOverride(value) {
+    if(value===''||value==null)return null;
+    const n=Number(value);if(!Number.isFinite(n)||n<30||n>300)throw Error('Outfit height must be blank or between 30 and 300 cm.');return n;
+}
+export function withOutfitHeight(profile={},outfit={}) {
+    const override=outfitHeightOverride(outfit.heightOverrideCm);
+    return override===null?profile:{...profile,heightCm:override};
+}
 export function heightFactor(profile={},reference=REFERENCE_HEIGHT_CM) {
     const fine=bounded(profile.fineTuneOffset,-99,7900,0);
     // The caller supplies the tallest active character as the reference.

@@ -4,6 +4,7 @@ import JSZip from '../vendor/jszip.js';
 import { sha256Bytes } from './transfer-hash.js';
 import { TRANSFER_LIMITS as limits, archivePath, validateCharacterBundle } from './character-transfer-model.js';
 import { readZipImage } from './outfit-files-model.js';
+import { checkTransferZipIndex } from './transfer-archive-index.js';
 
 export async function digestBlob(blob) {const bytes=await blob.arrayBuffer();if(!globalThis.crypto?.subtle)return sha256Bytes(bytes);return [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(n=>n.toString(16).padStart(2,'0')).join('');}
 export async function checkTransferImage(blob,filename) {
@@ -18,12 +19,13 @@ export async function createTransferZip(manifest,assets,onProgress=()=>{}) {
     if(assets.length+2>limits.entries)throw Error('Too many files for one bundle. Export fewer characters.');const archive=new JSZip();let total=0;
     for(const [index,item] of assets.entries()){onProgress(`Packing ${index+1}/${assets.length}: ${item.metadata.filename}`);await checkTransferAsset(item.blob,item.metadata);total+=item.blob.size;if(total>limits.expanded)throw Error('Bundle exceeds 500 MiB. Export fewer characters or omit image files.');const metadata={...item.metadata,size:item.blob.size,sha256:await digestBlob(item.blob)};manifest.assets.push(metadata);archive.file(metadata.path,await item.blob.arrayBuffer(),{binary:true,createFolders:false});}
     const clean=validateCharacterBundle(manifest);const json=JSON.stringify(clean,null,2);if(new TextEncoder().encode(json).length>limits.manifest)throw Error('Settings manifest exceeds 5 MiB. Export fewer characters.');
-    archive.file('manifest.json',json);archive.file('ABOUT.txt',`ImmersiveGroups — ${clean.name}\nVersion ${clean.extensionVersion}\nImport through ImmersiveGroups → Import / export.\nThis bundle contains only the categories selected by its creator.\nCharacter cards may contain embedded lore and creator notes. Chats, API credentials, connection URLs and device-specific chat state are excluded.\nImage files already on the destination are never overwritten.\n`);
+    archive.file('manifest.json',json);archive.file('ABOUT.txt',`ImmersiveGroups — ${clean.name}\nVersion ${clean.extensionVersion}\nImport through ImmersiveGroups → Import / export.\nThis bundle contains only the categories selected by its creator.\nCharacter cards may contain embedded lore and creator notes. Chats, API credentials, connection URLs and device-specific chat state are excluded.\nExisting cards/backgrounds are kept. Sprite replacements require per-outfit conflict review and explicit acknowledgement in supported versions.\n`);
     const blob=await archive.generateAsync({type:'blob',compression:'STORE'},p=>onProgress(`Creating ZIP: ${Math.round(p.percent)}%`));if(blob.size>limits.archive)throw Error('ZIP exceeds 250 MiB. Export fewer characters or omit image files.');return {blob,manifest:clean};
 }
 export async function readTransferZip(file,onProgress=()=>{}) {
     if(!file||file.size>limits.archive)throw Error('Choose a ZIP smaller than 250 MiB.');
-    const archive=await JSZip.loadAsync(await file.arrayBuffer());const entries=Object.values(archive.files);if(entries.length>limits.entries)throw Error('ZIP contains too many entries.');
+    const bytes=await file.arrayBuffer(),indexedNames=checkTransferZipIndex(bytes,limits.entries);
+    const archive=await JSZip.loadAsync(bytes);const entries=Object.values(archive.files);if(entries.length!==indexedNames.size||entries.some(e=>!indexedNames.has(e.unsafeOriginalName||e.name)))throw Error('ZIP entry names changed during decoding.');if(entries.length>limits.entries)throw Error('ZIP contains too many entries.');
     let expanded=0;for(const entry of entries){archivePath((entry.unsafeOriginalName||entry.name).replace(/\/$/,''));if(entry.dir)continue;const size=entry._data?.uncompressedSize;if(!Number.isSafeInteger(size)||size<0||size>(entry.name==='manifest.json'?limits.manifest:limits.image))throw Error('ZIP entry exceeds its size limit.');expanded+=size;if(expanded>limits.expanded)throw Error('ZIP expands beyond 500 MiB.');}
     const manifestFile=archive.file('manifest.json');if(!manifestFile)throw Error('This is not an ImmersiveGroups character/settings bundle. Existing sprite ZIPs belong in Upload sprite ZIP.');
     const manifest=validateCharacterBundle(JSON.parse(await (await readZipImage(manifestFile,limits.manifest)).text()));

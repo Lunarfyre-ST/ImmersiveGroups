@@ -435,6 +435,7 @@ body.waifuMode.prome-custom-sheld-height:not(.movingUI) #sheld {
 
 /* Prome owns this marker; chat source and message identifiers stay untouched. */
 #chat > .mes.prome-hidden-message { display: none !important; }
+#chat.ig-last-reply-only #show_more_messages { display:none!important; }
 
 /* Center anchors stay independent of sprite dimensions and native left animation. */
 body.waifuMode :is(#visual-novel-wrapper, #ig-mobile-sprites) > .expression-holder.prome-stable-slot {

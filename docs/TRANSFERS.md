@@ -25,13 +25,16 @@ Character cards are a separate option with a **PNG / JSON** format selector. PNG
 3. Map source characters to installed characters. Exact avatar filenames are suggested first, then unique character names. Review these suggestions.
 4. Set each destination sprite root if it differs from the displayed character name. `Character/winter` is remapped to `Destination/winter`.
 5. For a new character, enable **Character card** and choose **Create a new character from included card**. Existing cards are never replaced. New cards use a separate sprite root based on their new avatar filename.
-6. Choose **Keep existing values** or **Use imported values** for matching metadata, then review the preview and apply.
+6. In **Choose outfits**, select the entries you want. Existing saved outfits or nonempty sprite folders trigger **Update mode** and start unchecked. New outfits start checked. Changing destination mappings rechecks their conflicts. Use **Recheck outfit conflicts** after external file changes.
+7. If you check a conflicting outfit, read the warning and file list, then check **I understand what I am doing** before applying. This permits matching sprite files to be replaced; unrelated files stay. If this is your first import of the pack, investigate why its paths already exist and back up the affected files first.
+8. Choose **Keep existing values** or **Use imported values** for matching metadata, then review the preview and apply. This metadata policy is separate from the acknowledgement for sprite replacements.
 
 Characters can be left unmapped. Incomplete group presets and assets with unresolved bindings are skipped rather than becoming available to the wrong characters. Existing native SillyTavern group chats are not created or modified; **Groups** means ImmersiveGroups named binding presets.
 
 ## Independent choices
 
 - **Descriptions only** updates matching outfit/image entries without replacing their names, files, colors or bindings. Missing matching entries are reported and skipped. Background scene descriptions can be copied without changing existing relationships.
+- **Outfit height overrides** copies optional per-outfit heights independently of character height profiles. Blank means normal character height; older bundles without the field do not clear an existing override.
 - **Library order** restores the order of matching outfits when using the imported-values policy. Other outfits remain present.
 - **Outfit entries** includes names, shared outfit names and visibility. Descriptions, locks, library order and UI colors have their own choices.
 - **Image files** can be included separately. Gallery files imported without assignments are stored in `ImmersiveGroups-Imports`; they do not create image commands automatically.
@@ -40,7 +43,7 @@ Characters can be left unmapped. Incomplete group presets and assets with unreso
 
 ## What is preserved
 
-- Existing sprite files are kept when a destination filename stem already exists, including variants with a different extension. Missing files are uploaded under their original names. The review/result tells you how many files were kept.
+- Existing outfits are unchecked by default in Update mode. Checking one and acknowledging the warning permits replacement of matching sprite stems, including a different extension such as `neutral.jpg` → `neutral.png`. Missing files are uploaded under their original names; unrelated sprites remain. Case-only ambiguous conflicts are blocked. The result reports kept and replaced files. Programmatic imports without an acknowledged review keep existing sprites.
 - Existing background files are kept when their names match. Background descriptions, bindings, favorites, shared outfit links and explicit load rules are portable.
 - Included gallery images receive new unique filenames in `ImmersiveGroups-Imports`; their assignments are relinked to the uploaded files.
 - Import merges selected entries; it does not remove unrelated outfits, presets, backgrounds or gallery assignments.
@@ -54,6 +57,8 @@ Bundles are limited to **250 MiB compressed**, **500 MiB expanded**, **20 MiB pe
 
 If a requested asset cannot be exported, the export reports the failure instead of claiming to create a complete portable bundle. Export without image files if you only need settings/path references, or repair the missing files first. Missing-background metadata can still be exported without its unavailable image.
 
-If an import upload fails, extension settings are not committed. New cards/files already uploaded remain on the server; the error reports the completed counts. Existing files remain intact. You can remove incomplete new assets through SillyTavern or retry after resolving the error.
+If an import upload fails, extension settings are not committed. New cards/files already uploaded remain on the server; the error reports the completed counts. During an acknowledged update, existing sprite files may already have been replaced or removed by the native endpoint; affected attempted paths are reported. Restore from backup if needed, or inspect the files before retrying. Imports are not a multi-file transaction, and simultaneous imports from another device are not locked.
 
 The existing **Upload sprite ZIP**, **Add outfit → Sprite ZIP**, and folder-name imports work as before. They use their original importer; character/settings bundles use this separate transfer window.
+
+See [Bundle format and compatibility](TRANSFER_FORMAT.md) and the [0.3.4 import/export review](IMPORT_EXPORT_REVIEW_0.3.4.md) for the maintained data contract and known limits.
