@@ -3,8 +3,9 @@
 import { defaultSettings } from '../constants.js';
 const bounds={stageFitColumns:[1,8],stageSpeakHeight:[0,80],stageSpeakWidth:[0,400],stageSpeakFontSize:[0,32],stageNameLetters:[1,40],stageControlHeight:[24,56],stageFontSize:[10,22],stageOutfitWidth:[80,260],stageGap:[2,16],stageIdleOpacity:[20,100],spriteSpacingPercent:[20,160],layoutSpriteScale:[1,600],spriteOffsetY:[-1000,1000],stageOffsetX:[-1000,1000],stageOffsetY:[-1000,1000],outfitPopupOffsetX:[-1000,1000],outfitPopupOffsetY:[-1000,1000],outfitMenuRows:[2,12]};
 const enums={stageLayout:['characters','shared'],stageFlow:['scroll','wrap','stack'],stageFadeTarget:['outfits','all','none'],stageSpeakPlacement:['top','bottom'],stageOutfitPlacement:['top','bottom'],stageBackgroundPlacement:['top','bottom']};
-const bools=['stageAutoFit','stageAbbreviate','stageShowSpeak','stageShowOutfits','stageShowNames','stageShowLocks','stageShowManager','stageShowBackgroundArrows','stageNamesAbove','stageCenterCards'];
-export const visualKeys=[...Object.keys(bounds),...Object.keys(enums),...bools];
+const colors=['stageAllOutfitColor'];
+const bools=['stageShowAllOutfits','stageAutoFit','stageAbbreviate','stageShowSpeak','stageShowOutfits','stageShowNames','stageShowLocks','stageShowManager','stageShowBackgroundArrows','stageNamesAbove','stageCenterCards'];
+export const visualKeys=[...Object.keys(bounds),...Object.keys(enums),...bools,...colors];
 const record=o=>Boolean(o&&typeof o==='object'&&!Array.isArray(o));
 const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 export function validateVisualProfile(input) {
@@ -13,6 +14,7 @@ export function validateVisualProfile(input) {
     for(const key of visualKeys){
         const value=own(input.settings,key)?input.settings[key]:defaultSettings[key];
         if(bounds[key]){if(typeof value!=='number'||!Number.isFinite(value)||value<bounds[key][0]||value>bounds[key][1])throw new Error(`Invalid ${key}.`);}
+        else if(colors.includes(key)){if(typeof value!=='string'||!/^#[a-f0-9]{6}$/i.test(value))throw new Error(`Invalid ${key}.`);}
         else if(enums[key]?!enums[key].includes(value):typeof value!=='boolean')throw new Error(`Invalid ${key}.`);
         settings[key]=value;
     }

@@ -35,15 +35,15 @@ module.exports=async function verifySceneTools(context,url){
  await page.evaluate(()=>{ctx.extensionSettings.ImmersiveGroups.sheldCharacterControls=true;window.dispatchEvent(new Event('ig-layout-change'));});await page.waitForSelector('#local_image_floating_button',{state:'hidden'});
  await page.evaluate(()=>{ctx.extensionSettings.ImmersiveGroups.stageShowBackground=false;window.dispatchEvent(new Event('ig-layout-change'));});
  await page.getByRole('button',{name:'Backgrounds and images',exact:true}).click();assert.equal(await page.locator('[data-media-pane=images]').isVisible(),true);assert.equal(await page.locator('[data-media-tabs]').isVisible(),false);
- const menu=page.locator('[data-media-pane=images]'),image=menu.locator('[data-quick-image]');await menu.locator('[data-quick-search]').fill('forest');
- const imageId=await image.locator('option').nth(1).getAttribute('value');assert.ok(imageId);await image.selectOption(imageId);assert.equal(await menu.locator('[data-quick-preview]').isVisible(),true);
+ const menu=page.locator('[data-media-pane=images]'),image=menu.locator('[data-quick-results]');await menu.locator('[data-quick-search]').fill('forest');
+ await image.locator('.ig-media-card').first().click();await menu.locator('.ig-quick-preview').evaluate(n=>n.open=true);assert.equal(await menu.locator('[data-quick-preview]').isVisible(),true);
  // An explicit send uses the native send UI; inserting never replaces a draft.
  await page.evaluate(()=>{const send=document.createElement('button');send.id='send_but';send.type='button';send.addEventListener('click',()=>{window.quickSent=document.getElementById('send_textarea').value;document.getElementById('send_textarea').value='';});document.getElementById('send_form').append(send);});
  await menu.locator('[data-quick-send]').click();assert.match(await page.evaluate(()=>window.quickSent),/^\/sys ::img general forest::$/);
  await page.locator('#send_textarea').fill('My unfinished draft');assert.equal(await menu.locator('[data-quick-send]').isDisabled(),true);await menu.locator('[data-quick-insert]').click();assert.equal(await page.locator('#send_textarea').inputValue(),'My unfinished draft\n::img general forest::');
  await page.locator('#send_textarea').fill('');await page.locator('[data-media-close]').click();
  await page.evaluate(()=>{ctx.extensionSettings.ImmersiveGroups.stageShowBackground=true;window.dispatchEvent(new Event('ig-layout-change'));});
- await page.getByRole('button',{name:'Backgrounds and images',exact:true}).click();await page.locator('[data-media-tab=backgrounds]').click();assert.equal(await page.locator('[data-bg-linked]').isVisible(),true);await page.locator('[data-media-tab=images]').click();
+ await page.getByRole('button',{name:'Backgrounds and images',exact:true}).click();await page.locator('[data-media-tab=backgrounds]').click();assert.equal(await page.locator('[data-bg-pool=linked]').isVisible(),true);await page.locator('[data-media-tab=images]').click();
  await menu.locator('[data-quick-library]').click();await page.waitForSelector('.ig-gallery-studio');assert.equal(await page.locator('.ig-background-popover').isVisible(),false);
  const card=page.locator('.ig-gallery-image-card').filter({has:page.locator('strong',{hasText:/^forest$/})}).first();await card.getByRole('button',{name:/Details & bindings/}).click();
  const editor=page.locator('.ig-gallery-editor');assert.equal(await editor.locator('.ig-image-bindings').isVisible(),true);
@@ -51,7 +51,7 @@ module.exports=async function verifySceneTools(context,url){
  await editor.locator('.ig-gallery-binding-list label').filter({hasText:'Bea'}).first().locator('input').check();await editor.getByRole('checkbox',{name:'Require all selected characters to be present'}).check();await editor.getByRole('button',{name:'Save image details'}).click();
  const bound=await page.evaluate(()=>ctx.extensionSettings.ImmersiveGroups.gallery.generalAssignments.forest);assert.deepEqual(bound.characterBindings,['alex.png','bea.png']);assert.equal(bound.requireAllCharacters,true);assert.equal(bound.availability,'bound');
  await page.locator('.ig-gallery-studio > .local-image-modal-header').getByRole('button',{name:'Close',exact:true}).click();
- await page.evaluate(()=>{ctx.groupId=null;ctx.characterId=2;emit('CHAT_CHANGED');});await page.waitForTimeout(150);await page.getByRole('button',{name:'Backgrounds and images',exact:true}).click();assert.equal(await image.locator('option').evaluateAll(nodes=>nodes.some(n=>n.textContent.includes('forest'))),false);await page.locator('[data-media-close]').click();
+ await page.evaluate(()=>{ctx.groupId=null;ctx.characterId=2;emit('CHAT_CHANGED');});await page.waitForTimeout(150);await page.getByRole('button',{name:'Backgrounds and images',exact:true}).click();assert.equal(await image.locator('.ig-media-card').evaluateAll(nodes=>nodes.some(n=>n.textContent.includes('forest'))),false);await page.locator('[data-media-close]').click();
  await page.evaluate(()=>{ctx.groupId=ctx.groups[0].id;ctx.characterId=0;emit('CHAT_CHANGED');});
  // Reload serialized settings into a new runtime, rather than reusing module state.
  const saved=await page.evaluate(()=>structuredClone(ctx.extensionSettings.ImmersiveGroups));await page.addInitScript(s=>{document.addEventListener('DOMContentLoaded',()=>{if(window.ctx)ctx.extensionSettings.ImmersiveGroups=s;},{once:true});},saved);

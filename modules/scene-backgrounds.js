@@ -2,14 +2,21 @@
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
 import { extension_settings, getContext } from '../../../../extensions.js';
 import { getRequestHeaders, saveSettingsDebounced, chat_metadata } from '../../../../../script.js';
+import { mountMediaGrid } from './media-grid.js';
+import { backgroundIsEligible, matchingBindingGroups } from './binding-groups-model.js';
 import { floatingPanel } from './floating-panel.js';
 import { layoutSettings } from './responsive.js';
 import { setupBackgroundDefaults } from './background-defaults.js';
 import { backgroundChoices, nextLinkedBackground } from './background-model.js';
+import { commonOutfitKey } from './common-outfits-model.js';
+import { bindingGroups } from './binding-groups-model.js';
+import { knownBackgrounds, forgetBackground, relinkBackground } from './background-catalog-model.js';
 import * as backgrounds from '../../../../backgrounds.js';
 import { extensionName } from '../constants.js';
 
+let linkedOutfitEpoch=0;
 let imageMenu, mediaPane='backgrounds',linkedNav,linkedCursor='',linkedScope='';
+let backgroundGrid,backgroundPool='linked',backgroundView='grid',pickerScope='',backgroundPoolTouched=false;
 let api, panel, picker, popup, dialog, files = [], loading = false, filesLoaded = false, backgroundRevision = 0, defaultController;
 const settings = () => extension_settings[extensionName];
 export const getBackgroundPath = file => backgrounds.getBackgroundPath?.(file) || `backgrounds/${encodeURIComponent(file)}`;
@@ -20,17 +27,28 @@ export function backgroundSceneContext() {
     const lockedUrl = typeof chat_metadata?.custom_background === 'string' ? chat_metadata.custom_background : '';
     const activeUrl = lockedUrl || backgrounds.background_settings?.url || '';
     const current = lockedUrl ? files.find(file => activeUrl.includes(getBackgroundPath(file))) || null : backgrounds.background_settings?.name || null;
-    const known = [...new Set([...files, ...(settings().backgroundFavorites || []), ...Object.keys(settings().backgroundDescriptions || {})])];
-    return { current, locked: Boolean(lockedUrl), automationLocked: Boolean(settings().backgroundAutomationLocked), url: activeUrl,
-        library: known.map(file => ({file, available:files.includes(file), description:description(file), characterBindings:[...bindings(file)], favorite:(settings().backgroundFavorites || []).includes(file)})) };
+    const known = knownBackgrounds(files,settings());
+    return { current,outfitsEnabled:Boolean(settings().backgroundOutfitsEnabled), locked: Boolean(lockedUrl), automationLocked: Boolean(settings().backgroundAutomationLocked), url: activeUrl,
+        library: known.map(file => ({file, available:files.includes(file), description:description(file),outfitPreset:own(settings().backgroundOutfitLinks,file)?settings().backgroundOutfitLinks[file]:'', characterBindings:[...bindings(file)], presetBindings:own(settings().backgroundGroupBindings,file)&&Array.isArray(settings().backgroundGroupBindings[file])?[...settings().backgroundGroupBindings[file]]:[], favorite:(settings().backgroundFavorites || []).includes(file)})) };
 }
 const el = (tag,text='') => {const n=document.createElement(tag);n.textContent=text;return n;};
 function status(text) { dialog.querySelector('[data-bg-status]').textContent=text; }
 function saveLibrary(){saveSettingsDebounced();window.dispatchEvent(new Event('ig-background-catalog-change'));}
+export function discardBackground(file){
+    if(!filesLoaded)throw new Error('Refresh the background library first.');
+    if(files.includes(file))throw new Error('Only missing entries can be discarded. Delete files through SillyTavern first.');
+    forgetBackground(settings(),file);saveLibrary();favorites();refreshLinkedArrows();
+}
+export function relinkBackgroundEntry(oldFile,newFile){
+    if(!filesLoaded||files.includes(oldFile)||!files.includes(newFile))throw new Error('Refresh the library and select an available replacement for a missing entry.');
+    relinkBackground(settings(),oldFile,newFile);saveLibrary();favorites();refreshLinkedArrows();
+}
 export function updateBackground(file,patch){
     if(!backgroundSceneContext().library.some(entry=>entry.file===file))throw new Error('Background is no longer in the library.');
     if(typeof patch.description==='string')Object.defineProperty(settings().backgroundDescriptions,file,{value:patch.description.slice(0,12000),enumerable:true,writable:true,configurable:true});
     if(Array.isArray(patch.characterBindings))Object.defineProperty(settings().backgroundBindings,file,{value:[...new Set(patch.characterBindings.filter(a=>typeof a==='string'))],enumerable:true,writable:true,configurable:true});
+    if(Array.isArray(patch.presetBindings))Object.defineProperty(settings().backgroundGroupBindings,file,{value:[...new Set(patch.presetBindings.filter(id=>bindingGroups(settings().bindingGroups).some(g=>g.id===id)))],enumerable:true,writable:true,configurable:true});
+    if(typeof patch.outfitPreset==='string')Object.defineProperty(settings().backgroundOutfitLinks||={},file,{value:commonOutfitKey(patch.outfitPreset),writable:true,enumerable:true,configurable:true});
     if(typeof patch.favorite==='boolean'){const list=settings().backgroundFavorites||[];settings().backgroundFavorites=patch.favorite?[...new Set([...list,file])]:list.filter(f=>f!==file);}
     saveLibrary();favorites();refreshLinkedArrows();
 }
@@ -45,14 +63,22 @@ export async function readBackgrounds() {
     filesLoaded=true;refreshLinkedArrows();return files;
 }
 export function ensureBackgrounds(){return filesLoaded?Promise.resolve(files):readBackgrounds();}
-export function pickBackground(file,{automatic=false}={}) {
+export function pickBackground(file,{automatic=false,isCurrent=()=>true,excludeAvatars=[]}={}) {
     if(!files.includes(file))throw new Error('This background is no longer available. Refresh the library.');
     // Use the native selection handler so chat locks and existing native UI
     // behavior stay consistent, without constructing/executing slash commands.
-    const proxy=document.createElement('div');proxy.className='bg_example';proxy.hidden=true;proxy.setAttribute('bgfile',file);proxy.setAttribute('custom','false');proxy.dataset.igAutomatic=String(automatic);
+    const proxy=document.createElement('div');proxy.className='bg_example';proxy.hidden=true;proxy.setAttribute('bgfile',file);proxy.setAttribute('custom','false');proxy.dataset.igAutomatic=String(automatic);proxy.dataset.igLinkedManaged='true';
     $(proxy).data('url',`url("${getBackgroundPath(file)}")`);
     document.body.append(proxy);
     try {proxy.click();linkedCursor=file;refreshLinkedArrows();} finally {proxy.remove();}
+    return applyLinkedBackgroundOutfits(file,{isCurrent,excludeAvatars});
+}
+async function applyLinkedBackgroundOutfits(file,{isCurrent=()=>true,excludeAvatars=[]}={}){
+    const epoch=++linkedOutfitEpoch,s=settings(),theme=own(s.backgroundOutfitLinks,file)?s.backgroundOutfitLinks[file]:'',ctx=getContext(),chat=ctx.getCurrentChatId?.(),group=ctx.groupId;
+    const allowed=()=>s.backgroundOutfitsEnabled&&!(s.sceneAutomation?.commandless&&s.sceneAutomation?.mode!=='api');
+    if(!theme||!allowed()||!api.applyCommonOutfit)return;
+    const valid=()=>epoch===linkedOutfitEpoch&&isCurrent()&&allowed()&&settings().backgroundOutfitLinks?.[file]===theme&&getContext().getCurrentChatId?.()===chat&&getContext().groupId===group;
+    return api.applyCommonOutfit(theme,{automatic:true,isCurrent:valid,excludeAvatars});
 }
 function refreshLinkedArrows(){
     if(!linkedNav)return;
@@ -64,26 +90,26 @@ function refreshLinkedArrows(){
     for(const button of linkedNav.querySelectorAll('button'))button.disabled=!pool.length||(pool.length===1&&index===0);
 
 }
-export async function requestAutomaticBackground({file,chatId,groupId,isCurrent=()=>true}={}){
+export async function requestAutomaticBackground({file,chatId,groupId,isCurrent=()=>true,excludeAvatars=[]}={}){
     const revision=backgroundRevision;
     const valid=()=>isCurrent()&&String(getContext().getCurrentChatId?.())===String(chatId)&&String(getContext().groupId??'')===String(groupId??'')&&!chat_metadata?.custom_background&&!settings().backgroundAutomationLocked&&backgroundRevision===revision;
     if(!valid())return false;await ensureBackgrounds();if(!files.includes(file)||!valid())return false;
     await new Promise((resolve,reject)=>{const image=new Image(),timer=setTimeout(()=>done(new Error('Background image load timed out')),15000);function done(error){clearTimeout(timer);image.onload=image.onerror=null;error?reject(error):resolve();}image.onload=()=>done();image.onerror=()=>done(new Error('Background image could not load'));image.src=getBackgroundPath(file);});
-    if(!valid())return false;defaultController?.cancel();pickBackground(file,{automatic:true});return true;
+    if(!valid())return false;defaultController?.cancel();await pickBackground(file,{automatic:true,isCurrent:valid,excludeAvatars});return true;
 }
 function favorites() {
-    const character=picker.querySelector('[data-bg-character]');
-    const previous=character.value;
-    const characters=api.characters(),charSignature=JSON.stringify(characters.map(c=>[c.avatar,c.name]));
-    if(character!==document.activeElement&&character.dataset.signature!==charSignature){character.replaceChildren(new Option('All characters',''));for(const c of characters)character.append(new Option(c.name,c.avatar));character.value=characters.some(c=>c.avatar===previous)?previous:'';character.dataset.signature=charSignature;}
-    const {linked,starred}=backgroundChoices(files,settings(),characters.map(c=>c.avatar),character.value);
-    for(const [selector,entries,label,empty] of [['[data-bg-linked]',linked,'Choose linked background','No linked backgrounds'],['[data-bg-picker]',starred,'Choose starred background','Star backgrounds in the library']]){
-        const select=picker.querySelector(selector),signature=JSON.stringify(entries);
-        // Never replace rows while a native touch picker is open.
-        if(select!==document.activeElement&&select.dataset.signature!==signature){select.replaceChildren(new Option(entries.length?label:empty,''));for(const file of entries)select.append(new Option(file,file));select.disabled=!entries.length;select.dataset.signature=signature;}
-        select.title=label;
-    }
-    picker.querySelector('[data-bg-linked-empty]').hidden=linked.length>0;
+    if(!picker||!backgroundGrid)return;
+    const character=picker.querySelector('[data-bg-character]'),search=picker.querySelector('[data-bg-quick-search]'),characters=api.characters(),ctx=getContext();
+    const scope=JSON.stringify([ctx.groupId??null,ctx.getCurrentChatId?.(),characters.map(c=>c.avatar)]),groups=matchingBindingGroups(settings().bindingGroups,characters.map(c=>c.avatar));
+    if(scope!==pickerScope){pickerScope=scope;character.value='';search.value='';backgroundPoolTouched=false;backgroundPool=backgroundChoices(files,settings(),characters.map(c=>c.avatar)).linked.length?'linked':'starred';}
+    const signature=JSON.stringify([characters.map(c=>[c.avatar,c.name]),groups]);
+    if(character!==document.activeElement&&character.dataset.signature!==signature){const previous=character.value;character.replaceChildren(new Option('Current chat',''));for(const c of characters)character.append(new Option(c.name,c.avatar));for(const g of groups)character.append(new Option(`Group: ${g.name}`,`preset:${g.id}`));character.value=[...character.options].some(o=>o.value===previous)?previous:'';character.dataset.signature=signature;}
+    const preset=groups.find(g=>`preset:${g.id}`===character.value),avatars=preset?preset.members:characters.map(c=>c.avatar),filter=preset?'':character.value;
+    const pools=backgroundChoices(files,settings(),avatars,filter),all=files.filter(file=>!character.value||backgroundIsEligible(backgroundSceneContext().library.find(b=>b.file===file),filter?[filter]:avatars,settings().bindingGroups,false));
+    const choices={...pools,all};if(!backgroundPoolTouched)backgroundPool=pools.linked.length?'linked':pools.starred.length?'starred':'all';for(const button of picker.querySelectorAll('[data-bg-pool]')){const key=button.dataset.bgPool;button.textContent=`${key==='linked'?'Linked':key==='starred'?'Starred':'All'} (${choices[key].length})`;button.setAttribute('aria-pressed',String(backgroundPool===key));}
+    const words=search.value.toLowerCase().trim().split(/\s+/).filter(Boolean),entries=choices[backgroundPool].filter(file=>words.every(w=>`${file} ${description(file)}`.toLowerCase().includes(w))).map(file=>({id:file,name:file,description:description(file),src:getBackgroundPath(file)}));
+    backgroundGrid.render(entries,{selected:linkedCursor||backgroundSceneContext().current,view:backgroundView,emptyText:search.value?'No backgrounds match this search.':backgroundPool==='linked'?'No shared links for this selection.':backgroundPool==='starred'?'No starred backgrounds for this selection.':'No backgrounds available.'});
+    const lock=picker.querySelector('[data-bg-model-lock]');lock.setAttribute('aria-pressed',String(Boolean(settings().backgroundAutomationLocked)));lock.innerHTML=settings().backgroundAutomationLocked?'<i class="fa-solid fa-lock" aria-hidden="true"></i>':'<i class="fa-solid fa-lock-open" aria-hidden="true"></i>';lock.title=settings().backgroundAutomationLocked?'Model background changes locked':'Model background changes allowed';
 }
 export function refreshBackgrounds(layout) {
     if(!panel)return;
@@ -100,7 +126,7 @@ export function refreshBackgrounds(layout) {
     const target=layout.stageBackgroundPlacement==='bottom'?api.bottom:api.top;
     if(panel.parentElement!==target)target.append(panel);
     if(panel.hidden)popup.close();
-    picker.querySelector('[data-bg-model-lock]').checked=Boolean(settings().backgroundAutomationLocked);favorites();
+    picker.querySelector('[data-bg-model-lock]').hidden=mediaPane!=='backgrounds';favorites();
 }
 function renderLibrary() {
     const list=dialog.querySelector('[data-bg-list]'),search=dialog.querySelector('[data-bg-search]').value.toLocaleLowerCase();list.replaceChildren();
@@ -120,27 +146,35 @@ function renderLibrary() {
         row.append(image,star,label,use,notes,bound);list.append(row);
     }
 }
-async function openLibrary() {
-    if(window.ImmersiveGroupsGallery?.openLibrary)return window.ImmersiveGroupsGallery.openLibrary({type:'background'});
+async function openLibrary(view={}) {
+    if(window.ImmersiveGroupsGallery?.openLibrary)return window.ImmersiveGroupsGallery.openLibrary({type:'background',...view});
     if(!dialog.open)dialog.showModal();status('Loading backgrounds…');
     if(loading)return;loading=true;
     try{await readBackgrounds();renderLibrary();favorites();status(`${files.length} backgrounds. Star favorites to show them on the Sheld.`);}catch(error){status(error.message);}finally{loading=false;}
 }
 export function setupBackgrounds(services) {
-    api=services;const s=settings();if(!Array.isArray(s.backgroundFavorites))s.backgroundFavorites=[];if(!s.backgroundBindings||typeof s.backgroundBindings!=='object'||Array.isArray(s.backgroundBindings))s.backgroundBindings={};
+    api=services;const s=settings();
+    document.addEventListener('click',event=>{const node=event.target.closest?.('.bg_example');if(!node||node.dataset.igLinkedManaged==='true')return;const file=node.getAttribute('bgfile');queueMicrotask(()=>applyLinkedBackgroundOutfits(file).catch(error=>console.warn('[ImmersiveGroups] Linked outfits:',error.message)));},true);if(!Array.isArray(s.backgroundFavorites))s.backgroundFavorites=[];if(!s.backgroundBindings||typeof s.backgroundBindings!=='object'||Array.isArray(s.backgroundBindings))s.backgroundBindings={};
     if(!s.backgroundDescriptions||typeof s.backgroundDescriptions!=='object'||Array.isArray(s.backgroundDescriptions))s.backgroundDescriptions={};
+    if(!s.backgroundGroupBindings||typeof s.backgroundGroupBindings!=='object'||Array.isArray(s.backgroundGroupBindings))s.backgroundGroupBindings={};
     panel=el('div');panel.className='ig-background-controls';
     linkedNav=el('div');linkedNav.id='ig-linked-background-nav';linkedNav.setAttribute('aria-label','Linked background navigation');linkedNav.hidden=true;
     for(const [direction,label] of [[-1,'Previous linked background'],[1,'Next linked background']]){const button=el('button',direction<0?'‹':'›');button.type='button';button.className='prome-stage-button';button.setAttribute('aria-label',label);button.title=label;button.addEventListener('click',()=>{const file=nextLinkedBackground(files,settings(),api.characters().map(c=>c.avatar),linkedCursor||backgroundSceneContext().current,direction);if(file)try{pickBackground(file);}catch(error){console.warn('[ImmersiveGroups]',error.message);}});linkedNav.append(button);}
     document.getElementById('prome-stage-manage').after(linkedNav);
-    window.addEventListener('ig-background-catalog-change',refreshLinkedArrows);
+    window.addEventListener('ig-background-catalog-change',()=>{favorites();refreshLinkedArrows();});
+    window.addEventListener('ig-binding-groups-change',()=>{favorites();refreshLinkedArrows();});
     document.addEventListener('click',event=>{const node=event.target.closest?.('.bg_example');if(node){linkedCursor=node.getAttribute('bgfile')||'';requestAnimationFrame(refreshLinkedArrows);}},true);
     const toggle=el('button');toggle.type='button';toggle.className='prome-stage-button';toggle.title='Backgrounds & images';toggle.setAttribute('aria-label','Backgrounds and images');toggle.innerHTML='<i class="fa-solid fa-image" aria-hidden="true"></i>';panel.append(toggle);api.top.append(panel);
-    picker=el('section');picker.className='ig-background-popover';picker.setAttribute('aria-label','Backgrounds and images');picker.innerHTML=`<header><strong>Backgrounds &amp; images</strong><button type="button" data-media-close aria-label="Close backgrounds and images">×</button></header>
+    picker=el('section');picker.className='ig-background-popover';picker.setAttribute('aria-label','Backgrounds and images');picker.innerHTML=`<header><strong>Backgrounds &amp; images</strong><div class="ig-media-header-actions"><button type="button" data-bg-model-lock aria-label="Lock model background changes" aria-pressed="false">🔓</button><button type="button" data-media-close aria-label="Close backgrounds and images">×</button></div></header>
     <div class="ig-media-tabs" data-media-tabs role="tablist" aria-label="Scene media"><button type="button" role="tab" id="ig-media-backgrounds-tab" data-media-tab="backgrounds" aria-controls="ig-media-backgrounds">Backgrounds</button><button type="button" role="tab" id="ig-media-images-tab" data-media-tab="images" aria-controls="ig-media-images">Send image</button></div>
-    <div id="ig-media-backgrounds" data-media-pane="backgrounds" role="tabpanel" aria-labelledby="ig-media-backgrounds-tab"><label><input type="checkbox" data-bg-model-lock> Lock model background changes</label><label>Character filter<select data-bg-character aria-label="Background character filter"></select></label><section class="ig-media-linked"><h4>Linked backgrounds</h4><select data-bg-linked aria-label="Linked background"></select><small data-bg-linked-empty>Link backgrounds to characters in the library. All characters only shows backgrounds linked to every active member. Choose one character to see their individual links.</small></section><section class="ig-media-starred"><h4>Starred backgrounds</h4><select data-bg-picker aria-label="Starred background"></select></section><button type="button" class="menu_button" data-bg-manage>Manage backgrounds &amp; favorites</button></div>
+    <div id="ig-media-backgrounds" class="ig-media-content" data-media-pane="backgrounds" role="tabpanel" aria-labelledby="ig-media-backgrounds-tab"><div class="ig-media-search-row"><input type="search" class="text_pole" data-bg-quick-search placeholder="Find a background" aria-label="Search scene backgrounds"><button type="button" class="menu_button" data-bg-view aria-label="Use compact background list" aria-pressed="false">☷</button></div><div class="ig-media-pools" aria-label="Background pool"><button type="button" data-bg-pool="linked">Linked</button><button type="button" data-bg-pool="starred">Starred</button><button type="button" data-bg-pool="all">All</button></div><label class="ig-media-filter">For<select data-bg-character aria-label="Background character filter"></select></label><div class="ig-media-results" data-bg-results></div><footer class="ig-media-footer"><button type="button" class="menu_button" data-bg-manage>Open library</button><small role="status" data-bg-quick-status>Choose a background to apply it.</small></footer></div>
     <div id="ig-media-images" data-media-pane="images" role="tabpanel" aria-labelledby="ig-media-images-tab" hidden></div>`;
-    picker.querySelector('[data-bg-model-lock]').addEventListener('change',event=>{settings().backgroundAutomationLocked=event.target.checked;saveSettingsDebounced();window.dispatchEvent(new Event('ig-layout-change'));});
+    const libraryView=()=>({search:picker.querySelector('[data-bg-quick-search]').value,character:picker.querySelector('[data-bg-character]').value.startsWith('preset:')?'':picker.querySelector('[data-bg-character]').value,group:picker.querySelector('[data-bg-character]').value.startsWith('preset:')?picker.querySelector('[data-bg-character]').value.slice(7):''});
+    backgroundGrid=mountMediaGrid(picker.querySelector('[data-bg-results]'),{label:'Available backgrounds',onEmptyAction:()=>{popup.close();openLibrary(libraryView());},onSelect:async entry=>{const notice=picker.querySelector('[data-bg-quick-status]');try{const pending=pickBackground(entry.id);favorites();notice.textContent=`Selected ${entry.name}`;await pending;}catch(error){notice.textContent=error.message;}}});
+    picker.querySelector('[data-bg-model-lock]').addEventListener('click',()=>{settings().backgroundAutomationLocked=!settings().backgroundAutomationLocked;favorites();saveSettingsDebounced();window.dispatchEvent(new Event('ig-layout-change'));});
+    picker.querySelector('[data-bg-quick-search]').addEventListener('input',favorites);
+    for(const button of picker.querySelectorAll('[data-bg-pool]'))button.addEventListener('click',()=>{backgroundPool=button.dataset.bgPool;backgroundPoolTouched=true;favorites();});
+    picker.querySelector('[data-bg-view]').addEventListener('click',event=>{backgroundView=backgroundView==='grid'?'list':'grid';event.currentTarget.setAttribute('aria-pressed',String(backgroundView==='list'));event.currentTarget.setAttribute('aria-label',backgroundView==='list'?'Use background thumbnails':'Use compact background list');favorites();});
     document.addEventListener('click',event=>{const node=event.target.closest?.('.bg_example');if(node&&node.dataset.igAutomatic!=='true')backgroundRevision++;},true);
     popup=floatingPanel(toggle,picker);
     picker.querySelector('[data-media-close]').addEventListener('click',()=>popup.close(true));
@@ -151,12 +185,8 @@ export function setupBackgrounds(services) {
     window.addEventListener('ig-gallery-change',()=>refreshBackgrounds(layoutSettings()));
     toggle.addEventListener('click',async()=>{if(popup.isOpen){popup.close();return;}refreshBackgrounds(layoutSettings());popup.open();if(!files.length&&!loading){loading=true;try{await readBackgrounds();favorites();popup.position();}catch(error){console.warn('[ImmersiveGroups]',error.message);}finally{loading=false;}}});
     picker.querySelector('[data-bg-character]').addEventListener('change',favorites);
-    for(const select of picker.querySelectorAll('[data-bg-picker],[data-bg-linked]')){
-        select.addEventListener('change',event=>{if(!event.target.value)return;try{pickBackground(event.target.value);popup.close();}catch(error){console.warn('[ImmersiveGroups]',error.message);}event.target.value='';event.target.blur();});
-        select.addEventListener('blur',favorites);
-    }
     picker.querySelector('[data-bg-character]').addEventListener('blur',favorites);
-    picker.querySelector('[data-bg-manage]').addEventListener('click',()=>{popup.close();openLibrary();});
+    picker.querySelector('[data-bg-manage]').addEventListener('click',()=>{popup.close();openLibrary(libraryView());});
     dialog=el('dialog');dialog.className='prome-outfit-dialog ig-background-dialog';dialog.innerHTML='<div class="prome-outfit-dialog-header"><h3>Background library</h3><button type="button" class="menu_button" data-bg-close>Close</button></div><div class="prome-outfit-dialog-body"><input type="search" class="text_pole" data-bg-search placeholder="Find a background" aria-label="Find a background"><p data-bg-status role="status"></p><div data-bg-list></div></div>';document.body.append(dialog);
     dialog.querySelector('[data-bg-close]').addEventListener('click',()=>dialog.close());dialog.querySelector('[data-bg-search]').addEventListener('input',renderLibrary);
     document.getElementById('ig-open-backgrounds')?.addEventListener('click',openLibrary);

@@ -59,6 +59,29 @@ test('examples, reasoning and malformed commands do not execute',()=>{
  for(const text of ['```\n'+backgroundCommand('room.jpg')+'\n```','```\n'+backgroundCommand('room.jpg'),'<think>\n'+backgroundCommand('room.jpg'),'`'+backgroundCommand('room.jpg')+'`'])assert.equal(parseSceneCommands(text).commands.length,0);
  assert.equal(parseSceneCommands('::outfit bad syntax::').issues.length,1);assert.equal(parseSceneCommands('::outfit "a.png" "bad\\q"::').commands.length,0);
 });
+test('scene parser accepts both HTML comment endings and ignores commented commands',()=>{
+ const outside=backgroundCommand('room.jpg'),inside=outfitCommand('a.png','A/two');
+ for(const end of ['-->','--!>']){
+  const result=parseSceneCommands(`<!--\n${inside}\n${end}\n${outside}`);
+  assert.deepEqual(result,{commands:[{type:'background',file:'room.jpg'}],issues:[]});
+  assert.deepEqual(parseSceneCommands(`<!-- example ${end}\n${outside}`).commands,result.commands);
+ }
+ assert.deepEqual(parseSceneCommands(`<!--\n${inside}\n--!\n${outside}`).commands,[]);
+ assert.deepEqual(parseSceneCommands(`<!--\n${inside}\n--!!>\n${outside}`).commands,[]);
+});
+test('reasoning tags and Markdown fences inside comments cannot alter scene parser state',()=>{
+ const command=backgroundCommand('room.jpg');
+ for(const end of ['-->','--!>']){
+  // A commented opening tag or fence must not swallow later visible commands.
+  for(const example of ['<think>','<ANALYSIS>','```','~~~'])
+   assert.deepEqual(parseSceneCommands(`<!--\n${example}\n${command}\n${end}\n${command}`).commands,[{type:'background',file:'room.jpg'}]);
+  // A commented closing tag must not release commands from real reasoning.
+  for(const tag of ['think','analysis']){
+   const text=`<${tag}>\n<!--\n</${tag}>\n${end}\n${command}\n</${tag}>\n${outfitCommand('a.png','A/two')}`;
+   assert.deepEqual(parseSceneCommands(text).commands,[{type:'outfit',avatar:'a.png',folder:'A/two'}]);
+  }
+ }
+});
 test('history stripping preserves the system command protocol and does not mutate source messages',()=>{
  const s=scene(),inventory=buildSceneInventory(s,'a.png',enabled),prompt=buildScenePrompt(inventory,enabled),message={name:'A',mes:'Scene\n'+outfitCommand('a.png','A/two')};
  assert.equal(stripSceneCommands(message.mes),'Scene\n');const request=plannerMessages(prompt,message);assert.equal(message.mes.includes('::outfit'),true);assert.equal(request.length,2);assert.equal(request[1].content.includes('::outfit'),false);assert.ok(stripSceneHistoryPrompt(prompt+'\n'+backgroundCommand('room.jpg')).includes(outfitCommand('a.png','A/two')));assert.equal(stripSceneHistoryPrompt(prompt+'\n'+backgroundCommand('room.jpg')).endsWith(backgroundCommand('room.jpg')),false);

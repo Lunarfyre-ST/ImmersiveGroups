@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Gallery subsystem derived from LocalImage by mechamarmot; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
+import { commandsInText } from './image-command-text.js';
+import { contextBindingGroups, matchingBindingGroups } from '../../modules/binding-groups-model.js';
+export { commandsInText } from './image-command-text.js';
 export const GENERAL_KEY = '__localimage_general__';
 export const DEFAULT_INSTRUCTIONS = `You may display an available image when it clearly matches the current scene.
 Use at most one image per reply. Copy a complete command from AVAILABLE IMAGE COMMANDS exactly, including both pairs of colons.
@@ -27,7 +30,7 @@ export function availableInChat(entry,ctx) {
     const groups=Array.isArray(entry.groupBindings)?entry.groupBindings:[];
     if(entry.availability==='bound') {
         const matches=bound.length>0&&(entry.requireAllCharacters?bound.every(a=>avatars.has(a)):bound.some(a=>avatars.has(a)));
-        return matches || (ctx.groupId!=null&&groups.some(g=>String(g)===String(ctx.groupId)));
+        return matches || matchingBindingGroups(contextBindingGroups(ctx),[...avatars],entry.presetBindings||[]).length>0 || (ctx.groupId!=null&&groups.some(g=>String(g)===String(ctx.groupId)));
     }
     if(entry.gallery===GENERAL_KEY)return true;
     const group=ctx.groups?.find(g=>String(g.id)===String(ctx.groupId));
@@ -70,16 +73,22 @@ export function saveCatalogEntry(settings,entry,patch) {
     if(name!==entry.name&&own(map,name))throw new Error('This gallery already has that image name.');
     const old=own(map,entry.name)?map[entry.name]:{};
     const value={...(typeof old==='object'?old:{}),path:entry.path,description:String(patch.description??entry.description??'').slice(0,2000),availability:['all','bound','inherit'].includes(patch.availability)?patch.availability:'inherit',characterBindings:[...new Set((patch.characterBindings||[]).filter(a=>typeof a==='string'))],groupBindings:[...new Set((patch.groupBindings||[]).map(String))],requireAllCharacters:patch.requireAllCharacters===true};
+    value.presetBindings=[...new Set((patch.presetBindings??entry.presetBindings??[]).filter(id=>typeof id==='string'))];
     if(name!==entry.name)value.aliases=[...new Set([...(Array.isArray(value.aliases)?value.aliases:[]),entry.name])];
     Object.defineProperty(map,name,{value,enumerable:true,writable:true,configurable:true});
     if(name!==entry.name)delete map[entry.name];
     return name;
 }
-// Code examples never consume display limits. A standalone inline command may render.
-export function commandsInText(text) {
-    if(typeof text!=='string')return [];
-    const cleaned=text.replace(/```[\s\S]*?(?:```|$)|~~~[\s\S]*?(?:~~~|$)/g,'').replace(/<(pre|a|script|style|textarea)\b[^>]*>[\s\S]*?<\/\1>/gi,'').replace(/`([^`\n]*)`/g,(all,inside)=>/^::img[ \t]+[^\r\n]+::$/i.test(inside.trim())?inside:'');
-    return [...cleaned.matchAll(/::img[ \t]+([^\r\n]*?)::/gi)];
+// Parsed commands are independent of display limits. Reuse them while a message
+// stays unchanged, avoiding repeated HTML parsing across a long chat on swipes.
+const parsedMessageCommands = new WeakMap();
+function messageCommands(message) {
+    const text = message?.mes;
+    if (!message || typeof message !== 'object') return [];
+    if (typeof text !== 'string' || !/::img[ \t]/i.test(text)) { parsedMessageCommands.delete(message); return []; }
+    let cached = parsedMessageCommands.get(message);
+    if (!cached || cached.text !== text) { cached = { text, commands: commandsInText(text) }; parsedMessageCommands.set(message, cached); }
+    return cached.commands;
 }
 export function buildDisplayPolicy(chat,settings,resolve) {
     const limits=limitsFor(settings),decisions=new Map(),lastShown=new Map(),roundCounts=new Map();
@@ -87,7 +96,7 @@ export function buildDisplayPolicy(chat,settings,resolve) {
     for(const [index,message] of (chat||[]).entries()){
         if(message?.is_user)round++;
         let count=0;const images=new Map();decisions.set(index,images);
-        for(const match of commandsInText(message?.mes)){
+        for(const match of messageCommands(message)){
             const image=resolve(match[1],message);if(!image)continue;
             let reason='';
             if(limits.repeatEnabled&&lastShown.has(image.src)&&round-lastShown.get(image.src)<=limits.cooldownRounds)reason='recently shown';
@@ -118,6 +127,8 @@ export function buildGalleryPrompt(settings,ctx,files,policy) {
         if(note&&!described.has(entry.gallery)){lines.push(`Gallery context: ${JSON.stringify(String(note).slice(0,600))}`);described.add(entry.gallery);}
         if(entry.description)lines.push(`Scene: ${JSON.stringify(entry.description.slice(0,800))}`);
         if(entry.characterBindings?.length)lines.push(`Characters: ${entry.characterBindings.map(a=>ctx.characters?.find(c=>c.avatar===a)?.name||a).join(', ')}`);
+        const groups=contextBindingGroups(ctx).filter(g=>entry.presetBindings?.includes(g.id));
+        if(groups.length)lines.push(`Named groups: ${JSON.stringify(groups.map(g=>({name:g.name,members:g.members.map(a=>ctx.characters?.find(c=>c.avatar===a)?.name||a)})))}`);
     }
     return lines.join('\n');
 }

@@ -1123,7 +1123,7 @@ function availableQuickImages() {
 }
 function mountImageMenu(container) {
     return mountQuickImageMenu(container,{readEntries:availableQuickImages,readContext:()=>SillyTavern.getContext(),send:sendAsNarrator,
-        openLibrary:()=>{window.dispatchEvent(new Event('ig-close-scene-panels'));floatingPanelExpanded=false;closeFloatingPanel();openGalleryStudio();},
+        openLibrary:view=>{window.dispatchEvent(new Event('ig-close-scene-panels'));floatingPanelExpanded=false;closeFloatingPanel();openGalleryStudio(view);},
         openGeneral:()=>{window.dispatchEvent(new Event('ig-close-scene-panels'));floatingPanelExpanded=false;closeFloatingPanel();openGeneralGallery();},
         openSettings:()=>{window.dispatchEvent(new Event('ig-close-scene-panels'));floatingPanelExpanded=false;closeFloatingPanel();openExtensionSettings();}});
 }
@@ -1156,6 +1156,7 @@ function createFloatingButton() {
     observeSceneShortcut();applyGalleryShortcutSettings();
     window.addEventListener('resize', applyGalleryShortcutSettings);
     window.addEventListener('ig-layout-change',applyGalleryShortcutSettings);
+    window.addEventListener('ig-binding-groups-change',()=>{updateGalleryPrompt();for(const menu of sceneImageMenus)menu.refresh();});
     document.addEventListener('ig-floating-open',()=>closeFloatingPanel());
     document.addEventListener('pointerdown',event=>{const panel=document.getElementById(FLOATING_PANEL_ID);if(panel&&!panel.contains(event.target)&&!button.contains(event.target))closeFloatingPanel();},true);
     document.addEventListener('keydown',event=>{if(event.key==='Escape'&&floatingPanelExpanded){event.preventDefault();closeFloatingPanel();button.focus({preventScroll:true});}});
@@ -1404,8 +1405,8 @@ function installExtensionSettings() {
 }
 function openGalleryStudio(options={}) {
     const token=++galleryViewToken;
-    const type=['outfit','background','image'].includes(options?.type)?options.type:'all';
-    const initialView={type,character:typeof options?.character==='string'?options.character:'',search:'',gallery:'',description:'all',visibility:'all',outfitImages:'all',backgrounds:'all',...(type!=='all'?{currentOnly:false}:{})};
+    const type=['outfit','background','image','group'].includes(options?.type)?options.type:'all';
+    const initialView={type,character:typeof options?.character==='string'?options.character:'',search:'',gallery:'',description:'all',visibility:'all',outfitImages:'all',backgrounds:'all',backgroundAvailability:'all',...(type!=='all'?{currentOnly:false}:{})};
     window.dispatchEvent(new Event('ig-close-scene-panels'));
     closeShortcutSettings();
     if(!galleryContainer){galleryContainer=document.createElement('div');galleryContainer.id='local-image-gallery-root';document.body.appendChild(galleryContainer);galleryRoot=createRoot(galleryContainer);}

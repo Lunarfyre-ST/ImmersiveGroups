@@ -2,6 +2,7 @@
 // Gallery subsystem derived from LocalImage by mechamarmot; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
 /* global SillyTavern */
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { imageMatchesSearch } from './library-model.js';
 import { safeImageSource } from './gallery-model';
 
 /**
@@ -68,6 +69,7 @@ function SettingsPanel({ onOpenLibrary, onOpenExtensionSettings }) {
 
 function Gallery({ characterName, onClose, assignments, characterSettings, customPrompts, onAssign, onUnassign, onUpdateDescription, onSaveSettings, onAddPrompt, onEditPrompt, onDeletePrompt, isPersona = false, folderName, galleryTitle, tagEntity, onOpenGeneral, onOpenExtensionSettings, onOpenLibrary }) {
     const [images, setImages] = useState([]);
+    const [search,setSearch]=useState('');
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
@@ -342,6 +344,7 @@ function Gallery({ characterName, onClose, assignments, characterSettings, custo
         }
     }, [onClose]);
 
+    const visibleImages=images.filter(image=>imageMatchesSearch(image,getAssignmentInfo(image.src),search));
     // Count assigned images
     const assignedCount = Object.keys(assignments || {}).length;
 
@@ -417,17 +420,17 @@ function Gallery({ characterName, onClose, assignments, characterSettings, custo
                     )}
                 </div>
 
-                <div className="local-image-modal-content">
+                <div className="ig-file-search"><input type="search" className="text_pole" aria-label="Search gallery images" placeholder="Search filenames, assigned names and descriptions…" value={search} onChange={event=>setSearch(event.target.value)}/></div><div className="local-image-modal-content">
                     {loading ? (
                         <div className="local-image-loading">Loading...</div>
-                    ) : images.length === 0 ? (
+                    ) : visibleImages.length === 0 ? (
                         <div className="local-image-empty">
-                            <p>No images yet</p>
+                            <p>{search?'No matching images':'No images yet'}</p>
                             <p>Drag and drop images here or click upload</p>
                         </div>
                     ) : (
                         <div className="local-image-grid">
-                            {images.map((image, index) => {
+                            {visibleImages.map((image, index) => {
                                 const { name: assignmentName, description } = getAssignmentInfo(image.src);
                                 return (
                                     <div
