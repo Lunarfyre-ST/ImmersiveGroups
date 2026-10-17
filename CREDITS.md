@@ -84,3 +84,23 @@ The accessible chat-history control, scene animation settings and cancellation, 
 In-place outfit crossfades, selectable transition styles, linked fade timings, animation resets and synchronized Scene tuning animation controls are ImmersiveGroups additions maintained by Lunarfyre-ST and contributors. Existing upstream and dependency notices are retained.
 
 The 0.2.8 outfit ownership guards, preserved mismatch quarantine and explicit shared-outfit recovery are also ImmersiveGroups changes.
+
+The 0.2.8 repository repair also adds merge-marker detection, JSON validation and browser-test syntax checks to the build validation.
+
+HTML-aware image-command recognition uses parse5 by Ivan Nikulin and contributors (MIT), with the entities decoder by Felix Böhm and contributors (BSD-2-Clause). These dependencies are bundled in Gallery; their license texts are included in `licenses/Parse5-MIT.txt` and `licenses/Entities-BSD-2-Clause.txt`. This repair replaces regex-based HTML filtering with parser-based text recognition and prevents excluded examples from joining into new commands.
+
+## 0.2.9 additions — 2026-10-16
+
+Reusable named character groups, group-aware background/image bindings, chat-scoped searchable binding lists, missing-background metadata cleanup and relinking, and descriptions-only prompt context are ImmersiveGroups changes. Outfits retain their individual character ownership. The prior CodeQL repairs remain included.
+
+## 0.3.0 additions — 2026-10-17
+
+Compact outfit reordering, shared outfit names and group selection, background-linked outfit changes, expression browsing/counts, mismatched-entry disposal and file-gallery search are ImmersiveGroups changes. These additions retain the original Prome and LocalImage credits and all previous repairs.
+
+### 0.3.1 character/settings transfers
+
+ImmersiveGroups adds versioned character/settings bundles, selectable media packaging, character and relationship remapping, validated import reviews and non-overwriting media uploads. This transfer system is separate from the existing sprite ZIP importer. It uses the bundled JSZip library (credited above) and SillyTavern's native character/sprite/background/image APIs.
+
+### 0.3.2 media picker and transfer controls
+
+ImmersiveGroups adds compact scene-media browsing, granular transfer selections with PNG/JSON cards and background exclusions, and reversible DOM-only cleanup of spacing around hidden scene commands. The existing sprite ZIP importer remains unchanged.

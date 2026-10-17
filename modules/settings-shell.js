@@ -2,7 +2,7 @@
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
 import { extension_settings } from '../../../../extensions.js';
 import { eventSource, event_types } from '../../../../../script.js';
-import { automationSettings } from './scene-automation-model.js';
+import { automationSettings, isCommandless } from './scene-automation-model.js';
 import { mountAnimationControls } from './animation-controls.js';
 import { setupSceneAnimations } from './scene-animations.js';
 import { mountPresetControls, resetVisualSettings } from './preset-controls.js';
@@ -23,6 +23,7 @@ export function setupSettingsShell() {
         const placement={auto:'Auto',before:'Start of message',after:'End of message'}[g.prompt?.placement]||'End of message';
         const fields=[['automation',`Automation: ${s.enabled?'On':'Off'}`,s.enabled,'Master switch for outfit and background automation. Gallery instructions have their own switch.'],['mode',`Mode: ${s.mode==='api'?'API':'Prompt'}`,s.enabled,'Configured scene automation mode.'],['outfits',`Outfits: ${s.enabled&&s.outfits?s.scope==='speaker'?'Speaker':'All':'Off'}`,s.enabled&&s.outfits,'Active outfit automation scope.'],['background',`Background: ${s.enabled&&s.backgrounds?'On':'Off'}`,s.enabled&&s.backgrounds,'Background automation.'],['gallery',`Gallery: ${g.enabled!==false&&g.prompt?.enabled?'On':'Off'} | ${placement}`,g.enabled!==false&&g.prompt?.enabled,'Gallery image instructions and requested command placement. Image rendering has its own switch in Gallery.']];
         for(const [key,text,on,title] of fields){let pill=status.querySelector(`[data-ig-summary="${key}"]`);if(!pill){pill=document.createElement('span');pill.dataset.igSummary=key;status.append(pill);}if(pill.textContent!==text)pill.textContent=text;pill.dataset.enabled=String(Boolean(on));pill.title=title;}
+        if(s.enabled&&isCommandless(s))for(const [key,text,on] of [['automation','Automation: Off (context only)',false],['mode','Mode: Descriptions only',true],['outfits',`Outfits: ${s.outfits?'Current descriptions':'Off'}`,s.outfits],['background',`Background: ${s.backgrounds?'Current description':'Off'}`,s.backgrounds]]){const pill=status.querySelector(`[data-ig-summary="${key}"]`);pill.textContent=text;pill.dataset.enabled=String(on);pill.title='Scene reference only. Model outfit and background changes are disabled.';}
     }
     for(const name of ['ig-automation-state-change','ig-gallery-change','ig-layout-change'])window.addEventListener(name,showAutomation);
     eventSource.on(event_types.SETTINGS_UPDATED,showAutomation);showAutomation();

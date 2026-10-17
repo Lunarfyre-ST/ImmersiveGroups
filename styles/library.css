@@ -125,3 +125,61 @@
 .ig-library-mismatches { padding:10px; border:1px solid rgba(var(--ig-accent-characters),.5); border-radius:7px; }
 .ig-library-mismatches article { display:flex; flex-direction:column; gap:6px; padding:10px 0; border-top:1px solid var(--SmartThemeBorderColor); }
 .ig-library-mismatches code { overflow-wrap:anywhere; }
+.ig-library-filter-row[hidden],.ig-library-toolbar-footer[hidden] { display:none; }
+.ig-binding-controls,.ig-preset-bindings,.ig-missing-background,.ig-group-editor { display:flex; flex-direction:column; gap:9px; min-width:0; }
+.ig-binding-controls > label { display:flex; gap:8px; align-items:center; }
+.ig-binding-controls :is(select,input[type=search]),.ig-missing-background select { width:100%; min-width:0; max-width:100%; }
+.ig-preset-bindings { border-top:1px solid var(--SmartThemeBorderColor,#555); margin-top:10px; padding-top:10px; }
+.ig-preset-bindings .ig-gallery-binding-list { max-height:180px; }
+.ig-preset-bindings label > span { min-width:0; overflow-wrap:anywhere; }
+.ig-preset-bindings small,.ig-missing-background small { display:block; font-size:12px; opacity:.8; line-height:1.4; }
+.ig-missing-background { border:1px solid #bc996266; border-radius:7px; padding:10px; }
+.ig-missing-background details label { flex-direction:column; align-items:stretch; }
+.ig-library-group p { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; }
+.ig-group-editor > label { flex-direction:column; align-items:stretch; }
+.ig-group-editor textarea { width:100%; min-width:0; box-sizing:border-box; }
+.ig-outfit-order-list { display:flex; flex-direction:column; gap:12px; }
+.ig-outfit-order-list section { border:1px solid var(--SmartThemeBorderColor,#555); border-radius:8px; padding:10px; min-width:0; }
+.ig-outfit-order-list h4 { margin:0 0 8px; }
+.ig-outfit-order-row { display:flex; align-items:center; gap:6px; padding:7px 0; border-top:1px solid var(--SmartThemeBorderColor,#555); }
+.ig-outfit-order-row > span { flex:1; min-width:0; }
+.ig-outfit-order-row :is(strong,small) { display:block; overflow-wrap:anywhere; }
+.ig-outfit-order-row small { font-size:11px; opacity:.7; }
+.ig-expression-browser { display:flex; flex-direction:column; gap:6px; margin-top:6px; }
+.ig-expression-browser > div { display:flex; align-items:center; gap:5px; }
+.ig-expression-browser select { flex:1; min-width:0; width:0; }
+.ig-expression-browser small { font-size:12px; opacity:.8; }
+.ig-library-card .ig-background-outfit-link { flex-direction:column; align-items:stretch; }
+.ig-background-outfit-link select { width:100%; min-width:0; }
+.ig-background-outfit-link small { opacity:.75; }
+#ig-all-outfits { background:var(--ig-card-color,#3f5b57); border:1px solid var(--SmartThemeBorderColor,#666); max-width:170px; min-width:90px; padding-inline:8px; }
+#ig-all-outfits[hidden] { display:none; }
+#ig-stage-tools:has(#ig-all-outfits:not([hidden])) { flex-wrap:wrap; max-width:45%; justify-content:flex-end; }
+.ig-api-cache-note { display:block; padding:8px 10px; border-inline-start:2px solid #c49d64; background:#c49d6410; margin:8px 0; }
+.ig-file-search { padding:10px 16px; flex:none; }
+.ig-file-search input { width:100%; min-width:0; box-sizing:border-box; }
+.ig-unified-library .ig-library-types > button:last-child { border-bottom-color:rgba(var(--ig-accent-characters),.8); }
+@media(max-width:600px) { .ig-library-types { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+
+/* Character/settings transfers use a native modal for focus isolation. */
+.ig-transfer-dialog{color:var(--SmartThemeBodyColor,#e8e9ed);background:var(--SmartThemeBlurTintColor,#252933);border:1px solid var(--SmartThemeBorderColor,#ffffff30);border-radius:12px;width:min(760px,calc(100vw - 20px));max-width:calc(100vw - 20px);max-height:calc(100dvh - 24px);padding:0;overflow:auto;box-shadow:0 14px 60px #0008}
+.ig-transfer-dialog::backdrop{background:#0009}
+.ig-transfer-dialog>header{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:var(--SmartThemeBlurTintColor,#252933);border-bottom:1px solid #ffffff20}
+.ig-transfer-dialog h3,.ig-transfer-dialog h4{margin:0}
+.ig-transfer-tabs{display:flex;gap:8px;padding:12px 16px 0}.ig-transfer-tabs button{flex:1}.ig-transfer-tabs [aria-pressed=true]{background:#666b76;color:#fff;border-color:#b3bac8}
+.ig-transfer-body{display:grid;gap:12px;padding:16px;min-width:0}.ig-transfer-body section{display:grid;gap:12px;min-width:0}.ig-transfer-body fieldset{display:grid;gap:8px;min-width:0;border:1px solid #ffffff25;border-radius:8px;padding:12px}.ig-transfer-body legend{padding:0 5px;color:#c8b9e7}.ig-transfer-body label{display:grid;gap:5px;min-width:0;overflow-wrap:anywhere}.ig-transfer-body input:not([type=checkbox]),.ig-transfer-body select{width:100%;min-width:0;max-width:100%;padding:7px;border-radius:5px}.ig-transfer-body .ig-transfer-check{display:flex;align-items:flex-start;gap:8px}.ig-transfer-check input{flex:none;margin-top:4px}.ig-transfer-check[hidden]{display:none}.ig-transfer-characters{display:grid;gap:6px;max-height:180px;overflow-y:auto;padding:8px;border:1px solid #ffffff20;border-radius:7px}.ig-transfer-mapping{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:10px;border-bottom:1px solid #ffffff18;padding-bottom:10px}.ig-transfer-body small{display:block;opacity:.83;overflow-wrap:anywhere}.ig-transfer-preview{display:grid;gap:8px;background:#b4a3d011;border-left:3px solid #b4a3d0;padding:10px}.ig-transfer-preview p{margin:0}.ig-transfer-preview ul{padding-left:20px;max-height:180px;overflow:auto}.ig-transfer-status{position:sticky;bottom:0;z-index:1;background:var(--SmartThemeBlurTintColor,#252933);margin:0;padding:12px 16px;border-top:1px solid #ffffff20;overflow-wrap:anywhere}.ig-transfer-primary{background:#536a6740;border-color:#92b5ad88;min-height:40px}.ig-transfer-dialog [aria-busy=true]{cursor:progress}
+@media(max-width:550px){.ig-transfer-mapping{grid-template-columns:minmax(0,1fr)}.ig-transfer-body{padding:12px}.ig-transfer-dialog>header{padding:10px 12px}}
+.ig-transfer-guide{display:inline-block;margin:8px 16px 0;font-size:12px;color:inherit;text-decoration:underline}
+.ig-library-header-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}.ig-library-header-actions button{display:inline-flex;align-items:center;gap:6px}.ig-transfer-status{max-height:110px;overflow-y:auto}
+@media(max-width:550px){.ig-library-transfer-label{display:none}.ig-transfer-status{max-height:96px}}
+/* Granular transfer sections keep each data type independently selectable. */
+.ig-transfer-sections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-width:0}.ig-transfer-sections fieldset{margin:0;align-content:start}.ig-transfer-backgrounds{min-width:0}.ig-transfer-backgrounds>summary{cursor:pointer;font-size:12px}.ig-transfer-backgrounds [data-transfer-bg-list]{display:grid;gap:6px;max-height:170px;overflow:auto;padding-top:8px}.ig-transfer-backgrounds label{font-size:12px}.ig-transfer-backgrounds .menu_button{font-size:11px;padding:4px 6px}.ig-transfer-body [hidden]{display:none!important}
+@media(max-width:550px){.ig-transfer-sections{grid-template-columns:1fr}}
+.ig-transfer-dialog .menu_button{width:auto!important;min-width:0;white-space:nowrap;overflow-wrap:normal;word-break:normal;flex:none}.ig-transfer-dialog .ig-tool-actions{display:flex;flex-wrap:wrap;gap:6px}.ig-transfer-dialog .ig-transfer-primary{width:100%!important}.ig-transfer-dialog>header .menu_button{min-width:54px}.ig-transfer-sections .ig-transfer-backgrounds .menu_button{padding:5px 7px}
+
+/* Native text inputs need both theme colors; a browser's white field must not
+   inherit white dialog text. Counts sit outside labels to keep names stable. */
+.ig-transfer-body :is(input:not([type=checkbox]),select){color:var(--SmartThemeBodyColor,#eee);background-color:var(--SmartThemeBlurTintColor,#252933);border:1px solid var(--SmartThemeBorderColor,#777);text-shadow:none}
+.ig-transfer-body input::placeholder{color:inherit;opacity:.65}
+.ig-transfer-option{display:grid;gap:2px;min-width:0}
+.ig-transfer-option>small{padding-inline-start:24px;font-size:11px;line-height:1.4}

@@ -7,7 +7,7 @@ let sceneAutomation=null;
 const runtimeKey=Symbol.for('ImmersiveGroups.runtime');
 const rootUrl=new URL('.',import.meta.url);
 const current='third-party/'+decodeURIComponent(rootUrl.pathname.split('/').filter(Boolean).pop());
-const runtime=globalThis[runtimeKey] ||= {version:'0.2.8',status:'idle',components:{},errors:[]};
+const runtime=globalThis[runtimeKey] ||= {version:'0.3.3',status:'idle',components:{},errors:[]};
 
 function showProblem(text) {
     console.error('[ImmersiveGroups]',text);
@@ -39,8 +39,9 @@ async function start() {
     for(const [index,result] of results.entries())if(result.status==='rejected'){
         runtime.errors.push(String(result.reason?.message||result.reason));showProblem(`${index===0?'Gallery':'Scene controls'} could not start: ${result.reason?.message||result.reason}`);
     }
+    const transfers=(await import('./modules/character-transfer-controls.js')).setupCharacterTransfers();
     runtime.status=runtime.errors.length?'partial':'ready';
-    globalThis.ImmersiveGroups=Object.freeze({version:runtime.version,automation:sceneAutomation,getStatus:()=>JSON.parse(JSON.stringify(runtime)),getSceneContext:async()=>{
+    globalThis.ImmersiveGroups=Object.freeze({version:runtime.version,automation:sceneAutomation,transfers,getStatus:()=>JSON.parse(JSON.stringify(runtime)),getSceneContext:async()=>{
         const stage=runtime.components.scene?await import('./modules/stage-controls.js'):null;
         return {version:1,scene:stage?.getSceneContext(),gallery:globalThis.ImmersiveGroupsGallery?.getSceneContext()};
     }});
