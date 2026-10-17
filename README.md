@@ -1,4 +1,4 @@
-# ImmersiveGroups
+# 🎭 ImmersiveGroups
 
 ImmersiveGroups is a SillyTavern extension for giving your chats a visual novel feel. Keep several characters on screen, give them different outfits, change the background, and add images to the conversation. It works with solo and group chats, on PC and mobile.
 
@@ -8,20 +8,22 @@ You can change outfits and backgrounds yourself, or let the model choose them as
 
 **Current version: 0.3.5** — this update focuses on import/export: choose individual outfits, give your packs a version, and review file conflicts before importing. [Release notes](docs/RELEASE_0.3.5.md).
 
+[Previews](#-previews) · [Install](#-install) · [First steps](#-start-with-a-chat) · [Import / export](#-import-and-export) · [Automation](#-let-the-model-change-the-scene) · [Credits](#credits-and-origins)
+
 > [!WARNING]
 > **Still in beta.** Back up your SillyTavern `data` folder before installing or updating. The extension has automated tests, but testing with real setups is still limited. Expect some rough edges, especially with larger collections and different browsers or phones.
 
-## What does it look like?
+## 🖼️ Previews
 
-### PC
+### 🖥️ PC
 
 ![ImmersiveGroups PC preview](docs/Preview-PC.jpg)
 
-### Mobile
+### 📱 Mobile
 
 <img src="docs/Preview-Mobile.gif" alt="ImmersiveGroups mobile preview" width="350">
 
-## Is it useful for your setup?
+## ✨ Is it useful for your setup?
 
 The more sprites and outfits you use, the more there is to work with. You don't need to use every feature, though.
 
@@ -34,7 +36,9 @@ The more sprites and outfits you use, the more there is to work with. You don't 
 
 You'll need your own sprites, backgrounds or images. This extension doesn't generate them. There is some setup involved, and the settings menu is fairly large. Start with the parts you want; automation is optional and starts off on a fresh install.
 
-## Install
+---
+
+## 📥 Install
 
 1. Back up your SillyTavern `data` folder.
 2. **Disable standalone Prome and LocalImage extensions**, including forks. Keep their saved settings, but don't run them alongside ImmersiveGroups.
@@ -51,17 +55,20 @@ If you're coming from Prome or LocalImage, supported settings are copied over on
 
 If startup is blocked by an extension conflict, check for another enabled copy of Prome or LocalImage, disable it, and reload.
 
-## Start with a chat
+## 💬 Start with a chat
 
 Open a character or group chat with sprites, then try the outfit selectors beside the character controls. **Speak** asks a particular character to reply; it can also submit any text you've already typed into the message box.
 
-The **sliders icon** opens **Scene tuning**, so you can adjust the layout while looking at the chat. Start by getting the sprites to fit, then adjust spacing and the chat window height. You can return to the main settings for the less frequently used options.
+> [!TIP]
+> The **sliders icon** opens **Scene tuning**, so you can adjust the layout while looking at the chat. Start by getting the sprites to fit, then adjust spacing and the chat window height. You can return to the main settings for the less frequently used options.
 
 PC and mobile have separate layout settings. **Preview layout** lets you try either one, and **Settings profile** chooses which one you're editing. Leave it on **Follow active layout** if you want to edit the layout you're currently seeing. Scene tuning always edits the live layout. Settings marked **Shared** apply to both.
 
 By default, a viewport width of 1000 CSS pixels or less uses the mobile layout. You can change that under **Layout → Mobile layout**. Forcing PC or Mobile changes this extension's layout; it doesn't force the rest of SillyTavern into that mode.
 
-## Outfits and character controls
+---
+
+## 👗 Outfits and character controls
 
 Change each character's outfit from their selector. You can use the mouse, touch or keyboard, or hover over the selector and scroll through outfits. Outfit changes load the new sprite before switching it in place.
 
@@ -69,10 +76,10 @@ Change each character's outfit from their selector. You can use the mouse, touch
 
 Open **Manage outfits**, or **Gallery → Open asset library**, to add and organize outfits. You can rename their display labels, hide them from selectors, reorder them, and write descriptions without renaming the files on disk. Preview arrows and the expression dropdown let you browse sprites without changing what the character is wearing in the chat.
 
-- **Add outfit** accepts a folder name or full path, with an optional sprite ZIP. Choose the character in the form itself.
-- **Scan outfit folders** reads outfit names from your local `characters` folder. It doesn't upload images. If SillyTavern runs on another device, those folders also need to exist on that server; otherwise, upload a ZIP instead.
-- **Upload sprite ZIP** adds images to an outfit. Duplicate filenames get numbered variants so the existing files are kept. You may need to reload SillyTavern to see newly added expressions.
-- **Reorder outfits** switches the library to compact rows with up/down arrows. Choose **Done reordering** to return to the previews.
+- ➕ **Add outfit** accepts a folder name or full path, with an optional sprite ZIP. Choose the character in the form itself.
+- 🔍 **Scan outfit folders** reads outfit names from your local `characters` folder. It doesn't upload images. If SillyTavern runs on another device, those folders also need to exist on that server; otherwise, upload a ZIP instead.
+- 📦 **Upload sprite ZIP** adds images to an outfit. Duplicate filenames get numbered variants so the existing files are kept. You may need to reload SillyTavern to see newly added expressions.
+- ↕️ **Reorder outfits** switches the library to compact rows with up/down arrows. Choose **Done reordering** to return to the previews.
 
 Outfit locks prevent automatic clothing changes while still letting you choose outfits manually. Muted group members are hidden from the scene, and the remaining sprites adjust to the available space.
 
@@ -81,7 +88,7 @@ You can also change each character's button background, Speak button color and t
 <img src="docs/Preview-Colors.jpg" alt="Character button background, Speak button and text color settings" width="320">
 
 <details>
-<summary>Shared outfits and folders under the wrong character</summary>
+<summary><strong>👥 Shared outfits and folders under the wrong character</strong></summary>
 
 Give matching outfits the same **Shared outfit name**, such as `winter` or `pyjama`. With **All characters outfit selector** enabled under **Controls** or **Scene tuning → Buttons**, you can change the whole active group at once. It only offers names with one clear match for every active character.
 
@@ -91,7 +98,7 @@ Automatic common-folder discovery and automatic Basic hiding start off on fresh 
 
 </details>
 
-## Make the scene fit
+## 📐 Make the scene fit
 
 Set character heights in **Characters**, then use **Sprites → Fit calibration** to get the tallest active character to fit on screen. The others scale relative to that character. Unset heights use 165 cm.
 
@@ -107,13 +114,13 @@ There are controls for sprite spacing, shadows, vertical offsets and dimming pre
 
 For the chat itself, adjust **chat window / Sheld height** and choose whether to show scrollable history or only the latest message. Quick Reply rows can be limited and scrolled; setting the row count to zero hides the inline bar while keeping the popup available.
 
-### Add transitions
+### 🎞️ Add transitions
 
 Open **Animations**, or **Scene tuning → Animations**, and enable outfit or background fades. **Crossfade** blends the old image into the new one. **Fade out, then fade in** shows them one after the other.
 
 Fade-in and fade-out timings start linked; unlink them if you want different durations. Fades start off on a fresh install. **Reset animation defaults** turns them off again and restores Crossfade with 200 ms outfit timings and 350 ms background timings. These settings are shared between PC and mobile, and reduced-motion preferences are respected.
 
-## Backgrounds, images and the library
+## 🗂️ Backgrounds, images and the library
 
 The asset library brings outfits, backgrounds, gallery images and named character groups into one window. Search names or descriptions, filter by character/group, and edit descriptions directly under each entry.
 
@@ -123,7 +130,7 @@ Use the background/image picker for quick changes without opening the full libra
 
 For backgrounds, you can star favorites, link locations to characters or groups, and save scene descriptions. Optional arrow buttons cycle through backgrounds that fit the active characters. You can also set a remembered or default background to load when opening a chat.
 
-### Change outfits with a background
+### 🔗 Change outfits with a background
 
 For example, you might want a bedroom background to put everyone in their pyjamas:
 
@@ -137,7 +144,7 @@ Choosing that background can now change matching unlocked characters too. It wor
 
 If a background file has been moved or renamed, use **Tools → Review missing backgrounds** to remove the old entry or relink it to the new file. Relinking keeps descriptions, favorites and links; these tools don't delete image files.
 
-### Put gallery images in messages
+### 🖼️ Put gallery images in messages
 
 Use **Upload / manage image files** in the library to upload images and give them command names. A General gallery image uses:
 
@@ -149,7 +156,9 @@ Image command names can't contain spaces or colons. You can type the command you
 
 Image sizing, cooldowns and per-message/per-round limits are adjustable. Image instructions and loading limits start off on fresh installs. See the [Gallery guide](docs/GALLERY.md) for the details.
 
-## Import and export
+---
+
+## 📦 Import and export
 
 Open **Import / export** from the library toolbar or extension settings to move characters and their setup between installations.
 
@@ -165,7 +174,7 @@ Existing character cards aren't replaced. Unrelated entries are kept, and import
 
 Back up before updating a pack: if an upload fails, files already written can remain even though the extension settings weren't applied. The [transfer guide](docs/TRANSFERS.md) explains the available choices, limits and recovery steps.
 
-## Let the model change the scene
+## 🤖 Let the model change the scene
 
 Automation is optional. You can use all the manual controls without turning it on.
 
@@ -182,11 +191,11 @@ You can offer outfits for all active unlocked characters, or only the speaking c
 
 Commands need their own lines and must use the exact names supplied to the model. They can go before, between or after the narration. The displayed command text is hidden by default, while the original message keeps it. Opening a chat or selecting an old swipe doesn't replay old scene commands.
 
-### Scene descriptions without automatic changes
+### 📝 Scene descriptions without automatic changes
 
 Choose **Prompt mode** and enable **Descriptions only — no automation commands** to give the model current outfit, background and matching group descriptions as reference. This can include locked characters. Turn off Gallery image instructions separately if you don't want image commands either.
 
-### Separate API analysis
+### 🔌 Separate API analysis
 
 **API mode** makes a separate request to read the latest reply and decide whether outfits or the background should change. It can use your main API, another connection profile, or a custom/local OpenAI-compatible endpoint. It currently handles outfits and backgrounds, not gallery images.
 
@@ -197,7 +206,9 @@ Test it with **Analyze & apply last reply** before enabling automatic analysis. 
 
 Custom endpoints must be reachable from the browser and allow requests from it. Custom API keys stay in memory for the current page session. Outfit locks and background locks prevent automatic changes while leaving manual choices available. Results from a chat or message you've since changed are discarded.
 
-## What's next?
+---
+
+## 🛠️ What's next?
 
 For 0.3.5, the priority is testing real packs on a clean installation: fresh imports, repeat imports, deliberate conflicts and larger collections. The [0.3.5 review and test checklist](docs/IMPORT_EXPORT_REVIEW_0.3.5.md) records what's been checked and what still needs testing.
 
@@ -205,9 +216,11 @@ After that, I may start inviting more users from 0.3.6 onward. I also want to im
 
 If you report a problem, include your SillyTavern and extension versions, browser/device, what you tried and what happened. Please leave API keys and private chat content out of reports.
 
-## Development
+## 🧰 Development
 
 See [Development and validation](docs/DEVELOPMENT.md) for local checks, browser tests and the release checklist. Coding-agent guidance is in [AGENTS.md](AGENTS.md).
+
+---
 
 ## Credits and origins
 
