@@ -38,6 +38,8 @@ The more sprites and outfits you use, the more there is to work with. You don't 
 
 You'll need your own sprites, backgrounds or images. This extension doesn't generate them. There is some setup involved, and the settings menu is fairly large. Start with the parts you want; automation is optional and starts off on a fresh install.
 
+📚 **Looking for a starting point?** The [ImmersiveGroups Library](https://github.com/Lunarfyre-ST/ImmersiveGroups-Library) is a home for premade character sets with cards, expression sprites, outfits and backgrounds. It's there to help you try the extension without putting together every asset yourself, or to give you a base for your own setup.
+
 ---
 
 ## 📥 Install
