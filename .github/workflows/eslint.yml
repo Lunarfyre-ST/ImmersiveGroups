@@ -27,10 +27,6 @@ jobs:
     name: Run ESLint scanning
     runs-on: ubuntu-24.04
 
-    permissions:
-      contents: read
-      security-events: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,23 +35,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "24"
+          cache: npm
 
-      - name: Install ESLint and SARIF formatter
-        run: |
-          npm install --no-save eslint@^9 \
-            @microsoft/eslint-formatter-sarif@3.1.0
+      - name: Install locked dependencies
+        run: npm ci
 
       - name: Run ESLint
-        id: lint
-        run: |
-          npx eslint . \
-            --config eslint.config.mjs \
-            --format stylish || true
-
-          npx eslint . \
-            --config eslint.config.mjs \
-            --format @microsoft/eslint-formatter-sarif \
-            --output-file eslint-results.sarif
-        continue-on-error: true
+        run: npm run lint
 
 
