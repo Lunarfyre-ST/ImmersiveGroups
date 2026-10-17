@@ -1,0 +1,94 @@
+{
+  "format": "ImmersiveGroups.character-bundle",
+  "version": 2,
+  "extensionVersion": "0.3.3",
+  "name": "Historical compatibility fixture",
+  "createdAt": "2026-10-17T00:00:00.000Z",
+  "options": {
+    "outfits": true,
+    "heights": true,
+    "colors": true,
+    "cards": false,
+    "backgrounds": false,
+    "groups": false,
+    "gallery": false,
+    "settings": true
+  },
+  "characters": [
+    {
+      "avatar": "fixture.png",
+      "name": "Fixture",
+      "outfits": [
+        {
+          "folder": "Fixture/winter",
+          "label": "Winter",
+          "description": "A warm coat",
+          "commonName": "",
+          "hidden": null
+        }
+      ],
+      "ignored": [],
+      "locked": false,
+      "height": {
+        "desktop": {
+          "heightCm": 170,
+          "fineTuneOffset": 2,
+          "offsetY": 0
+        },
+        "mobile": {
+          "heightCm": 170,
+          "fineTuneOffset": 0,
+          "offsetY": 0
+        }
+      },
+      "colors": {
+        "background": "",
+        "speak": "",
+        "text": "",
+        "inheritSpeak": true
+      },
+      "outfitColors": [
+        {
+          "folder": "Fixture/winter",
+          "fontColor": ""
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "avatar": "fixture.png",
+      "name": "Fixture"
+    }
+  ],
+  "groups": [],
+  "backgrounds": [],
+  "assets": [],
+  "selection": {
+    "outfits": true,
+    "spriteFiles": false,
+    "outfitDescriptions": true,
+    "outfitOrder": true,
+    "outfitLocks": true,
+    "heights": true,
+    "colors": true,
+    "cards": false,
+    "backgrounds": false,
+    "backgroundFiles": false,
+    "backgroundDescriptions": false,
+    "backgroundRelationships": false,
+    "groups": false,
+    "gallery": false,
+    "galleryFiles": false,
+    "galleryDescriptions": false,
+    "settings": true,
+    "cardFormat": "png"
+  },
+  "settings": {
+    "sceneAutomation": {
+      "enabled": true,
+      "apiAutoAfterReply": true
+    },
+    "gallery": {}
+  }
+}

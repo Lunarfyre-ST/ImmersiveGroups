@@ -14,7 +14,12 @@ for(const file of all.filter(f=>/\.(?:js|mjs|cjs|json|html|css|md|ya?ml)$/.test(
     if(marker){const line=source.slice(0,marker.index).split('\n').length;throw new Error(`Unresolved merge conflict in ${path.relative(root,file)}:${line}`);}
     if(file.endsWith('.json'))JSON.parse(source);
 }
-for(const file of all.filter(f=>/\.(?:js|mjs|cjs)$/.test(f)&&!f.includes('/gallery/dist/')))await transform(await fs.readFile(file,'utf8'),{loader:file.includes('/gallery/src/')?'jsx':'js',target:'es2022',sourcefile:file});
+for(const file of all.filter(f=>/\.(?:js|mjs|cjs)$/.test(f))){
+    // Match project paths consistently on Windows and POSIX systems.
+    const relative=path.relative(root,file).split(path.sep).join('/');
+    if(relative.startsWith('gallery/dist/'))continue;
+    await transform(await fs.readFile(file,'utf8'),{loader:relative.startsWith('gallery/src/')?'jsx':'js',target:'es2022',sourcefile:file});
+}
 await build({entryPoints:[path.join(root,'index.js')],bundle:true,write:false,format:'esm',platform:'browser',target:'es2022',logLevel:'silent',plugins:[{name:'native-sillytavern',setup(b){b.onResolve({filter:/^\.\./},args=>{const target=path.resolve(args.resolveDir,args.path);if(!target.startsWith(root+path.sep))return {path:args.path,external:true};});}}]});
 const manifest=JSON.parse(await fs.readFile(path.join(root,'manifest.json'),'utf8'));
 for(const file of [manifest.js,manifest.css])await fs.access(path.join(root,file));

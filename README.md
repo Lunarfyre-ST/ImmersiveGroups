@@ -6,7 +6,7 @@ What began as a quick patch for multiple outfits in the PromeVN extension quickl
 
 The goal is a more cohesive light novel experience: keep a group of characters on screen, change their outfits, set the scene, and optionally let the model choose suitable outfits, backgrounds and premade gallery images.
 
-**Current version: 0.3.3.** Includes character/settings ZIP transfers with independent choices and content previews, plus a searchable visual picker for backgrounds and gallery images. Outfit/background automation works through either the main roleplay prompt or a separate API call. Background-linked outfits can coordinate changes from a background command alone. Gallery images have their own optional prompt; the separate scene-analysis API currently handles outfits and backgrounds.
+**Current version: 0.3.4.** Includes per-outfit height overrides and selective outfit updates with conflict review, alongside character/settings ZIP transfers with independent choices and content previews, plus a searchable visual picker for backgrounds and gallery images. Outfit/background automation works through either the main roleplay prompt or a separate API call. Background-linked outfits can coordinate changes from a background command alone. Gallery images have their own optional prompt; the separate scene-analysis API currently handles outfits and backgrounds.
 
 > [!WARNING]
 > **Beta project with limited real-world testing.** Back up your SillyTavern `data` folder before installing or updating. Use at your own risk. Features, settings and migration behavior may change during development. Automated checks do not replace testing across actual SillyTavern setups, browsers and phones.
@@ -299,6 +299,12 @@ Scene commands must be on separate lines. They can appear before, between paragr
 Automatic API analysis runs once after a solo reply or a completed group round, once roleplay generation is idle. It uses the final assistant reply and your chosen recent-message window, not the entire chat by default. API keys for custom endpoints stay in page-session memory. Custom endpoints must be reachable from the browser and allow its origin.
 
 Outfit locks and model background locks block automatic changes while leaving manual selection available. Loading a chat or choosing an existing swipe does not replay historical scene commands. A new generated swipe is a fresh reply and can trigger automation.
+
+## Development
+
+See [Development and validation](docs/DEVELOPMENT.md) for Node setup, local checks,
+browser regressions, CI coverage, and the real SillyTavern release checklist.
+Repository guidance for coding agents is in [AGENTS.md](AGENTS.md).
 
 ## Planned features
 
