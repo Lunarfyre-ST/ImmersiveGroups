@@ -184,6 +184,7 @@
 .ig-transfer-body input::placeholder{color:inherit;opacity:.65}
 .ig-transfer-option{display:grid;gap:2px;min-width:0}
 .ig-transfer-option>small{padding-inline-start:24px;font-size:11px;line-height:1.4}
+.ig-transfer-outfit-picker{min-width:0}.ig-transfer-outfit-picker>summary{cursor:pointer;margin-inline-start:24px;font-size:12px;overflow-wrap:anywhere}.ig-transfer-outfit-picker[open]{grid-column:1/-1}.ig-transfer-outfit-picker .ig-transfer-outfit-list>.ig-transfer-check{display:flex;flex-wrap:wrap;overflow-wrap:anywhere;padding:6px}.ig-transfer-outfit-picker code{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px}.ig-transfer-outfit-notice{margin:0;font-size:12px;color:var(--SmartThemeQuoteColor,#e6b66b)}
 
 .ig-transfer-outfit-list{display:grid;gap:8px;max-height:300px;overflow:auto;overscroll-behavior:contain}
 .ig-transfer-outfit-row{display:grid;gap:4px;padding:8px;border:1px solid var(--SmartThemeBorderColor,#777);border-radius:6px;min-width:0}.ig-transfer-outfit-row code{font-size:11px;overflow-wrap:anywhere}

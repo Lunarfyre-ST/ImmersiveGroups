@@ -2,15 +2,16 @@
 import { transferSelection, transferCategories, bundleSelection } from './transfer-selection.js';
 import { safeCardJson } from './character-card-data.js';
 import { transferId } from './transfer-hash.js';
+import { validatePackMetadata } from './transfer-pack-version.js';
 import { extension_settings, getContext } from '../../../../extensions.js';
 import { getRequestHeaders, saveSettingsDebounced, getCharacters, isGenerating } from '../../../../../script.js';
 import { extensionName } from '../constants.js';
 import { ensureBackgrounds, readBackgrounds, getBackgroundPath } from './scene-backgrounds.js';
 import { captureCharacterBundle, applyCharacterBundle, validateCharacterBundle, suggestCharacterMappings, remapOutfitFolder, leafName, owns, put, TRANSFER_LIMITS } from './character-transfer-model.js';
-import { createTransferZip, readTransferZip, checkTransferImage } from './character-transfer-archive.js';
+import { createTransferZip, readTransferZip, checkTransferImage, digestBlob } from './character-transfer-archive.js';
 import { spriteFolder } from './outfit-files-model.js';
 import { createImportReviewer } from './transfer-import-review.js';
-import { transferOutfitKey, excludedOutfitKeys, spriteIdentity, spriteStem, inventorySignature } from './transfer-outfit-model.js';
+import { transferOutfitKey, excludedOutfitKeys, spriteIdentity, spriteStem, inventorySignature, bundleOutfits } from './transfer-outfit-model.js';
 import { createTransferCounter } from './transfer-preview.js';
 
 const config=()=>extension_settings[extensionName];
@@ -21,18 +22,24 @@ function headers() {const h={...getRequestHeaders()};for(const key of Object.key
 async function jsonRequest(url,data) {const r=await fetch(url,{method:'POST',headers:getRequestHeaders(),body:JSON.stringify(data)});if(!r.ok)throw Error(`Request failed (${r.status}): ${url}`);return r.json();}
 async function spriteList(folder) {spriteFolder(folder);const r=await fetch('/api/sprites/get?name='+encodeURIComponent(folder),{cache:'no-store'});if(!r.ok)throw Error('Could not inspect destination sprite folder.');const result=await r.json();if(!Array.isArray(result))throw Error('Invalid sprite list.');return result;}
 function localPath(raw,prefix) {const u=new URL(raw,location.href);if(u.origin!==location.origin||!u.pathname.startsWith(prefix)||u.username||u.password)throw Error('Only local SillyTavern assets can be transferred.');const path=decodeURIComponent(u.pathname);if(path.split('/').some(p=>p==='..'||p==='.')||path.includes('\\'))throw Error('Invalid asset path.');return u.pathname;}
-async function imageBlob(url,filename) {const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw Error(`Image unavailable (${r.status}): ${filename}`);const size=Number(r.headers.get('Content-Length'));if(size>TRANSFER_LIMITS.image)throw Error(`Image exceeds 20 MiB: ${filename}`);if(!r.body)throw Error('This browser cannot stream image downloads.');const reader=r.body.getReader(),chunks=[];let bytes=0;try{for(;;){const {done,value}=await reader.read();if(done)break;bytes+=value.byteLength;if(bytes>TRANSFER_LIMITS.image)throw Error(`Image exceeds 20 MiB: ${filename}`);chunks.push(value);}}finally{await reader.cancel().catch(()=>{});reader.releaseLock();}const blob=new Blob(chunks);await checkTransferImage(blob,filename);return blob;}
+async function imageBlob(url,filename,validate=true) {const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw Error(`Image unavailable (${r.status}): ${filename}`);const size=Number(r.headers.get('Content-Length'));if(size>TRANSFER_LIMITS.image)throw Error(`Image exceeds 20 MiB: ${filename}`);if(!r.body)throw Error('This browser cannot stream image downloads.');const reader=r.body.getReader(),chunks=[];let bytes=0;try{for(;;){const {done,value}=await reader.read();if(done)break;bytes+=value.byteLength;if(bytes>TRANSFER_LIMITS.image)throw Error(`Image exceeds 20 MiB: ${filename}`);chunks.push(value);}}finally{await reader.cancel().catch(()=>{});reader.releaseLock();}const blob=new Blob(chunks);if(validate)await checkTransferImage(blob,filename);return blob;}
 function entryPath(folder,row) {const raw=localPath(row.path,'/characters/'),decoded=decodeURIComponent(raw),expected='/characters/'+folder+'/';if(!decoded.startsWith(expected)||decoded.slice(expected.length).includes('/'))throw Error('Sprite list contains a path from another outfit.');const filename=leafName(decoded.slice(expected.length));return {raw,filename,revision:new URL(row.path,location.href).search};}
 function appendAsset(assets,metadata,blob) {assets.push({metadata:{...metadata,path:`assets/${assets.length}/${metadata.filename}`},blob});}
-const importReviewer=createImportReviewer({characters,settings:config,readFolder:async folder=>(await spriteList(folder)).map(row=>entryPath(folder,row))});
+async function inspectSprite(folder,file){const blob=await imageBlob(localPath(`/characters/${folder.split('/').map(encodeURIComponent).join('/')}/${encodeURIComponent(file.filename)}`,'/characters/'),file.filename,false);return {size:blob.size,sha256:await digestBlob(blob)};}
+const importReviewer=createImportReviewer({characters,settings:config,readFolder:async folder=>(await spriteList(folder)).map(row=>entryPath(folder,row)),readFile:inspectSprite});
 export const reviewImportDestinations=(bundle,options={})=>importReviewer.review(validateCharacterBundle(bundle),options);
 export function transferCharacters() {const known=characters().map(c=>({avatar:c.avatar,name:c.name}));for(const avatar of new Set(['outfitCatalog','heightProfiles','mobileHeightProfiles'].flatMap(k=>Object.keys(config()[k]||{}))))if(!known.some(c=>c.avatar===avatar))known.push({avatar,name:avatar.replace(/\.[^.]+$/,''),unavailable:true});return known;}
-export async function exportCharacterBundle({avatars=[],options={},name='ImmersiveGroups',media=false,selection,excludedBackgrounds=[],onProgress=()=>{}}={}) {
+export function getExportPack(name){
+    const existing=(Array.isArray(config().transferExportPacks)?config().transferExportPacks:[]).find(entry=>entry?.name===name.trim());
+    if(existing)try{return validatePackMetadata(existing);}catch{/* Ignore invalid local drafts. */}
+    return {id:transferId(),version:'1.0.0'};
+}
+export async function exportCharacterBundle({avatars=[],options={},name='ImmersiveGroups',media=false,selection,pack,excludedBackgrounds=[],excludedOutfits=[],onProgress=()=>{}}={}) {
     return exclusive(async()=>{
         const chosen=transferSelection(options,media,selection);options={...transferCategories(chosen),all:options.all===true};const settings=structuredClone(config()),known=transferCharacters(),files=options.backgrounds?await ensureBackgrounds():[];
         if(options.all)avatars=known.map(c=>c.avatar);
         if(!avatars.length&&!options.settings&&!options.backgrounds&&!options.groups&&!options.gallery)throw Error('Select characters or extension settings.');
-        const manifest=captureCharacterBundle(settings,known,avatars,options,name,files,{selection:chosen,excludedBackgrounds}),assets=[];let total=0;
+        const manifest=captureCharacterBundle(settings,known,avatars,options,name,files,{selection:chosen,excludedBackgrounds,excludedOutfits,pack}),assets=[];let total=0;
         const add=(metadata,blob)=>{total+=blob.size;if(total>TRANSFER_LIMITS.expanded)throw Error('Selected files exceed 500 MiB. Export fewer characters.');appendAsset(assets,metadata,blob);};
         for(const c of manifest.characters){
             if(chosen.cards){onProgress(`Exporting card: ${c.name}`);const response=await fetch('/api/characters/export',{method:'POST',headers:getRequestHeaders(),body:JSON.stringify({avatar_url:c.avatar,format:chosen.cardFormat})});if(!response.ok)throw Error(`Could not export character card: ${c.name}`);let blob=await response.blob();if(chosen.cardFormat==='json'){if(blob.size>TRANSFER_LIMITS.manifest)throw Error('JSON card exceeds 5 MiB.');blob=new Blob([JSON.stringify(safeCardJson(JSON.parse(await blob.text())),null,2)],{type:'application/json'});}else await checkTransferImage(blob,c.avatar);add({kind:'card',avatar:c.avatar,filename:c.avatar.replace(/\.[^.]+$/,'')+'.'+chosen.cardFormat},blob);}
@@ -40,7 +47,9 @@ export async function exportCharacterBundle({avatars=[],options={},name='Immersi
         }
         if(chosen.backgroundFiles&&options.backgrounds)for(const b of manifest.backgrounds){if(!files.includes(b.file))continue;onProgress(`Reading background: ${b.file}`);add({kind:'background',filename:b.file},await imageBlob(localPath(getBackgroundPath(b.file),'/backgrounds/'),b.file));}
         if(chosen.galleryFiles&&manifest.gallery){const paths=new Set();for(const map of [manifest.gallery.generalAssignments,...Object.values(manifest.gallery.assignments)])for(const e of Object.values(map)){if(paths.has(e.path))continue;paths.add(e.path);const filename=leafName(e.path.split('/').pop());onProgress(`Reading gallery image: ${filename}`);add({kind:'gallery',source:e.path,filename},await imageBlob(localPath('/'+e.path,'/user/images/'),filename));}}
-        return createTransferZip(manifest,assets,onProgress);
+        const result=await createTransferZip(manifest,assets,onProgress);
+        if(manifest.pack){config().transferExportPacks=[...(Array.isArray(config().transferExportPacks)?config().transferExportPacks:[]).filter(entry=>entry?.name!==name.trim()),{name:name.trim(),...manifest.pack}];saveSettingsDebounced();}
+        return result;
     });
 }
 export const inspectCharacterBundle=(file,onProgress)=>exclusive(()=>readTransferZip(file,onProgress));
@@ -76,7 +85,7 @@ export async function importCharacterBundle(inspected,{mappingValues={},roots={}
         if(overwriteAcknowledged&&!conflictReview)throw Error('Review outfit conflicts before authorizing replacements.');
         const reviewed=conflictReview?await importReviewer.verify(conflictReview,bundle,{mappingValues,roots,folders:requestedFolders,categories,selection:chosen,media,excludedOutfits,overwriteAcknowledged}):null;
         const reviewedRows=new Map(reviewed?.rows.map(row=>[row.key,row])||[]);
-        const mappings={},created=[],folderMap={},backgroundNames={},galleryPaths={},uploaded=[],kept=[],warnings=[],replaced=[],replacementAttempts=[];
+        const mappings={},created=[],folderMap={},backgroundNames={},galleryPaths={},uploaded=[],kept=[],unchanged=[],warnings=[],replaced=[],replacementAttempts=[];
         // No configuration mutation until all requested uploads have succeeded.
         try {
             for(const ref of bundle.references){const value=mappingValues[ref.avatar];if(value==='__create__'){onProgress(`Creating character: ${ref.name}`);const target=await createCard(ref,bundle,inspected.readAsset);created.push(target);put(mappings,ref.avatar,target);if(!roots[ref.avatar]||roots[ref.avatar]===ref.name)put(roots,ref.avatar,target.avatar.replace(/\.png$/i,''));}else {const c=characters().find(c=>c.avatar===value);if(c)put(mappings,ref.avatar,{avatar:c.avatar,name:c.name});}}
@@ -96,8 +105,10 @@ export async function importCharacterBundle(inspected,{mappingValues={},roots={}
                     if(matches.length){
                         if(!overwriteAcknowledged){if(reviewRow&&!reviewRow.existing)throw Error(`New conflict found in ${folder}. Recheck outfit conflicts.`);kept.push(`${folder}/${asset.filename}`);continue;}
                         const approved=reviewRow?.files.filter(row=>spriteIdentity(row.filename)===stem)||[];
+                        await Promise.all(matches.map(async row=>Object.assign(row,await inspectSprite(folder,row))));
                         if(!approved.length||inventorySignature(matches)!==inventorySignature(approved))throw Error(`Sprite conflicts changed in ${folder}. Recheck before replacing files.`);
                         if(matches.some(row=>spriteStem(row.filename)!==spriteStem(asset.filename)))throw Error('Case-only sprite conflicts cannot be overwritten safely. Choose another destination folder.');
+                        if(matches.length===1&&matches[0].filename===asset.filename&&matches[0].sha256===asset.sha256&&matches[0].size===asset.size){kept.push(`${folder}/${asset.filename}`);unchanged.push(`${folder}/${asset.filename}`);continue;}
                     }
                     const blob=await inspected.readAsset(asset);
                     if(matches.length)replacementAttempts.push(...matches.map(row=>`${folder}/${row.filename}`));
@@ -119,13 +130,14 @@ export async function importCharacterBundle(inspected,{mappingValues={},roots={}
             for(const event of ['ig-layout-change','ig-editor-layout-change','ig-binding-groups-change','ig-background-catalog-change','ig-scene-library-change','ig-gallery-change','ig-automation-state-change'])window.dispatchEvent(new Event(event));
             if(created.length){try{await getCharacters();}catch{warnings.push('Reload the page to show newly imported cards.');}}
             await readBackgrounds().catch(()=>warnings.push('Refresh the background library to see newly uploaded files.'));
-            return {...result.report,created:created.length,uploaded:uploaded.length,kept:kept.length,replaced:replaced.length,warnings,reload:categories.settings===true};
+            return {...result.report,created:created.length,uploaded:uploaded.length,kept:kept.length,unchanged:unchanged.length,replaced:replaced.length,warnings,reload:categories.settings===true};
         }catch(error){const recovery=created.length||uploaded.length||replacementAttempts.length?` ${created.length} new cards and ${uploaded.length} completed uploads remain on the server; no extension settings were applied. ${replacementAttempts.length?`Existing sprite files may already have been replaced: ${replacementAttempts.join(', ')}. Restore from your backup if needed.`:'Existing files were kept.'} Chat files were not changed.`:'';throw Error(error.message+recovery);}
     });
 }
 export function defaultTransferMappings(bundle) {return suggestCharacterMappings(bundle,characters());}
 
 export async function listTransferBackgrounds({avatars=[],all=false}={}){const files=await ensureBackgrounds();return captureCharacterBundle(config(),transferCharacters(),avatars,{backgrounds:true,groups:true,all},'Preview',files).backgrounds;}
+export function listTransferOutfits({avatars=[],all=false}={}){const known=transferCharacters();return bundleOutfits(captureCharacterBundle(config(),known,all?known.map(c=>c.avatar):avatars,{outfits:true,colors:true},'Preview'));}
 
 export function createTransferPreview() {
     const count=createTransferCounter({readSprites:async folder=>{

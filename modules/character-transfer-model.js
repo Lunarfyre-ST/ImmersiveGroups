@@ -2,7 +2,8 @@
 import { transferSelection, transferCategories, bundleSelection } from './transfer-selection.js';
 import { EXTENSION_VERSION } from '../version.js';
 import { outfitHeightOverride } from './height-model.js';
-import { transferOutfitKey, excludedOutfitKeys, spriteIdentity } from './transfer-outfit-model.js';
+import { transferOutfitKey, excludedOutfitKeys, spriteIdentity, bundleOutfits } from './transfer-outfit-model.js';
+import { validatePackMetadata } from './transfer-pack-version.js';
 import { transferId } from './transfer-hash.js';
 // Portable, versioned data only. Runtime state, chats and connection details are excluded.
 import { defaultSettings } from '../constants.js';
@@ -57,9 +58,10 @@ function galleryData(g={}) {const out={assignments:{},generalAssignments:{},gall
 export function captureCharacterBundle(s,characters,avatars,options={},name='ImmersiveGroups',backgroundFiles=[],details={}) {
     const selection=transferSelection(options,details.media===true,details.selection),excluded=new Set(details.excludedBackgrounds||[]);options={...transferCategories(selection),all:options.all===true};
     const selected=new Set(avatars),all=options.all===true,groups=(s.bindingGroups||[]).filter(g=>all||g.members?.some(a=>selected.has(a)));
+    const excludedEntries=excludedOutfitKeys({characters:characters.filter(c=>selected.has(c.avatar)).map(c=>({avatar:c.avatar,outfits:s.outfitCatalog?.[c.avatar]?.outfits||[]}))},details.excludedOutfits||[]);
     const refs=new Set(selected);
     const result={format:TRANSFER_FORMAT,version:TRANSFER_VERSION,requiredFeatures:[],extensionVersion:EXTENSION_VERSION,selection,name:String(name).slice(0,100),createdAt:new Date().toISOString(),options:Object.fromEntries(TRANSFER_CATEGORIES.map(k=>[k,options[k]===true])),characters:characters.filter(c=>selected.has(c.avatar)).map(c=>{
-        const out={avatar:c.avatar,name:c.name},catalog=owns(s.outfitCatalog,c.avatar)?s.outfitCatalog[c.avatar]:{};
+        const out={avatar:c.avatar,name:c.name},original=owns(s.outfitCatalog,c.avatar)?s.outfitCatalog[c.avatar]:{},catalog={...original,outfits:(original.outfits||[]).filter(o=>!excludedEntries.has(transferOutfitKey(c.avatar,o.folder))),ignored:(original.ignored||[]).filter(folder=>!excludedEntries.has(transferOutfitKey(c.avatar,folder)))};
         if(options.outfits){out.outfits=(catalog.outfits||[]).map(value=>{const e=outfit(value);if(!options.colors)delete e.fontColor;if(!selection.outfitHeights)delete e.heightOverrideCm;else if(!owns(e,'heightOverrideCm'))e.heightOverrideCm=null;if(!selection.outfitDescriptions)e.description='';if(!selection.outfits){e.label=e.folder.split('/').pop();e.commonName='';e.hidden=null;}return e;});if(!selection.outfitOrder)out.outfits.sort((a,b)=>a.folder.localeCompare(b.folder));out.ignored=selection.outfits?(catalog.ignored||[]).map(spriteFolder):[];out.locked=selection.outfitLocks&&catalog.locked===true;}
         if(options.heights){const cm=s.heightProfiles?.[c.avatar]?.heightCm||165;out.height={desktop:height({heightCm:165,fineTuneOffset:0,offsetY:0,...s.heightProfiles?.[c.avatar]}),mobile:height({heightCm:cm,fineTuneOffset:0,offsetY:0,...s.mobileHeightProfiles?.[c.avatar]})};}
         if(options.colors){out.colors=colors({background:'',speak:'',text:'',inheritSpeak:true,...catalog.colors});out.outfitColors=(catalog.outfits||[]).map(o=>({folder:spriteFolder(o.folder),fontColor:color(o.fontColor||'')}));}return out;
@@ -78,11 +80,13 @@ export function captureCharacterBundle(s,characters,avatars,options={},name='Imm
     for(const r of result.backgroundRules||[])for(const a of r.characters||[])refs.add(a);
     result.references=[...refs].map(avatar=>({avatar,name:characters.find(c=>c.avatar===avatar)?.name||avatar.replace(/\.[^.]+$/,'')}));
     // Validate our own output through exactly the same schema used by imports.
+    if(details.pack!==undefined)result.pack=validatePackMetadata(details.pack);
     return validateCharacterBundle(result);
 }
 export function validateCharacterBundle(v) {
     if(!record(v)||v.format!==TRANSFER_FORMAT||![1,TRANSFER_VERSION].includes(v.version))throw Error('Choose an ImmersiveGroups character/settings bundle (version 1 or 2).');
     const out={format:TRANSFER_FORMAT,version:v.version,extensionVersion:text(v.extensionVersion||'',30),name:text(v.name||'ImmersiveGroups',100),createdAt:text(v.createdAt||'',100),options:Object.fromEntries(TRANSFER_CATEGORIES.map(k=>[k,v.options?.[k]===true])),characters:[],references:[],groups:[],backgrounds:[],assets:[]};
+    if(v.pack!==undefined)out.pack=validatePackMetadata(v.pack);
     if(v.requiredFeatures!==undefined){out.requiredFeatures=strings(list(v.requiredFeatures,32));for(const feature of out.requiredFeatures)if(!TRANSFER_FEATURES.has(feature))throw Error(`This bundle requires an unsupported feature: ${feature}. Update ImmersiveGroups before importing.`);}
     if(v.version===2){if(!record(v.selection))throw Error('Version 2 bundles require a transfer selection.');out.selection=transferSelection({},false,v.selection);}
     const avatars=new Set();for(const c of list(v.characters,2000)){const avatar=leafName(c.avatar);if(avatars.has(avatar))throw Error('Duplicate character in bundle.');avatars.add(avatar);const next={avatar,name:text(c.name,200)};if(c.outfits!==undefined){next.outfits=list(c.outfits,1000).map(outfit);if(new Set(next.outfits.map(o=>o.folder)).size!==next.outfits.length)throw Error('Duplicate outfit folder.');next.ignored=(c.ignored||[]).map(spriteFolder);next.locked=c.locked===true;}if(c.height)next.height={desktop:height(c.height.desktop),mobile:height(c.height.mobile)};if(c.colors)next.colors=colors(c.colors);if(c.outfitColors)next.outfitColors=list(c.outfitColors,1000).map(e=>({folder:spriteFolder(e.folder),fontColor:color(text(e.fontColor,7))}));out.characters.push(next);}
@@ -102,6 +106,7 @@ const mergeMap = (target,source,policy) => {for(const [k,v] of Object.entries(so
 // Called only after media work succeeds. Build a fresh object before committing once.
 export function applyCharacterBundle(current,bundle,{categories=bundle.options,mappings={},roots={},folders={},backgroundNames={},galleryPaths={},policy='keep',groupIds={},selection,excludedBackgrounds=[],excludedOutfits=[]}={}) {
     const excludedEntries=excludedOutfitKeys(bundle,excludedOutfits);
+    const pack=validatePackMetadata(bundle.pack);
     if(!['keep','update'].includes(policy))throw Error('Choose a metadata conflict policy.');
     const chosen=bundleSelection(bundle,categories,selection),excluded=new Set(excludedBackgrounds);
     const mediaPlan={backgrounds:[],gallery:[]};const next=structuredClone(current),report={characters:0,outfits:0,groups:0,backgrounds:0,images:0,skipped:[]};
@@ -126,6 +131,11 @@ export function applyCharacterBundle(current,bundle,{categories=bundle.options,m
         if(chosen.colors&&c.colors){catalog.colors||={};mergeMap(catalog.colors,c.colors,policy);for(const paint of c.outfitColors||[]){if(excludedEntries.has(transferOutfitKey(c.avatar,paint.folder)))continue;const folder=folders[JSON.stringify([c.avatar,paint.folder])]||remapOutfitFolder(paint.folder,roots[c.avatar]||target.name),entry=catalog.outfits?.find(o=>o.folder===folder);if(entry&&(policy==='update'||!owns(entry,'fontColor')))entry.fontColor=paint.fontColor;}}
         if((categories.outfits&&c.outfits)||(categories.colors&&c.colors))put(ensure('outfitCatalog'),avatar,catalog);
         if(chosen.heights&&c.height){for(const [key,p] of [['heightProfiles',c.height.desktop],['mobileHeightProfiles',c.height.mobile]]){const map=ensure(key),profile=owns(map,avatar)?structuredClone(map[avatar]):{};mergeMap(profile,p,policy);put(map,avatar,profile);}next.heightSchemaVersion=3;}
+    }
+    if(pack&&['outfits','spriteFiles','outfitDescriptions','outfitHeights','outfitOrder','colors'].some(key=>chosen[key]))for(const outfit of bundleOutfits(bundle)){
+        const target=mapping(outfit.avatar);if(!target||excludedEntries.has(outfit.key))continue;
+        const folder=folders[outfit.key]||remapOutfitFolder(outfit.folder,roots[outfit.avatar]||target.name);
+        if(next.outfitCatalog?.[target.avatar]?.outfits?.some(entry=>entry.folder===folder))put(ensure('transferOutfitOrigins'),transferOutfitKey(target.avatar,folder),{packId:pack.id,version:pack.version,sourceAvatar:outfit.avatar,sourceFolder:outfit.folder,selection:{...chosen},policy});
     }
     const gidMap={};if(chosen.groups){next.bindingGroups=Array.isArray(next.bindingGroups)?next.bindingGroups:[];for(const g of bundle.groups){const members=g.members.map(a=>mapping(a)?.avatar);if(members.some(a=>!a)||new Set(members).size!==members.length){report.skipped.push(`Group (unmapped/duplicate members): ${g.name}`);continue;}let id=groupIds[g.id]||g.id,existing=next.bindingGroups.find(x=>x.id===id);if(existing&&policy==='keep'&&(existing.name!==g.name||JSON.stringify([...existing.members].sort())!==JSON.stringify([...members].sort()))){existing=next.bindingGroups.find(x=>x.name===g.name&&JSON.stringify([...x.members].sort())===JSON.stringify([...members].sort()));id=existing?.id||transferId();}put(gidMap,g.id,id);if(!existing){next.bindingGroups.push({...g,id,members});report.groups++;}else if(policy==='update'){Object.assign(existing,{...g,id,members});report.groups++;}}}
     const bindings=e=>{const characters=e.characterBindings.map(a=>mapping(a)?.avatar),presets=e.presetBindings.map(id=>gidMap[id]||((next.bindingGroups||[]).some(g=>{const source=bundle.groups.find(g=>g.id===id);return g.id===id&&(!source||JSON.stringify([...g.members].sort())===JSON.stringify(source.members.map(a=>mapping(a)?.avatar).sort()));})?id:'')).filter(Boolean);if(characters.some(a=>!a)||presets.length!==e.presetBindings.length)return null;return {characters:[...new Set(characters)],presets};};

@@ -12,4 +12,4 @@ export function excludedOutfitKeys(bundle,values=[]){
 export function spriteCollisions(incoming,existing){
     return incoming.map(asset=>({asset,files:existing.filter(e=>spriteIdentity(e.filename)===spriteIdentity(asset.filename))}));
 }
-export function inventorySignature(files){return JSON.stringify(files.map(e=>[e.filename,e.revision||'']).sort((a,b)=>a[0].localeCompare(b[0])));}
+export function inventorySignature(files){return JSON.stringify(files.map(e=>[e.filename,e.revision||'',e.sha256||'',e.size??null]).sort((a,b)=>a[0].localeCompare(b[0])));}

@@ -69,6 +69,10 @@ Changes to reviewed mappings, selections, metadata, or inventory invalidate
 approval. Commit extension metadata only after requested uploads succeed.
 Native uploads are not transactional: report partial writes accurately and
 do not promise rollback. Keep the separate sprite ZIP importer compatible.
+Pack identity/version are advisory optional metadata, never overwrite permission.
+Local receipts describe processed selections, not fully installed revisions.
+Keep collision content checks and exact-filename identical-file skips intact;
+see `docs/IMPORT_EXPORT_REVIEW_0.3.5.md` for validation and remaining limits.
 
 ## Conventions and validation
 

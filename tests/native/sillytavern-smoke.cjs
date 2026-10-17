@@ -59,8 +59,8 @@ const artifactDirectory = path.resolve(__dirname, '../artifacts/native', browser
             await ctx.selectCharacterById(ctx.characters.findIndex(character => character.avatar === sourceAvatar));
             const sourceFolder = sourceName + '/winter', destinationFolder = destinationName + '/winter';
             const image = new Blob([Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg=='), value => value.charCodeAt(0))], { type: 'image/png' });
-            async function uploadSprite(folder, filename) {
-                const form = new FormData(); form.append('name', folder); form.append('label', filename.split('.')[0]); form.append('spriteName', filename.split('.')[0]); form.append('avatar', image, filename);
+            async function uploadSprite(folder, filename, bytes=image) {
+                const form = new FormData(); form.append('name', folder); form.append('label', filename.split('.')[0]); form.append('spriteName', filename.split('.')[0]); form.append('avatar', bytes, filename);
                 await request('/api/sprites/upload', form, true);
             }
             const sprites = async folder => { const response = await fetch('/api/sprites/get?name=' + encodeURIComponent(folder), { cache: 'no-store' }); if (!response.ok) throw Error('Native sprite inventory failed'); return response.json(); };
@@ -92,9 +92,13 @@ const artifactDirectory = path.resolve(__dirname, '../artifacts/native', browser
             const firstSprites = await sprites(destinationFolder);
             const repeated = await ImmersiveGroupsTransfers.importBundle(inspected, mapping);
             await uploadSprite(destinationFolder, 'happy.png');
+            const canvas=document.createElement('canvas');canvas.width=2;canvas.height=2;canvas.getContext('2d').fillRect(0,0,2,2);
+            await uploadSprite(destinationFolder, 'neutral.png',await new Promise(resolve=>canvas.toBlob(resolve)));
             const proof = await ImmersiveGroupsTransfers.reviewDestinations(inspected.manifest, mapping);
             const updated = await ImmersiveGroupsTransfers.importBundle(inspected, { ...mapping, policy: 'update', conflictReview: proof, overwriteAcknowledged: true });
             const finalSprites = await sprites(destinationFolder);
+            const identicalProof=await ImmersiveGroupsTransfers.reviewDestinations(inspected.manifest,mapping);
+            const identical=await ImmersiveGroupsTransfers.importBundle(inspected,{...mapping,conflictReview:identicalProof,overwriteAcknowledged:true});
             const createdCards = {};
             for (const cardFormat of ['png', 'json']) {
                 const pack = await ImmersiveGroupsTransfers.exportBundle({ avatars: [sourceAvatar], options: { cards: true }, selection: { cards: true, cardFormat }, name: 'Native card fixture' });
@@ -103,7 +107,7 @@ const artifactDirectory = path.resolve(__dirname, '../artifacts/native', browser
                 createdCards[cardFormat] = result.created;
             }
             return {
-                extension: ImmersiveGroups.getStatus(), prefix, imported, repeated, updated, createdCards,
+                extension: ImmersiveGroups.getStatus(), prefix, imported, repeated, updated, identical, createdCards,
                 firstSprites: firstSprites.map(sprite => sprite.path.split('?')[0].split('/').pop()),
                 finalSprites: finalSprites.map(sprite => sprite.path.split('?')[0].split('/').pop()).sort(),
                 height: settings.heightProfiles[destinationAvatar].heightCm,
@@ -122,6 +126,8 @@ const artifactDirectory = path.resolve(__dirname, '../artifacts/native', browser
         assert.deepEqual(report.firstSprites, ['neutral.png']);
         assert.deepEqual(report.finalSprites, ['happy.png', 'neutral.png']);
         assert.equal(report.updated.replaced, 1);
+        assert.equal(report.identical.replaced,0);
+        assert.equal(report.identical.unchanged,1);
         assert.equal(report.updated.images, 1);
         assert.ok(report.updated.uploaded >= 2);
         assert.ok(report.imported.kept >= 1, 'Existing native background is retained');

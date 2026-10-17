@@ -5,10 +5,10 @@ Open **Import / export** on the Library toolbar, or expand **Character & setting
 ## Export
 
 1. Choose **Current chat**, select characters individually, or choose **All extension settings**.
-2. Give the bundle a name.
+2. Give the bundle a name and an editable **Pack version** (for example `1.0.0`). Reuse the same name on this installation for later revisions of that pack.
 3. Select individual items under **Outfits, Character, Extra, Gallery and Settings**. Entries, descriptions, order, locks, colors and image files have separate toggles.
 4. Sprite images are enabled by default. Choose any additional image-file options, or use the combined image-file shortcut. Under **Extra → Choose backgrounds**, uncheck any backgrounds to omit their files and metadata.
-5. Select **Download named ZIP**.
+5. Expand the outfit count beneath **Outfit entries** and toggle individual **character / outfit** entries. Excluded outfits omit their per-outfit metadata and sprites. Select **Download named ZIP**.
 
 Counts beneath each option describe the available data in the current scope. Descriptions use SillyTavern’s current tokenizer when available, otherwise an exact character count. Sprite counts inspect folder inventories without downloading images; unavailable folders are shown explicitly. Import counts describe the bundle contents; the application preview below also accounts for destination mappings.
 
@@ -25,11 +25,13 @@ Character cards are a separate option with a **PNG / JSON** format selector. PNG
 3. Map source characters to installed characters. Exact avatar filenames are suggested first, then unique character names. Review these suggestions.
 4. Set each destination sprite root if it differs from the displayed character name. `Character/winter` is remapped to `Destination/winter`.
 5. For a new character, enable **Character card** and choose **Create a new character from included card**. Existing cards are never replaced. New cards use a separate sprite root based on their new avatar filename.
-6. In **Choose outfits**, select the entries you want. Existing saved outfits or nonempty sprite folders trigger **Update mode** and start unchecked. New outfits start checked. Changing destination mappings rechecks their conflicts. Use **Recheck outfit conflicts** after external file changes.
-7. If you check a conflicting outfit, read the warning and file list, then check **I understand what I am doing** before applying. This permits matching sprite files to be replaced; unrelated files stay. If this is your first import of the pack, investigate why its paths already exist and back up the affected files first.
+6. Expand the outfit count to open **Choose outfits**, then select the entries you want. Existing saved outfits or nonempty sprite folders trigger **Update mode** and start unchecked. New outfits start checked. Changing destination mappings rechecks their conflicts. Use **Recheck outfit conflicts** after external file changes.
+7. If you check a conflicting outfit, read its conflict notice, metadata differences, file comparisons and pack-version context, then check **I understand what I am doing** before applying. This permits matching sprite files to be replaced; unrelated files stay. If this is your first import of the pack, investigate why its paths already exist and back up the affected files first.
 8. Choose **Keep existing values** or **Use imported values** for matching metadata, then review the preview and apply. This metadata policy is separate from the acknowledgement for sprite replacements.
 
 Characters can be left unmapped. Incomplete group presets and assets with unresolved bindings are skipped rather than becoming available to the wrong characters. Existing native SillyTavern group chats are not created or modified; **Groups** means ImmersiveGroups named binding presets.
+
+Pack versions are advisory. Matching pack/source identities show newer, older or same as the last processed selection; kept files and partial selections can differ from that revision. Versions never enable replacements automatically. Identical sprite bytes with the same filename are kept without uploading again; different filenames/extensions still require replacement review.
 
 ## Independent choices
 
@@ -61,4 +63,4 @@ If an import upload fails, extension settings are not committed. New cards/files
 
 The existing **Upload sprite ZIP**, **Add outfit → Sprite ZIP**, and folder-name imports work as before. They use their original importer; character/settings bundles use this separate transfer window.
 
-See [Bundle format and compatibility](TRANSFER_FORMAT.md) and the [0.3.4 import/export review](IMPORT_EXPORT_REVIEW_0.3.4.md) for the maintained data contract and known limits.
+See [Bundle format and compatibility](TRANSFER_FORMAT.md) and the [0.3.5 review and manual-test checklist](IMPORT_EXPORT_REVIEW_0.3.5.md) for the maintained data contract and known limits.

@@ -23,6 +23,7 @@ const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://fix
 
  if(process.env.IG_BROWSER_ONLY==='planner'){await require('./planner-regressions.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
  if(process.env.IG_BROWSER_ONLY==='async'){await require('./async-regressions.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
+ if(process.env.IG_BROWSER_ONLY==='v035'){await require('./v035.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
  if(process.env.IG_BROWSER_ONLY==='v034'){await require('./v034.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);console.log('PASS: release version, outfit heights, pagination visibility, selective imports, explicit replacements, stale approvals and partial-failure reporting.');await browser.close();server.close();return;}
  if(process.env.IG_BROWSER_ONLY==='v033'){await require('./v033.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);console.log('PASS: transfer defaults, inventory and description previews, scope changes, theme readability and scene control spacing.');await browser.close();server.close();return;}
  if(process.env.IG_BROWSER_ONLY==='v032'){await require('./v032.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);console.log('PASS: compact scene media, granular transfers, JSON cards, background exclusions and reversible command-gap collapse.');await browser.close();server.close();return;}
@@ -256,6 +257,7 @@ const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://fix
  await require('./v027.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);
  await require('./v028.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);
  await require('./v028-ownership.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);
+ await require('./v035.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);
  await require('./v034.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);
  await require('./v033.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);
  await require('./v032.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);

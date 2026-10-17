@@ -20,14 +20,22 @@ export function mountOutfitImportChoices(parent,{bundle,state,review,onChange}) 
         list.replaceChildren();legend.textContent=state.updateMode?'Choose outfits — Update mode':'Choose outfits';
         status.textContent=state.updateMode?'Existing outfits detected. Conflicting outfits start unchecked. Select only the outfits you intend to update.':rows.length?'Choose the outfits to import. New entries start checked.':'This bundle has no outfit entries.';
         for(const row of rows){const box=node('div',null,'ig-transfer-outfit-row'),label=node('label',null,'ig-transfer-check'),input=node('input');input.type='checkbox';input.dataset.transferOutfit=row.key;input.checked=!state.excludedOutfits.has(row.key);input.disabled=row.unmapped||Boolean(row.error)||!relevant();input.dataset.keepDisabled=String(input.disabled);
-            label.append(input,document.createTextNode(`${row.character} · ${row.label}`));box.append(label,node('code',row.destination|| (row.newCardRoot?'A new character root will be checked after card creation.':'No destination character mapped.')));
+            label.append(input,document.createTextNode(`${row.character} / ${row.label}`));box.append(label,node('code',row.destination|| (row.newCardRoot?'A new character root will be checked after card creation.':'No destination character mapped.')));
             const info=row.error?`Check failed: ${row.error}`:row.unmapped?'Unmapped — skipped':row.existing?`Already present · ${row.conflicts.length} matching sprite files${row.metadata?' · saved outfit entry':''}`:'New outfit';box.append(node('small',info));
+            if(row.existing||row.error){const alert=node('p',row.error?'Conflict review failed; this outfit cannot be imported.':'Conflict found for this outfit. Review the differences before selecting it.','ig-transfer-outfit-notice');alert.setAttribute('role','status');box.append(alert);}
+            if(row.revision)box.append(node('small',row.revision.text));
+            if(row.differences?.length){const details=node('details');details.append(node('summary','Metadata differences'));for(const diff of row.differences)details.append(node('p',`${diff.field}: ${diff.existing===undefined?'(absent)':JSON.stringify(diff.existing)} → ${JSON.stringify(diff.incoming)}`));box.append(details);}
+            if(state.selection.spriteFiles&&row.conflicts.length){const details=node('details');details.append(node('summary',`${row.conflicts.length} file comparisons`));for(const file of row.conflicts){
+                const text={identical:'Identical bytes and filename — file will be kept',different:'Different file contents',renamed:'Identical bytes, different filename — replacement required',unchecked:'Contents not compared'}[file.comparison]||'Contents not compared';
+                details.append(node('p',`${file.filename} ← ${file.incoming}: ${text}`));
+                if(file.sha256)details.append(node('code',`Existing: ${file.size} bytes · SHA-256 ${file.sha256}\nIncoming: ${file.incomingSize} bytes · SHA-256 ${file.incomingHash}`));
+            }box.append(details);}
             input.addEventListener('change',()=>{if(input.checked)state.excludedOutfits.delete(row.key);else state.excludedOutfits.add(row.key);choices.set(row.key,{signature:row.signature,checked:input.checked});state.overwriteAcknowledged=false;showWarning();onChange();});list.append(box);
         }showWarning();
     }
     function refresh(){
         clearTimeout(timer);const request=++serial;state.conflictReview=null;state.reviewPending=true;state.overwriteAcknowledged=false;
-        for(const input of list.querySelectorAll('input'))input.disabled=true;status.textContent='Checking destination folders…';warning.hidden=true;onChange();
+        for(const input of list.querySelectorAll('input')){input.disabled=true;input.dataset.keepDisabled='true';}status.textContent='Checking destination folders…';warning.hidden=true;onChange();
         timer=setTimeout(async()=>{try{
             const proof=await review(bundle,{mappingValues:{...state.mappingValues},roots:{...state.roots},folders:{...state.folders},categories:{...state.options},selection:{...state.selection},media:state.media});
             if(disposed||request!==serial||!host.isConnected)return;rows=proof.rows;state.updateMode=proof.updateMode;state.conflictReview=proof;
