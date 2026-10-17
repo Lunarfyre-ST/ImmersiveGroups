@@ -85,7 +85,11 @@ Use Node 24 to match CI and `npm ci` for locked dependencies.
 - `npm test`: Node unit tests in `tests/*.test.mjs`.
 - `npm run build`: regenerate the gallery bundle and legal notices.
 - `npm run test:browser`: Playwright regression suite with simulated native APIs;
-  requires Chromium and produces ignored artifacts under `tests/artifacts/`.
+  defaults to Chromium; `IG_BROWSER=firefox` selects Firefox. Install matching
+  browsers; artifacts are ignored under `tests/artifacts/`.
+- `npm run test:native`: optional real-server smoke test. Requires a disposable
+  loopback SillyTavern server and `IG_ST_DISPOSABLE=1`; never use a live profile.
+  See `docs/DEVELOPMENT.md` for setup and the manual validation workflow.
 
 Choose validation appropriate to the change. Add focused regressions for
 meaningful behavior fixes. Run browser coverage for UI, lifecycle, integration,

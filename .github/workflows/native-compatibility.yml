@@ -1,0 +1,67 @@
+name: Native SillyTavern compatibility
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium firefox
+      - name: Prepare isolated SillyTavern 1.18.0
+        shell: bash
+        run: |
+          git clone --depth 1 --branch 1.18.0 https://github.com/SillyTavern/SillyTavern.git "$RUNNER_TEMP/sillytavern"
+          extension="$RUNNER_TEMP/sillytavern/public/scripts/extensions/third-party/ImmersiveGroups"
+          mkdir -p "$extension"
+          cp -R modules gallery html styles vendor licenses "$extension/"
+          cp manifest.json index.js prome.js constants.js utils.js listeners.js style.css version.js LICENSE CREDITS.md "$extension/"
+      - name: Install native server dependencies
+        run: npm ci
+        working-directory: ${{ runner.temp }}/sillytavern
+      - name: Test native APIs in Chromium and Firefox
+        shell: bash
+        env:
+          IG_ST_DISPOSABLE: '1'
+          IG_ST_URL: http://127.0.0.1:8179
+        run: |
+          cd "$RUNNER_TEMP/sillytavern"
+          node server.js --port=8179 --browserLaunchEnabled=false --autorun=false --listen=false --dataRoot="$RUNNER_TEMP/sillytavern/validation-data" > "$RUNNER_TEMP/sillytavern.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ready=false
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:8179/ > /dev/null; then
+              ready=true
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              cat "$RUNNER_TEMP/sillytavern.log"
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            cat "$RUNNER_TEMP/sillytavern.log"
+            exit 1
+          fi
+          cd "$GITHUB_WORKSPACE"
+          IG_BROWSER=chromium npm run test:native
+          IG_BROWSER=firefox npm run test:native
+      - name: Upload native validation reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-compatibility-reports
+          path: |
+            tests/artifacts/native/
+            ${{ runner.temp }}/sillytavern.log
+          if-no-files-found: ignore
+          retention-days: 7

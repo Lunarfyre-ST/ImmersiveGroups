@@ -8,4 +8,6 @@ test-results/
 Thumbs.db
 *.log
 *.zip
+!tests/fixtures/transfers/v033-media.zip
+!tests/fixtures/transfers/synthetic-v1-media.zip
 *.bak

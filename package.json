@@ -10,7 +10,8 @@
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",
     "test": "node --test tests/*.test.mjs",
-    "test:browser": "node tests/browser/combined.cjs"
+    "test:browser": "node tests/browser/combined.cjs",
+    "test:native": "node tests/native/sillytavern-smoke.cjs"
   },
   "dependencies": {
     "parse5": "8.0.1",

@@ -36,12 +36,12 @@ leave no diff. Keep attribution and license notices intact.
 Install the Chromium revision matching the locked Playwright dependency:
 
 ```sh
-npx playwright install chromium
+npx playwright install chromium firefox
 npm run test:browser
 ```
 
 On a Linux machine missing browser system libraries, use
-`npx playwright install --with-deps chromium` instead.
+`npx playwright install --with-deps chromium firefox` instead.
 
 The suite runs sequentially against a local HTTP fixture with simulated
 SillyTavern modules and endpoints. It uses the committed gallery bundle, so
@@ -63,7 +63,15 @@ IG_BROWSER_ONLY=v034 npm run test:browser
 ```
 
 Other existing focused suites include `sanitization`, `ownership`, `automation`,
-`auto-api`, and `groups`. Run the full suite before merging integration changes.
+`auto-api`, `groups`, `async`, and `planner`. The `async` suite pauses requests to exercise
+chat changes, replaced sprite holders/images, newer outfit selections, live
+locks, generation during import, partial upload failures, and transfer retries.
+The `planner` suite checks late API results after chat, swipe, deletion, text,
+or recent-history changes, including an old request returning during a new one.
+Run the full suite before merging integration changes.
+Chromium is the default engine. Set `IG_BROWSER=firefox` to run the same suite
+in Firefox (in PowerShell, use `$env:IG_BROWSER = 'firefox'`). Unset the variable
+after a focused run when returning to the default engine.
 Optional `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` and JSON-array
 `PLAYWRIGHT_CHROMIUM_ARGS` overrides exist for environments requiring them;
 prefer Playwright's matching browser for reproducibility.
@@ -72,7 +80,10 @@ prefer Playwright's matching browser for reproducibility.
 
 - Source checks, build reproducibility, and unit tests run on Linux and Windows.
 - The ESLint workflow uses locked dependencies and fails on lint errors.
-- Chromium integration runs in its own Linux job; failure artifacts are retained.
+- Chromium and Firefox integration run as separate Linux jobs; failure artifacts
+  are retained independently for each engine.
+- The manually dispatched **Native SillyTavern compatibility** workflow creates
+  an isolated 1.18.0 installation and runs real API/file checks in both browsers.
 - CodeQL is managed by GitHub default setup. OSV and Semgrep have separate
   workflows; Semgrep also depends on repository secrets/remote rules.
 
@@ -107,6 +118,53 @@ Before a release, cover these cases and record outcomes:
 
 Mocked endpoint tests cannot replace these server/filesystem checks. Do not use
 real external API calls in CI; test transports and cancellation with fixtures.
+
+## Native server smoke test
+
+The optional workflow in `.github/workflows/native-compatibility.yml` is the
+reproducible release check: run it from GitHub Actions with **Run workflow**.
+It clones SillyTavern's `1.18.0` tag, installs its locked dependencies, copies the
+extension's runtime files, starts a loopback-only server with separate data,
+runs Chromium and Firefox checks, uploads reports, and stops the server.
+It does not run on every push or pull request.
+
+For local runs, use a disposable SillyTavern installation with a separate data
+root. Install the current extension files there, then start that server:
+
+```sh
+node server.js --port=8179 --browserLaunchEnabled=false --autorun=false --listen=false --dataRoot=./ig-validation-data
+```
+
+From this extension's repository, with Playwright browsers installed:
+
+```powershell
+$env:IG_ST_DISPOSABLE = '1'
+$env:IG_ST_URL = 'http://127.0.0.1:8179'
+$env:IG_BROWSER = 'firefox' # or chromium
+try { npm run test:native } finally {
+    Remove-Item Env:IG_ST_DISPOSABLE, Env:IG_ST_URL, Env:IG_BROWSER
+}
+```
+
+On POSIX shells:
+
+```sh
+IG_ST_DISPOSABLE=1 IG_ST_URL=http://127.0.0.1:8179 IG_BROWSER=firefox npm run test:native
+```
+
+This writes uniquely named synthetic cards/media and metadata. The explicit
+disposable flag and loopback URL restriction are required; never use a live
+profile. External model-provider discovery is stubbed, while the character,
+sprite, background, gallery, and transfer operations use the real server.
+Native first-run onboarding is completed through its UI. The test checks
+repeat/update imports, PNG/JSON card creation, relationship remapping,
+unchanged chat/current scene choices, and clickable mobile-viewport library
+controls. Reports and screenshots are in `tests/artifacts/native/<browser>/`.
+Stop the local server after testing; the disposable data is retained for review.
+
+See [the validation record](VALIDATION_2026-10-17.md) for tested versions and
+remaining manual checks. Mobile viewport checks do not establish physical-phone
+or mobile Safari compatibility.
 
 ## Preparing a release
 

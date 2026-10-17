@@ -114,6 +114,7 @@
 }
 @media(max-height:600px) {
  .ig-unified-library { height:96dvh; max-height:96dvh; }
+ .ig-unified-library > .local-image-modal-header { padding:8px 10px; }
  .ig-unified-library > .local-image-modal-header small { display:none; }
  .ig-library-toolbar { padding:6px 10px; }
  .ig-library-toolbar > input[type=search],.ig-library-types,.ig-library-primary-actions { margin-bottom:5px; }
