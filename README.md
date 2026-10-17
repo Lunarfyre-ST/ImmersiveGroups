@@ -1,4 +1,4 @@
-![ImmersiveGroups banner](docs/banner.jpg)
+![ImmersiveGroups banner](docs/Banner.jpg)
 
 # 🎭 ImmersiveGroups
 
