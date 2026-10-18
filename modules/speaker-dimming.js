@@ -4,6 +4,8 @@ import { extension_settings, getContext } from '../../../../extensions.js';
 import { isGenerating, eventSource, event_types } from '../../../../../script.js';
 import { extensionName } from '../constants.js';
 import { bounded } from './height-profiles.js';
+import { motionOptions } from './motion-model.js';
+import { updateMotionSpeaker } from './scene-motion.js';
 let activeSpeaker='';
 export function setActiveSpeaker(avatar=''){activeSpeaker=avatar;}
 export function setupSpeakerTracking(){
@@ -44,13 +46,15 @@ export function applySpeakerDimming() {
         .map(a => ctx.characters?.find(c => c.avatar === a)).filter(Boolean) : [ctx.characters?.[ctx.characterId]].filter(Boolean);
     const active = activeSpeaker || (isGenerating() ? ctx.characters?.[ctx.characterId]?.avatar : '');
     const order = speakerOrder(ctx.chat || [], characters, active);
+    updateMotionSpeaker(order[0]||'');
     const ranks=characters.map((character,index)=>({avatar:character.avatar,index,rank:order.includes(character.avatar)?order.indexOf(character.avatar):characters.length,dim:config.spriteDefocusTint?dimPercent(character.avatar,order,config):0}));
     ranks.sort((a,b)=>a.dim-b.dim||a.rank-b.rank||a.index-b.index);
     const managed=new Set();
     for (const character of characters) {
         const nodes=group?[document.getElementById(`ig-expression-${character.avatar}`),document.getElementById(`expression-${character.avatar}`)]:[document.getElementById('expression-holder')];
         const enabled = config.enableVN_UI && config.spriteDefocusTint;
-        const dim = enabled ? dimPercent(character.avatar, order, config) : 0;
+        const focus=motionOptions(config,'focus');
+        const dim = enabled ? dimPercent(character.avatar, order, config)*(focus.enabled?focus.strength/100:1) : 0;
         const brightness = String(1 - dim / 100);
         for(const node of nodes.filter(Boolean)){
         managed.add(node);

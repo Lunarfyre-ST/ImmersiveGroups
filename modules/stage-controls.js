@@ -105,7 +105,7 @@ export async function changeOutfit(avatar, requestedFolder, { source = 'manual',
     const node = spriteNode(character);
     const img = node?.querySelector('img');
     if (!img) throw new Error('No sprite is displayed for this character yet. Enable Character Expressions first.');
-    cancelSceneFade(img);
+    cancelSceneFade(img, 'superseded');
     const scope = currentScope(), job = Symbol(); outfitJobs.set(avatar, job);
     const response = await fetch(`/api/sprites/get?name=${encodeURIComponent(folder)}`);
     if (!response.ok) throw new Error(`Could not read outfit folder (${response.status})`);

@@ -21,11 +21,16 @@ step and stop. Do not start the next step automatically.
   controls, outfit catalogs, ownership, sprite selection, and uploads.
 - `modules/height-*`, `scale.js`, `responsive.js`, `mobile-sprites.js`,
   `scene-animations.js`: heights, layout profiles, and cancellable transitions.
+- `modules/motion-model.js`, `scene-motion.js`, `motion-controls.js`: opt-in
+  scene movement, expression blends, previews and manual reactions. Preserve
+  additive transforms, cancellation, reduced motion and saved height values.
 - `modules/scene-backgrounds.js`, `background-*`, `binding-groups-model.js`:
   backgrounds, defaults, eligibility, and linked outfit changes.
 - `modules/scene-library.js`: bridge from scene services to gallery UI.
 - `modules/scene-automation*.js`, `scene-api.js`, `scene-command-view.js`:
   prompts, command validation, generation lifecycle, and API analysis.
+- `modules/diagnostics.js`: optional metadata-only LunarDebug producer bridge;
+  scene modules report through this helper without depending on LunarCore.
 - `modules/character-transfer-*`, `transfer-*`: bundle models, archives,
   conflict review, import/export, and controls.
 - `gallery/src/`: React gallery/library source and pure models.
@@ -53,6 +58,57 @@ not require end users to run npm.
 - Check native SillyTavern behavior before changing internal imports, sprite
   uploads, expression overrides, or background selection. Record versions
   actually tested rather than assuming minimum-version compatibility.
+
+## Optional LunarCore / LunarDebug compatibility
+
+[LunarCore](https://github.com/Lunarfyre-ST/LunarCore) includes LunarDebug, an
+optional diagnostic recorder for ImmersiveGroups. Keep the integration useful
+while preserving full standalone functionality. LunarCore must never become
+a required installation, import, startup dependency, or source of scene state.
+
+Before changing diagnostic hooks, consult LunarCore's
+[protocol](https://github.com/Lunarfyre-ST/LunarCore/blob/main/docs/diagnostics.md),
+`core/diagnostics.js`, `core/settings-schema.js`, and
+`integrations/immersivegroups.js`. Protocol 1 was reviewed against LunarCore
+0.0.3, commit `71179864e1c8df7ff44e4b9a135043a288fb0c29`; this records the source
+review, not a claim that every combination has been tested. Recheck the current
+contract when implementing integration changes.
+
+- Use `modules/diagnostics.js` rather than direct recorder calls throughout
+  the extension. The optional sink is
+  `globalThis[Symbol.for('LunarDebug.sink')]`; require `protocol === 1` and
+  `enabled` before emitting or beginning an operation. Missing, disabled,
+  incompatible, late-loaded, or throwing consumers must be harmless no-ops.
+  Do not wait for the recorder, add network calls, or change product behavior
+  because diagnostics fail. Keep the disabled path inexpensive.
+- Preserve `ImmersiveGroups.diagnosticsProtocol`, `getStatus()`, the document
+  `immersivegroups:ready` event, and existing window `ig-*` notifications used
+  by LunarCore. Advertise only supported protocols. Keep event targets and
+  lifecycle semantics stable; do not add duplicate notifications just to log.
+- Keep useful execution boundaries observable when modifying outfit changes,
+  backgrounds, animations, automation/API requests and context cleanup.
+  Report actual outcomes: a request is not proof of application, sprite commit
+  is separate from animation completion, and cancellation is not failure.
+  Use guarded `emit`/`begin`/`step`/`finish` helpers; null operations are normal.
+  Do not resume old traces into later recording sessions after Stop or Clear.
+- Send only fixed allowlisted events/enums, bounded numbers and booleans.
+  Never pass chat/prompt bodies, character/user names, avatar IDs, asset names,
+  paths, URLs, credentials, Error objects/messages/stacks, raw settings, DOM
+  content, deterministic hashes, absolute timestamps, or browser identifiers.
+  Build safe fields at the producer; consumer filtering is not permission to
+  hand private data to an optional sink. Extend the documented schema explicitly
+  when needed rather than encoding free-form detail in existing fields.
+- Diagnostics must remain observational: no replay, automatic uploads, settings
+  dumps, changes to recording preferences, or dependence on recorder results.
+  Avoid extra polling and unbounded/high-volume traces. Counts, summaries and
+  relative timings must describe their actual boundary, not imply causation,
+  rendering cost, or complete coverage of all failures.
+- For hook/integration changes, test absent/disabled LunarCore and enabled
+  protocol-1 recording, plus incompatible/throwing sinks and relevant late-load,
+  Stop/Clear and cancellation paths. Check that behavior and saved data agree
+  with recording off and on. Run companion LunarCore integration regressions
+  when its checkout is available; report the exact versions/results and any
+  untested combinations. Normal ImmersiveGroups tests must run without it.
 
 ## Transfer contract
 

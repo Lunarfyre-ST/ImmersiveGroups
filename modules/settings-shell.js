@@ -5,6 +5,7 @@ import { eventSource, event_types } from '../../../../../script.js';
 import { automationSettings, isCommandless } from './scene-automation-model.js';
 import { mountAnimationControls } from './animation-controls.js';
 import { setupSceneAnimations } from './scene-animations.js';
+import { setupSceneMotion } from './scene-motion.js';
 import { mountPresetControls, resetVisualSettings } from './preset-controls.js';
 import { extensionName } from '../constants.js';
 import { EXTENSION_VERSION } from '../version.js';
@@ -14,6 +15,7 @@ export function setupSettingsShell() {
     for(const label of document.querySelectorAll('[data-ig-version]'))label.textContent=EXTENSION_VERSION;
     setupResponsive();
     setupSceneAnimations();
+    setupSceneMotion();
     mountAnimationControls(document.querySelector('[data-ig-animation-controls]'));
     mountPresetControls(document.querySelector('[data-ig-presets]'),{profile:editingLayout});
     for(const button of document.querySelectorAll('[data-ig-reset]'))button.addEventListener('click',()=>resetVisualSettings(button.dataset.igReset,editingLayout()));

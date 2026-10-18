@@ -4,6 +4,7 @@ export function bounded(value,min,max,fallback) {
     const n=Number(value);return Number.isFinite(n)?Math.min(max,Math.max(min,n)):fallback;
 }
 const own=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k);
+const hasFineTuning=profile=>own(profile,'fineTuneOffset')||own(profile,'fineTunePercent');
 export const REFERENCE_HEIGHT_CM=165;
 export function outfitHeightOverride(value) {
     if(value===''||value==null)return null;
@@ -34,13 +35,19 @@ export function migrateHeightSettings(settings,avatars=[],folders={}) {
     const heights=Object.create(null);
     for(const avatar of new Set([...Object.keys(desktop),...Object.keys(mobile),...avatars])){
         const p=own(desktop,avatar)?desktop[avatar]:own(mobile,avatar)?mobile[avatar]:{};
-        heights[avatar]={heightCm:bounded(p?.heightCm,30,300,settings.heightMode==='percent'?180*bounded(p?.heightPercent,10,300,100)/100:180)};
+        heights[avatar]={heightCm:bounded(p?.heightCm,30,300,hasFineTuning(p)?REFERENCE_HEIGHT_CM:settings.heightMode==='percent'?180*bounded(p?.heightPercent,10,300,100)/100:180)};
     }
     const tallest=avatars.length?tallestHeight(heights,avatars):180;
     for(const [key,map] of [['heightProfiles',desktop],['mobileHeightProfiles',mobile]]) {
         const next={};
         for(const avatar of new Set([...Object.keys(map),...Object.keys(heights)])){
             const old=own(map,avatar)?map[avatar]:{},height=heights[avatar]?.heightCm||180;
+            // A missing/older marker must not reinterpret an already converted
+            // profile or turn an explicit zero into height compensation again.
+            if(hasFineTuning(old)||(!own(map,avatar)&&(hasFineTuning(own(desktop,avatar)?desktop[avatar]:null)||hasFineTuning(own(mobile,avatar)?mobile[avatar]:null)))){
+                const profile=hasFineTuning(old)?{...old,heightCm:height}:{heightCm:height,fineTuneOffset:0};
+                Object.defineProperty(next,avatar,{value:profile,writable:true,enumerable:true,configurable:true});continue;
+            }
             const fine=legacyHeightFactor(old,settings.heightMode,settings.referenceHeightCm,folders[avatar]||'')/(height/tallest)*100;
             Object.defineProperty(next,avatar,{value:{heightCm:height,fineTunePercent:fine},writable:true,enumerable:true,configurable:true});
         }

@@ -2,10 +2,13 @@
 import { extension_settings } from '../../../../extensions.js';
 import { saveSettingsDebounced } from '../../../../../script.js';
 import { extensionName, defaultSettings } from '../constants.js';
+import { motionKeys, motionValue } from './motion-model.js';
+import { mountMotionControls } from './motion-controls.js';
 
-export const animationKeys = ['outfit', 'background'].flatMap(kind => ['Enabled', 'Mode', 'Linked', 'Out', 'In'].map(suffix => `${kind}Fade${suffix}`));
+export const animationKeys = [...['outfit', 'background'].flatMap(kind => ['Enabled', 'Mode', 'Linked', 'Out', 'In'].map(suffix => `${kind}Fade${suffix}`)),...motionKeys];
 const settings = () => extension_settings[extensionName];
 function valueFor(key, value) {
+    if(motionKeys.includes(key))return motionValue(key,value);
     if (key.endsWith('Mode')) return value === 'sequential' ? 'sequential' : 'cross';
     if (key.endsWith('Enabled') || key.endsWith('Linked')) return typeof value === 'boolean' ? value : defaultSettings[key];
     const n = Number(value);
@@ -26,8 +29,10 @@ export function writeAnimationSetting(key, value) {
     if (!animationKeys.includes(key)) return;
     const s = settings(), kind = key.startsWith('outfit') ? 'outfit' : 'background';
     s[key] = valueFor(key, value);
-    if (s[`${kind}FadeLinked`] && (key.endsWith('Out') || key.endsWith('In'))) s[`${kind}FadeOut`] = s[`${kind}FadeIn`] = s[key];
-    if (key.endsWith('Linked') && s[key]) s[`${kind}FadeOut`] = s[`${kind}FadeIn`];
+    if (!motionKeys.includes(key)){
+        if (s[`${kind}FadeLinked`] && (key.endsWith('Out') || key.endsWith('In'))) s[`${kind}FadeOut`] = s[`${kind}FadeIn`] = s[key];
+        if (key.endsWith('Linked') && s[key]) s[`${kind}FadeOut`] = s[`${kind}FadeIn`];
+    }
     saveSettingsDebounced(); window.dispatchEvent(new Event('ig-layout-change'));
 }
 export function resetAnimationSettings() {
@@ -67,9 +72,10 @@ export function mountAnimationControls(parent) {
         }
         group.append(el('small', `Defaults: Crossfade, linked timings, ${defaultSettings[`${kind}FadeIn`]} ms. Fades off.`)); parent.append(group);
     }
+    const motion=mountMotionControls(parent,{settings,write:writeAnimationSetting});
     const reset = el('button', 'Reset animation defaults'); reset.type = 'button'; reset.className = 'menu_button'; reset.dataset.animationReset = '';
     reset.addEventListener('click', resetAnimationSettings); parent.append(reset);
-    function sync() { for (const input of controls) { const value = settings()[input.dataset.animationSetting]; if (input.type === 'checkbox') input.checked = value; else if (input.type !== 'number' || input !== document.activeElement) input.value = value; } }
+    function sync() { for (const input of controls) { const value = settings()[input.dataset.animationSetting]; if (input.type === 'checkbox') input.checked = value; else if (input.type !== 'number' || input !== document.activeElement) input.value = value; } motion.sync(); }
     window.addEventListener('ig-layout-change', sync); sync();
     return { sync };
 }

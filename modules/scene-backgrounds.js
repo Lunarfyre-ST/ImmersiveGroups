@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { diagnosticOperation } from './diagnostics.js';
+import { bindBackgroundDiagnostic } from './scene-animations.js';
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
 import { extension_settings, getContext } from '../../../../extensions.js';
 import { getRequestHeaders, saveSettingsDebounced, chat_metadata } from '../../../../../script.js';
@@ -73,7 +74,7 @@ export function pickBackground(file,{automatic=false,isCurrent=()=>true,excludeA
     const proxy=document.createElement('div');proxy.className='bg_example';proxy.hidden=true;proxy.setAttribute('bgfile',file);proxy.setAttribute('custom','false');proxy.dataset.igAutomatic=String(automatic);proxy.dataset.igLinkedManaged='true';
     $(proxy).data('url',`url("${getBackgroundPath(file)}")`);
     document.body.append(proxy);
-    try {proxy.click();linkedCursor=file;refreshLinkedArrows();} finally {proxy.remove();}
+    try {proxy.click();bindBackgroundDiagnostic(document.getElementById('bg1'),trace);linkedCursor=file;refreshLinkedArrows();} finally {proxy.remove();}
     const result=applyLinkedBackgroundOutfits(file,{isCurrent,excludeAvatars});
     trace.finish({outcome:'requested'});
     return result;
@@ -146,7 +147,7 @@ function renderLibrary() {
         const star=el('button',(settings().backgroundFavorites||[]).includes(file)?'★':'☆');star.type='button';star.className='menu_button ig-star';star.setAttribute('aria-label',`Star ${file}`);star.setAttribute('aria-pressed',String((settings().backgroundFavorites||[]).includes(file)));
         star.addEventListener('click',()=>{const saved=settings().backgroundFavorites||[];settings().backgroundFavorites=saved.includes(file)?saved.filter(f=>f!==file):[...saved,file];saveLibrary();renderLibrary();favorites();});
         const label=el('span',file);label.className='ig-background-name';
-        const use=el('button','Use');use.type='button';use.className='menu_button';use.addEventListener('click',()=>{try{pickBackground(file);status(`Selected ${file}`);}catch(e){status(e.message);}});
+        const use=el('button','Use');use.type='button';use.className='menu_button';use.dataset.bgUse='';use.addEventListener('click',()=>{try{pickBackground(file);status(`Selected ${file}`);}catch(e){status(e.message);}});
         const bound=el('details');bound.append(el('summary','Character bindings'));
         bound.append(el('small','Linked backgrounds appear for their characters even without a star. No characters selected: available to everyone when starred. Optional chat-load defaults can select a bound scene; configure them under Backgrounds → On chat load.'));
         for(const c of api.characters()) {const item=el('label'),check=el('input');check.type='checkbox';check.checked=bindings(file).includes(c.avatar);check.addEventListener('change',()=>{const avatars=bindings(file).filter(a=>a!==c.avatar);if(check.checked)avatars.push(c.avatar);Object.defineProperty(settings().backgroundBindings,file,{value:avatars,writable:true,enumerable:true,configurable:true});saveLibrary();favorites();});item.append(check,document.createTextNode(c.name));bound.append(item);}
@@ -169,7 +170,7 @@ export function setupBackgrounds(services) {
     if(!s.backgroundGroupBindings||typeof s.backgroundGroupBindings!=='object'||Array.isArray(s.backgroundGroupBindings))s.backgroundGroupBindings={};
     panel=el('div');panel.className='ig-background-controls';
     linkedNav=el('div');linkedNav.id='ig-linked-background-nav';linkedNav.setAttribute('aria-label','Linked background navigation');linkedNav.hidden=true;
-    for(const [direction,label] of [[-1,'Previous linked background'],[1,'Next linked background']]){const button=el('button',direction<0?'‹':'›');button.type='button';button.className='prome-stage-button';button.setAttribute('aria-label',label);button.title=label;button.addEventListener('click',()=>{const file=nextLinkedBackground(files,settings(),api.characters().map(c=>c.avatar),linkedCursor||backgroundSceneContext().current,direction);if(file)try{pickBackground(file);}catch(error){console.warn('[ImmersiveGroups]',error.message);}});linkedNav.append(button);}
+    for(const [direction,label] of [[-1,'Previous linked background'],[1,'Next linked background']]){const button=el('button',direction<0?'‹':'›');button.type='button';button.className='prome-stage-button';button.dataset[direction<0?'bgPrevious':'bgNext']='';button.setAttribute('aria-label',label);button.title=label;button.addEventListener('click',()=>{const file=nextLinkedBackground(files,settings(),api.characters().map(c=>c.avatar),linkedCursor||backgroundSceneContext().current,direction);if(file)try{pickBackground(file);}catch(error){console.warn('[ImmersiveGroups]',error.message);}});linkedNav.append(button);}
     document.getElementById('prome-stage-manage').after(linkedNav);
     window.addEventListener('ig-background-catalog-change',()=>{favorites();refreshLinkedArrows();});
     window.addEventListener('ig-binding-groups-change',()=>{favorites();refreshLinkedArrows();});

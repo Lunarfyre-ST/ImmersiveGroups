@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
+import { MOTION_DEFAULTS } from './modules/motion-model.js';
 export const extensionName = "ImmersiveGroups";
 // Unified settings key; bootstrap imports legacy preferences without changing backups.
 export const extensionFolderPath = new URL('.', import.meta.url).pathname.replace(/\/$/, '');
@@ -93,6 +94,7 @@ const defaultTintPresets = [
 ];
 
 export const defaultSettings = {
+    ...MOTION_DEFAULTS,
 	enableVN_UI: false,
     outfitFadeEnabled: false,
     outfitFadeMode: 'cross',

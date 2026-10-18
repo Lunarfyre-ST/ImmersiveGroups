@@ -2,8 +2,17 @@
 import { diagnostic, diagnosticOperation } from './diagnostics.js';
 import { extension_settings, getContext } from '../../../../extensions.js';
 import { extensionName, defaultSettings } from '../constants.js';
+import { motionOptions } from './motion-model.js';
 
-const running = new WeakMap(), active = new Set();
+const running = new WeakMap(), active = new Set(), backgroundDiagnostics = new WeakMap();
+// Called immediately after the native selection handler. Its synchronous style
+// mutation already queued the observer, so this explicit association expires
+// after that observer; later unrelated background changes cannot inherit it.
+export function bindBackgroundDiagnostic(node, trace) {
+    if (!node) return;
+    backgroundDiagnostics.set(node, trace);
+    queueMicrotask(() => { if (backgroundDiagnostics.get(node) === trace) backgroundDiagnostics.delete(node); });
+}
 const preferences = () => extension_settings[extensionName] || {};
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 export function animationOptions(kind) {
@@ -13,13 +22,14 @@ export function animationOptions(kind) {
         out: duration(s[`${kind}FadeLinked`] === false ? `${kind}FadeOut` : `${kind}FadeIn`), in: duration(`${kind}FadeIn`) };
 }
 function jobFor(node, kind, options) {
-    cancelSceneFade(node);
-    const trace = diagnosticOperation(kind === 'outfit' ? 'animation.swap' : 'animation.background', { kind, mode: options.mode, inMs: options.in, outMs: options.out });
-    const job = { cancelled: false, completed: false, failed: false, animations: new Set(), cleanup: () => {} };
-    job.cancel = () => { trace.finish({ outcome: job.failed ? 'failed' : job.completed ? 'completed' : 'cancelled' }); job.cancelled = true; for (const animation of job.animations) animation.cancel(); job.cleanup(); active.delete(job); if (running.get(node) === job) running.delete(node); };
+    cancelSceneFade(node, 'superseded');
+    const trace = diagnosticOperation(kind === 'background' ? 'animation.background' : 'animation.swap', { kind:kind==='expression'?'other':kind, mode: options.mode, inMs: options.in, outMs: options.out });
+    const job = { kind, reason: 'unknown', cancelled: false, completed: false, failed: false, animations: new Set(), cleanup: () => {} };
+    job.cancel = (reason = job.reason) => { if (!job.cancelled) job.reason = reason; trace.finish({ outcome: job.failed ? 'failed' : job.completed ? 'completed' : 'cancelled', reason: job.failed ? 'error' : job.completed ? undefined : job.reason }); job.cancelled = true; for (const animation of job.animations) animation.cancel(); job.cleanup(); active.delete(job); if (running.get(node) === job) running.delete(node); };
     running.set(node, job); active.add(job); return job;
 }
-export function cancelSceneFade(node) { running.get(node)?.cancel(); }
+export function cancelSceneFade(node, reason = 'unknown') { running.get(node)?.cancel(reason); }
+export function cancelExpressionFade(node){if(running.get(node)?.kind==='expression')cancelSceneFade(node,'superseded');}
 async function opacity(node, from, to, duration, job) {
     if (!duration || job.cancelled) return;
     const animation = node.animate([{ opacity: from }, { opacity: to }], { duration, easing: 'ease-in-out', fill: 'forwards' });
@@ -34,7 +44,7 @@ export async function fadeSceneSwap(node, kind, commit, valid = () => true) {
     const job = jobFor(node, kind, options), base = getComputedStyle(node).opacity;
     try {
         if (options.mode === 'cross' && node instanceof HTMLImageElement) {
-            if (!node.isConnected || !valid()) return false;
+            if (!node.isConnected || !valid()) { job.reason = 'stale'; return false; }
             const overlay = outfitOverlay(node);
             job.cleanup = () => overlay.remove();
             commit();
@@ -45,7 +55,7 @@ export async function fadeSceneSwap(node, kind, commit, valid = () => true) {
             return true;
         }
         await opacity(node, base, 0, options.out, job);
-        if (job.cancelled || !node.isConnected || !valid()) return false;
+        if (job.cancelled || !node.isConnected || !valid()) { if (!job.cancelled) job.reason = 'stale'; return false; }
         commit();
         for (const animation of job.animations) animation.cancel(); job.animations.clear();
         await opacity(node, 0, base, options.in, job);
@@ -53,7 +63,7 @@ export async function fadeSceneSwap(node, kind, commit, valid = () => true) {
         return true;
     } catch (error) { job.failed = true; throw error; } finally { job.cancel(); }
 }
-function outfitOverlay(node) {
+function outfitOverlay(node,source=node.currentSrc || node.src) {
     const style = getComputedStyle(node), overlay = document.createElement('div');
     // A visual-only layer keeps native expression/image queries on the real
     // sprite. It shares the sprite's positioned ancestor and parent dimming.
@@ -61,12 +71,23 @@ function outfitOverlay(node) {
     Object.assign(overlay.style, { position: 'absolute', left: `${node.offsetLeft}px`, top: `${node.offsetTop}px`,
         width: `${node.offsetWidth}px`, height: `${node.offsetHeight}px`, boxSizing: 'border-box', margin: '0',
         border: style.border, padding: style.padding, borderRadius: style.borderRadius,
-        backgroundImage: `url(${JSON.stringify(node.currentSrc || node.src)})`, backgroundRepeat: 'no-repeat',
+        backgroundImage: `url(${JSON.stringify(source)})`, backgroundRepeat: 'no-repeat',
         backgroundSize: ['cover', 'contain'].includes(style.objectFit) ? style.objectFit : '100% 100%',
         backgroundPosition: style.objectPosition, backgroundOrigin: 'content-box', backgroundClip: 'content-box',
-        transform: style.transform, transformOrigin: style.transformOrigin, filter: style.filter,
+        transform: style.transform, transformOrigin: style.transformOrigin, translate:style.translate, scale:style.scale, rotate:style.rotate, filter: style.filter,
         opacity: style.opacity, zIndex: style.zIndex, pointerEvents: 'none' });
     node.after(overlay); return overlay;
+}
+export async function fadeExpressionChange(node,previousSource,valid=()=>true){
+    const settings=motionOptions(preferences(),'expression');
+    // An outfit swap owns its opacity channel. Native expression changes do
+    // not cancel that swap or rewrite native expression metadata.
+    if(running.has(node)||!preferences().enableVN_UI||!settings.enabled||reducedMotion()||!settings.duration||!settings.strength||!node.animate||!node.isConnected||!valid())return false;
+    const options={mode:'cross',in:settings.duration,out:settings.duration},job=jobFor(node,'expression',options),base=Number(getComputedStyle(node).opacity),overlay=outfitOverlay(node,previousSource);
+    overlay.className='ig-expression-transition';job.cleanup=()=>overlay.remove();
+    try{await Promise.all([opacity(overlay,base*settings.strength/100,0,settings.duration,job),opacity(node,base*(1-settings.strength/100),base,settings.duration,job)]);job.completed=!job.cancelled&&node.isConnected&&valid();return job.completed;}
+    catch(error){job.failed=true;throw error;}
+    finally{job.cancel();}
 }
 function backgroundImageReady(css, job) {
     // A native single-image background uses a canonical quoted CSS URL.
@@ -90,34 +111,35 @@ function backgroundOverlay(node, image) {
 let installed = false;
 export function setupSceneAnimations() {
     if (installed) return; installed = true;
-    const cancelAll = () => { for (const job of [...active]) job.cancel(); };
-    window.addEventListener('ig-layout-change', cancelAll);
-    window.addEventListener('resize', cancelAll);
-    document.getElementById('prome-enable-vn')?.addEventListener('change', cancelAll);
-    window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', cancelAll);
+    const cancelAll = reason => () => { for (const job of [...active]) job.cancel(reason); };
+    window.addEventListener('ig-layout-change', cancelAll('layout_changed'));
+    window.addEventListener('resize', cancelAll('viewport_changed'));
+    document.getElementById('prome-enable-vn')?.addEventListener('change', cancelAll('disabled_scene'));
+    window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', cancelAll('motion_changed'));
     const context = getContext();
-    if (context.eventTypes?.CHAT_CHANGED) context.eventSource?.on(context.eventTypes.CHAT_CHANGED, cancelAll);
+    if (context.eventTypes?.CHAT_CHANGED) context.eventSource?.on(context.eventTypes.CHAT_CHANGED, cancelAll('chat_changed'));
     function attach(node) {
         let previous = node.style.backgroundImage;
         new MutationObserver(() => {
             const current = node.style.backgroundImage;
             if (current === previous) return;
             const old = previous; previous = current;
-            cancelSceneFade(node);
+            cancelSceneFade(node, 'superseded');
+            const parentTrace = backgroundDiagnostics.get(node); backgroundDiagnostics.delete(node);
             const options = animationOptions('background');
             if (!old || old === 'none' || !current || current === 'none' || !options.enabled || !node.animate || (!options.out && !options.in)) return;
             // Keep the old scene visible until the new image is ready. Never
             // rewrite native background styles, metadata, locks or selection.
-            const job = jobFor(node, 'background', options), base = getComputedStyle(node).opacity, overlay = backgroundOverlay(node, old);
+            const job = parentTrace ? parentTrace.run(() => jobFor(node, 'background', options)) : jobFor(node, 'background', options), base = getComputedStyle(node).opacity, overlay = backgroundOverlay(node, old);
             job.cleanup = () => overlay.remove();
             const hidden = node.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 1, fill: 'both' }); job.animations.add(hidden);
             void (async () => {
                 try {
                     await backgroundImageReady(current, job);
-                    if (job.cancelled || !node.isConnected) return;
+                    if (job.cancelled || !node.isConnected) { if (!job.cancelled) job.reason = 'unavailable'; return; }
                     if (options.mode === 'sequential') {
                         await opacity(overlay, base, 0, options.out, job);
-                        if (job.cancelled || !node.isConnected) return;
+                        if (job.cancelled || !node.isConnected) { if (!job.cancelled) job.reason = 'unavailable'; return; }
                         overlay.remove();
                         const incoming = opacity(node, 0, base, options.in, job);
                         hidden.cancel(); job.animations.delete(hidden);

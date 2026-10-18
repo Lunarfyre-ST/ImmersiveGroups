@@ -53,3 +53,34 @@ test('global calibration can preserve the full previous combination of scales',(
         migrateHeightSettings(s,['a']);migrateFineTuning(s);assert.equal(s.layoutSpriteScale,expected);assert.equal(s.mobileLayoutSettings.layoutSpriteScale,expected);assert.equal(s.scaleSprites,false);
     }
 });
+
+test('missing migration markers do not recreate height compensation over cleared fine tuning',()=>{
+    for(const marker of [undefined,1]){
+        const settings={heightSchemaVersion:marker,heightMode:'manual',heightProfiles:{nela:{heightCm:165,fineTuneOffset:0,offsetY:12},tall:{heightCm:180,fineTuneOffset:0}},mobileHeightProfiles:{nela:{heightCm:165,fineTuneOffset:-5,offsetY:-8}},layoutSpriteScale:100,mobileLayoutSettings:{layoutSpriteScale:85}};
+        const original=structuredClone(settings);migrateHeightSettings(settings,['nela','tall']);migrateFineTuning(settings);
+        assert.deepEqual(settings.heightProfiles.nela,original.heightProfiles.nela);assert.deepEqual(settings.mobileHeightProfiles.nela,original.mobileHeightProfiles.nela);
+        assert.equal(settings.mobileHeightProfiles.tall.fineTuneOffset,0);assert.equal(settings.heightSchemaVersion,3);
+        assert.deepEqual(settings.heightProfilesV1Backup.heightProfiles,original.heightProfiles);
+        const reloaded=JSON.parse(JSON.stringify(settings));assert.equal(migrateHeightSettings(reloaded,['nela','tall']),false);assert.equal(migrateFineTuning(reloaded),false);assert.equal(reloaded.heightProfiles.nela.fineTuneOffset,0);assert.equal(reloaded.mobileHeightProfiles.nela.fineTuneOffset,-5);
+    }
+});
+
+test('marker repair preserves modern fine tuning alongside legacy profiles and older multipliers',()=>{
+    const settings={heightMode:'manual',heightProfiles:{modern:{heightCm:155,fineTuneOffset:0,offsetY:7},v2:{heightCm:170,fineTunePercent:110,offsetY:-3},legacy:{heightCm:180,scalePercent:90}},mobileHeightProfiles:{modern:{heightCm:155,fineTuneOffset:12}},layoutSpriteScale:100,mobileLayoutSettings:{layoutSpriteScale:100}};
+    migrateHeightSettings(settings,['modern','v2','legacy']);migrateFineTuning(settings);
+    assert.equal(settings.heightProfiles.modern.fineTuneOffset,0);assert.equal(settings.mobileHeightProfiles.modern.fineTuneOffset,12);assert.equal(settings.heightProfiles.modern.offsetY,7);
+    assert.equal(settings.heightProfiles.v2.fineTuneOffset,10);assert.equal(settings.heightProfiles.v2.offsetY,-3);assert.equal(settings.mobileHeightProfiles.v2.fineTuneOffset,0);
+    assert.ok(Math.abs(heightFactor(settings.heightProfiles.legacy,180)-.9)<1e-8);
+});
+
+test('an already converted desktop profile does not discard a real legacy mobile calibration',()=>{
+    const settings={heightMode:'manual',heightProfiles:{a:{heightCm:155,fineTuneOffset:0},b:{heightCm:180,fineTuneOffset:0}},mobileHeightProfiles:{a:{heightCm:155,scalePercent:75}},layoutSpriteScale:100,mobileLayoutSettings:{layoutSpriteScale:100}};
+    migrateHeightSettings(settings,['a','b']);migrateFineTuning(settings);
+    assert.equal(settings.heightProfiles.a.fineTuneOffset,0);assert.ok(Math.abs(heightFactor(settings.mobileHeightProfiles.a,180)-.75)<1e-8);
+});
+
+test('repairing a fine-tune-only modern profile keeps its normal unset-height default',()=>{
+    const settings={heightMode:'manual',heightProfiles:{a:{fineTuneOffset:0}},mobileHeightProfiles:{},layoutSpriteScale:100,mobileLayoutSettings:{layoutSpriteScale:100}};
+    migrateHeightSettings(settings,['a']);migrateFineTuning(settings);
+    assert.equal(settings.heightProfiles.a.heightCm,165);assert.equal(settings.mobileHeightProfiles.a.heightCm,165);assert.equal(settings.heightProfiles.a.fineTuneOffset,0);
+});

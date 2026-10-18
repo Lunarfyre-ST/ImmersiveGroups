@@ -1,6 +1,6 @@
 # Character/settings bundle format
 
-This is the compatibility contract for ImmersiveGroups transfers. The bundle format version is independent of the extension release version. **0.3.5 continues writing version 2 and reading versions 1 and 2.**
+This is the compatibility contract for ImmersiveGroups transfers. The bundle format version is independent of the extension release version. **0.3.6 continues writing version 2 and reading versions 1 and 2.**
 
 ## Container and identity
 
