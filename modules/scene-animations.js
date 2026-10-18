@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { diagnostic, diagnosticOperation } from './diagnostics.js';
 import { extension_settings, getContext } from '../../../../extensions.js';
 import { extensionName, defaultSettings } from '../constants.js';
 
@@ -11,10 +12,11 @@ export function animationOptions(kind) {
         mode: s[`${kind}FadeMode`] === 'sequential' ? 'sequential' : 'cross',
         out: duration(s[`${kind}FadeLinked`] === false ? `${kind}FadeOut` : `${kind}FadeIn`), in: duration(`${kind}FadeIn`) };
 }
-function jobFor(node) {
+function jobFor(node, kind, options) {
     cancelSceneFade(node);
-    const job = { cancelled: false, animations: new Set(), cleanup: () => {} };
-    job.cancel = () => { job.cancelled = true; for (const animation of job.animations) animation.cancel(); job.cleanup(); active.delete(job); if (running.get(node) === job) running.delete(node); };
+    const trace = diagnosticOperation(kind === 'outfit' ? 'animation.swap' : 'animation.background', { kind, mode: options.mode, inMs: options.in, outMs: options.out });
+    const job = { cancelled: false, completed: false, failed: false, animations: new Set(), cleanup: () => {} };
+    job.cancel = () => { trace.finish({ outcome: job.failed ? 'failed' : job.completed ? 'completed' : 'cancelled' }); job.cancelled = true; for (const animation of job.animations) animation.cancel(); job.cleanup(); active.delete(job); if (running.get(node) === job) running.delete(node); };
     running.set(node, job); active.add(job); return job;
 }
 export function cancelSceneFade(node) { running.get(node)?.cancel(); }
@@ -28,8 +30,8 @@ async function opacity(node, from, to, duration, job) {
 // image fades; no wrappers, positioning, expression state or chat data change.
 export async function fadeSceneSwap(node, kind, commit, valid = () => true) {
     const options = animationOptions(kind);
-    if (!options.enabled || !node.animate || (!options.out && !options.in)) { if (!valid()) return false; commit(); return true; }
-    const job = jobFor(node), base = getComputedStyle(node).opacity;
+    if (!options.enabled || !node.animate || (!options.out && !options.in)) { diagnostic('animation.swap', {kind, outcome:'skipped', reason:'disabled'}); if (!valid()) return false; commit(); return true; }
+    const job = jobFor(node, kind, options), base = getComputedStyle(node).opacity;
     try {
         if (options.mode === 'cross' && node instanceof HTMLImageElement) {
             if (!node.isConnected || !valid()) return false;
@@ -39,6 +41,7 @@ export async function fadeSceneSwap(node, kind, commit, valid = () => true) {
             const incoming = opacity(node, 0, base, options.in, job);
             if (!options.out) overlay.remove();
             await Promise.all([incoming, opacity(overlay, base, 0, options.out, job)]);
+            job.completed = !job.cancelled;
             return true;
         }
         await opacity(node, base, 0, options.out, job);
@@ -46,8 +49,9 @@ export async function fadeSceneSwap(node, kind, commit, valid = () => true) {
         commit();
         for (const animation of job.animations) animation.cancel(); job.animations.clear();
         await opacity(node, 0, base, options.in, job);
+        job.completed = !job.cancelled;
         return true;
-    } finally { job.cancel(); }
+    } catch (error) { job.failed = true; throw error; } finally { job.cancel(); }
 }
 function outfitOverlay(node) {
     const style = getComputedStyle(node), overlay = document.createElement('div');
@@ -104,7 +108,7 @@ export function setupSceneAnimations() {
             if (!old || old === 'none' || !current || current === 'none' || !options.enabled || !node.animate || (!options.out && !options.in)) return;
             // Keep the old scene visible until the new image is ready. Never
             // rewrite native background styles, metadata, locks or selection.
-            const job = jobFor(node), base = getComputedStyle(node).opacity, overlay = backgroundOverlay(node, old);
+            const job = jobFor(node, 'background', options), base = getComputedStyle(node).opacity, overlay = backgroundOverlay(node, old);
             job.cleanup = () => overlay.remove();
             const hidden = node.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 1, fill: 'both' }); job.animations.add(hidden);
             void (async () => {
@@ -118,13 +122,15 @@ export function setupSceneAnimations() {
                         const incoming = opacity(node, 0, base, options.in, job);
                         hidden.cancel(); job.animations.delete(hidden);
                         await incoming;
+                        job.completed = !job.cancelled;
                         return;
                     }
                     const incoming = opacity(node, 0, base, options.in, job);
                     hidden.cancel(); job.animations.delete(hidden);
                     if (!options.out) overlay.remove();
                     await Promise.all([incoming, opacity(overlay, base, 0, options.out, job)]);
-                } finally { job.cancel(); }
+                    job.completed = !job.cancelled;
+                } catch (error) { job.failed = true; throw error; } finally { job.cancel(); }
             })().catch(error => console.warn('[ImmersiveGroups] Background animation:', error));
         }).observe(node, { attributes: true, attributeFilter: ['style'] });
     }

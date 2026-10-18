@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { diagnosticOperation } from './diagnostics.js';
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
 import { extension_settings, getContext } from '../../../../extensions.js';
 import { getRequestHeaders, saveSettingsDebounced, chat_metadata } from '../../../../../script.js';
@@ -64,6 +65,8 @@ export async function readBackgrounds() {
 }
 export function ensureBackgrounds(){return filesLoaded?Promise.resolve(files):readBackgrounds();}
 export function pickBackground(file,{automatic=false,isCurrent=()=>true,excludeAvatars=[]}={}) {
+    const trace=diagnosticOperation('background.select',{source:automatic?'automatic':'manual'});
+    try {
     if(!files.includes(file))throw new Error('This background is no longer available. Refresh the library.');
     // Use the native selection handler so chat locks and existing native UI
     // behavior stay consistent, without constructing/executing slash commands.
@@ -71,7 +74,10 @@ export function pickBackground(file,{automatic=false,isCurrent=()=>true,excludeA
     $(proxy).data('url',`url("${getBackgroundPath(file)}")`);
     document.body.append(proxy);
     try {proxy.click();linkedCursor=file;refreshLinkedArrows();} finally {proxy.remove();}
-    return applyLinkedBackgroundOutfits(file,{isCurrent,excludeAvatars});
+    const result=applyLinkedBackgroundOutfits(file,{isCurrent,excludeAvatars});
+    trace.finish({outcome:'requested'});
+    return result;
+    }catch(error){trace.finish({outcome:'failed'});throw error;}
 }
 async function applyLinkedBackgroundOutfits(file,{isCurrent=()=>true,excludeAvatars=[]}={}){
     const epoch=++linkedOutfitEpoch,s=settings(),theme=own(s.backgroundOutfitLinks,file)?s.backgroundOutfitLinks[file]:'',ctx=getContext(),chat=ctx.getCurrentChatId?.(),group=ctx.groupId;
@@ -91,11 +97,15 @@ function refreshLinkedArrows(){
 
 }
 export async function requestAutomaticBackground({file,chatId,groupId,isCurrent=()=>true,excludeAvatars=[]}={}){
+    const trace=diagnosticOperation('background.automatic',{source:'automatic'});
+    let outcome='cancelled';
+    try {
     const revision=backgroundRevision;
     const valid=()=>isCurrent()&&String(getContext().getCurrentChatId?.())===String(chatId)&&String(getContext().groupId??'')===String(groupId??'')&&!chat_metadata?.custom_background&&!settings().backgroundAutomationLocked&&backgroundRevision===revision;
     if(!valid())return false;await ensureBackgrounds();if(!files.includes(file)||!valid())return false;
     await new Promise((resolve,reject)=>{const image=new Image(),timer=setTimeout(()=>done(new Error('Background image load timed out')),15000);function done(error){clearTimeout(timer);image.onload=image.onerror=null;error?reject(error):resolve();}image.onload=()=>done();image.onerror=()=>done(new Error('Background image could not load'));image.src=getBackgroundPath(file);});
-    if(!valid())return false;defaultController?.cancel();await pickBackground(file,{automatic:true,isCurrent:valid,excludeAvatars});return true;
+    if(!valid())return false;defaultController?.cancel();await pickBackground(file,{automatic:true,isCurrent:valid,excludeAvatars});outcome='completed';return true;
+    }catch(error){outcome='failed';throw error;}finally{trace.finish({outcome});}
 }
 function favorites() {
     if(!picker||!backgroundGrid)return;

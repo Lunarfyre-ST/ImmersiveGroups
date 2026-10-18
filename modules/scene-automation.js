@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { diagnostic, diagnosticOperation } from './diagnostics.js';
 import { extension_settings, getContext } from '../../../../extensions.js';
 import { eventSource, event_types, saveSettingsDebounced, isGenerating } from '../../../../../script.js';
 import { extensionName } from '../constants.js';
@@ -48,6 +49,7 @@ function changedCommandRows(records){
 function updateInjection(avatar=speaker(),skip=false){
     const s=settings(),text=!skip&&s.enabled&&s.mode==='prompt'?buildScenePrompt(inventory(avatar),s):'';
     getContext().setExtensionPrompt?.(SCENE_PROMPT_KEY,text,1,s.depth,false,0);
+    diagnostic('context.injection',{enabled:Boolean(text),promptCharacters:text.length,depth:Number(s.depth),mode:s.mode});
     return text;
 }
 async function prepare(avatar){if(settings().backgrounds)await ensureBackgrounds();return inventory(avatar);}
@@ -55,6 +57,7 @@ function snapshot(message,index,offered,automatic=false){return {key:chatKey(),e
 function validSnapshot(snap){const c=getContext(),s=settings();return s.enabled&&!isCommandless(s)&&(!snap.recent||snap.recent.every(r=>c.chat?.includes(r.message)&&r.message.mes===r.text&&r.message.swipe_id===r.swipe))&&(!snap.automatic||(s.mode==='api'&&s.apiAutoAfterReply&&c.chat?.at(-1)===snap.message))&&snap.epoch===epoch&&snap.key===chatKey()&&c.chat?.[snap.index]===snap.message&&snap.message.mes===snap.text&&snap.message.swipe_id===snap.swipe;}
 async function execute(text,snap){
     const parsed=parseSceneCommands(text),results=[];
+    const trace=diagnosticOperation('automation.execute',{commands:parsed.commands.length,issues:parsed.issues.length});
     for(const command of parsed.commands){
         if(!validSnapshot(snap)){results.push({type:command.type,applied:false,reason:'Chat, message or settings changed.'});break;}
         const scene=getSceneContext();
@@ -74,6 +77,11 @@ async function execute(text,snap){
         }catch(error){results.push({type:command.type,applied:false,reason:error.message});}
     }
     const changed=results.filter(r=>r.applied).length;
+    for(const result of results) {
+        const reason=result.applied?undefined:result.reason==='Already wearing this outfit.'||result.reason==='Background already selected.'?'unchanged':result.reason==='Locked, unavailable or outside the permitted character scope.'?'scope_or_lock':result.reason==='Chat, message or settings changed.'?'stale':result.reason==='Change cancelled.'?'other':'error';
+        trace.step({kind:result.type,outcome:result.applied?'applied':reason==='error'?'failed':'skipped',reason});
+    }
+    trace.finish({outcome:'completed',applied:changed,skipped:results.length-changed});
     status(`${changed} scene change${changed===1?'':'s'} applied.${results.length>changed?' '+results.filter(r=>!r.applied).map(r=>r.reason).join(' '):''}${parsed.issues.length?' '+parsed.issues.join(' '):''}${!results.length&&!parsed.issues.length?' No applicable scene commands.':''}`);
     updateInjection();renderCommands();return {results,issues:parsed.issues};
 }
@@ -141,6 +149,8 @@ async function analyzeLastReply(automatic=null){
     const marker=epoch,key=chatKey(),text=last.message.mes,swipe=last.message.swipe_id,controller=new AbortController();
     // Reserve the request before any await so a double-click cannot bill twice.
     apiAbort=controller;apiBusy=true;panel.querySelector('[data-scene-api-response]').textContent='';syncUi();status(automatic?'Automatically analyzing the last assistant reply…':'Analyzing the last assistant reply…');
+    const trace=diagnosticOperation('automation.api',{automatic:Boolean(automatic),transport:s.apiTransport});
+    let diagnosticOutcome='failed';
     const timeout=setTimeout(()=>controller.abort(),90000);
     const aborted=new Promise((_,reject)=>{controller.signal.addEventListener('abort',()=>reject(new Error('Automation request cancelled.')),{once:true});});
     try{
@@ -156,8 +166,10 @@ async function analyzeLastReply(automatic=null){
         const response=await Promise.race([request,aborted]);
         if(!validSnapshot(snap)||controller.signal.aborted)throw new Error('Chat or reply changed; response discarded.');
         panel.querySelector('[data-scene-api-response]').textContent=response;
-        return await execute(response,snap);
-    }finally{clearTimeout(timeout);apiBusy=false;if(apiAbort===controller)apiAbort=null;updateInjection();syncUi();}
+        const result=await execute(response,snap);
+        diagnosticOutcome='completed';
+        return result;
+    }finally{trace.finish({outcome:controller.signal.aborted?'cancelled':diagnosticOutcome});clearTimeout(timeout);apiBusy=false;if(apiAbort===controller)apiAbort=null;updateInjection();syncUi();}
 }
 
 function syncUi(){
@@ -251,12 +263,13 @@ export function setupSceneAutomation(){
     if(event_types.CHAT_COMPLETION_PROMPT_READY)eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY,data=>{
         if(!settings().enabled||isCommandless(settings())||apiBusy)return;
         const key=Array.isArray(data?.chat)?'chat':Array.isArray(data?.messages)?'messages':null;if(!key)return;
+        diagnostic('context.history_cleanup',{mode:'prompt',messageCount:data[key].length});
         data[key]=data[key].map(message=>{
             if(message.role==='system'||message.role==='developer')return message;
             return {...message,content:typeof message.content==='string'?stripSceneCommands(message.content):Array.isArray(message.content)?message.content.map(part=>part?.type==='text'?{...part,text:stripSceneCommands(part.text)}:part):message.content};
         });
     });
-    if(event_types.GENERATE_AFTER_COMBINE_PROMPTS)eventSource.on(event_types.GENERATE_AFTER_COMBINE_PROMPTS,data=>{if(settings().enabled&&!isCommandless(settings())&&!apiBusy&&typeof data?.prompt==='string')data.prompt=stripSceneHistoryPrompt(data.prompt);});
+    if(event_types.GENERATE_AFTER_COMBINE_PROMPTS)eventSource.on(event_types.GENERATE_AFTER_COMBINE_PROMPTS,data=>{if(settings().enabled&&!isCommandless(settings())&&!apiBusy&&typeof data?.prompt==='string'){const size=data.prompt.length;data.prompt=stripSceneHistoryPrompt(data.prompt);diagnostic('context.history_cleanup',{mode:'prompt',changed:size!==data.prompt.length});}});
     onCatalogChange(()=>{updateInjection();schedulePreview();});
     for(const event of ['ig-background-catalog-change','ig-binding-groups-change'])window.addEventListener(event,()=>{cancel();updateInjection();schedulePreview();});
     window.addEventListener('ig-layout-change',()=>{updateInjection();schedulePreview();renderCommands();});

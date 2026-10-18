@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { diagnostic } from './diagnostics.js';
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
 import { extension_settings, getContext } from '../../../../extensions.js';
 import { saveSettingsDebounced } from '../../../../../script.js';
@@ -31,7 +32,7 @@ export function catalogFor(avatar) {
     return record;
 }
 export function onCatalogChange(listener) { listeners.add(listener); return () => listeners.delete(listener); }
-function changed() { saveSettingsDebounced(); for (const listener of listeners) listener(); }
+function changed() { diagnostic('ig.outfit_catalog'); saveSettingsDebounced(); for (const listener of listeners) listener(); }
 export function outfitFolderAllowed(character, folder) {
     return !foreignOutfitFolder(character, folder, getContext().characters || []) ||
         catalogFor(character.avatar).outfits.some(entry => entry.folder === folder && (entry.explicit === true || entry.source === 'manual'));

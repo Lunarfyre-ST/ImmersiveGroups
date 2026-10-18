@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { diagnosticOperation } from './diagnostics.js';
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
 import { cancelSceneFade, fadeSceneSwap } from './scene-animations.js';
 import { layoutSettings, editingLayout, writeLayoutSetting } from './responsive.js';
@@ -92,6 +93,9 @@ function preload(src) {
     });
 }
 export async function changeOutfit(avatar, requestedFolder, { source = 'manual', chatId = null, groupId = null, allowDuringGeneration = false, isCurrent = () => true } = {}) {
+    const trace = diagnosticOperation('outfit.change', { source });
+    let outcome = 'cancelled', committed = false;
+    try {
     const character = stageCharacters().find(c => c.avatar === avatar);
     if (!character) throw new Error('Character is no longer active in this chat');
     const folder = requestedFolder.trim();
@@ -116,7 +120,7 @@ export async function changeOutfit(avatar, requestedFolder, { source = 'manual',
     if (source === 'automatic' && (!automaticOutfitAllowed(avatar, folder)||!isCurrent()||!stageCharacters().some(c=>c.avatar===avatar))) return false;
     const valid = () => isCurrent() && outfitJobs.get(avatar) === job && currentScope() === scope && spriteNode(character) === node && node.querySelector('img') === img && node.isConnected &&
         (source !== 'automatic' || (automaticOutfitAllowed(avatar, folder) && isCurrent() && stageCharacters().some(c=>c.avatar===avatar)));
-    return fadeSceneSwap(img, 'outfit', () => {
+    const result = await fadeSceneSwap(img, 'outfit', () => {
         // Update the native override keyed by avatar filename, without running the
         // native override button (which empties the entire VN wrapper).
         if (!Array.isArray(extension_settings.expressionOverrides)) extension_settings.expressionOverrides = [];
@@ -126,6 +130,8 @@ export async function changeOutfit(avatar, requestedFolder, { source = 'manual',
         else extension_settings.expressionOverrides.push({ name: key, path: folder });
         if (expressions.lastExpression && typeof expressions.lastExpression === 'object') expressions.lastExpression[folder.split('/')[0]] = sprite.label;
         img.setAttribute('src', sprite.path);
+        committed = true;
+        trace.step({ outcome: 'applied', committed: true });
         img.setAttribute('data-expression', sprite.label);
         img.setAttribute('data-sprite-folder-name', folder);
         img.setAttribute('data-sprite-filename', url.pathname.split('/').pop());
@@ -140,6 +146,10 @@ export async function changeOutfit(avatar, requestedFolder, { source = 'manual',
         applyScale(node);
         refreshStageControls();
     }, valid);
+    outcome = result ? 'applied' : 'cancelled';
+    return result;
+    } catch (error) { outcome = 'failed'; throw error; }
+    finally { trace.finish({ outcome, committed }); }
 }
 export async function applyCommonOutfit(name,{automatic=false,isCurrent=()=>true,excludeAvatars=[]}={}) {
     name=commonOutfitKey(name);

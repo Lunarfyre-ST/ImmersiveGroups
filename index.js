@@ -42,7 +42,7 @@ async function start() {
     }
     const transfers=(await import('./modules/character-transfer-controls.js')).setupCharacterTransfers();
     runtime.status=runtime.errors.length?'partial':'ready';
-    globalThis.ImmersiveGroups=Object.freeze({version:runtime.version,automation:sceneAutomation,transfers,getStatus:()=>JSON.parse(JSON.stringify(runtime)),getSceneContext:async()=>{
+    globalThis.ImmersiveGroups=Object.freeze({version:runtime.version,diagnosticsProtocol:1,automation:sceneAutomation,transfers,getStatus:()=>JSON.parse(JSON.stringify(runtime)),getSceneContext:async()=>{
         const stage=runtime.components.scene?await import('./modules/stage-controls.js'):null;
         return {version:1,scene:stage?.getSceneContext(),gallery:globalThis.ImmersiveGroupsGallery?.getSceneContext()};
     }});
