@@ -29,8 +29,8 @@ module.exports=async function verifyScenePreferences(context,url){
  // Animation values are shared; paired sliders synchronize exact typed values.
  await page.locator('#ig-tab-animations').click();assert.equal(await setting('outfitFadeEnabled').isChecked(),false);assert.equal(await setting('backgroundFadeEnabled').isChecked(),false);
  await setting('outfitFadeMode').selectOption('sequential');await setting('outfitFadeLinked').uncheck();
- await setting('outfitFadeEnabled').check();await page.locator('#ig-pane-animations input[type=number][data-animation-setting="outfitFadeOut"]').fill('120');await page.locator('#ig-pane-animations input[type=number][data-animation-setting="outfitFadeOut"]').press('Tab');
- assert.equal(await page.locator('#ig-pane-animations input[type=range][data-animation-setting="outfitFadeOut"]').inputValue(),'120');
+ await setting('outfitFadeEnabled').check();await page.locator('#ig-pane-animations input[type=number][data-animation-setting="outfitFadeOut"]').fill('0.12');await page.locator('#ig-pane-animations input[type=number][data-animation-setting="outfitFadeOut"]').press('Tab');
+ assert.equal(await page.locator('#ig-pane-animations input[type=range][data-animation-setting="outfitFadeOut"]').inputValue(),'0.1');
  assert.equal(await page.evaluate(()=>ctx.extensionSettings.ImmersiveGroups.outfitFadeOut),120);
  await page.locator('#ig-edit-layout').selectOption('mobile');assert.equal(await setting('outfitFadeEnabled').isChecked(),true);await page.locator('#ig-edit-layout').selectOption('auto');
  await page.evaluate(()=>{window.nodes027=[...document.querySelectorAll('#visual-novel-wrapper img')];window.neighbors027=nodes027.slice(1).map(n=>[n,n.src,n.style.cssText]);window.result027=null;window.outfit027=stage027.changeOutfit('alex.png','Alex/outfit2').then(x=>result027=x);});

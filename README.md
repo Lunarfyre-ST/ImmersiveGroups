@@ -8,7 +8,7 @@ Started as a modification of PromeVN. [See credits below](#credits-and-origins).
 
 You can change outfits and backgrounds yourself, or let the model choose them as the story moves along. There are also plenty of ways to adjust how the scene looks: character heights, sprite spacing, button colors, transitions and separate PC/mobile layouts.
 
-**Current version: 0.3.6** — try optional entrances/exits, speaking emphasis, breathing, expression blends, reactions and background motion, each with its own controls and preview. [Release notes](docs/RELEASE_0.3.6.md).
+**Current version: 0.3.7** — steadier character entrances, simpler animation controls and more useful optional debugging. [Release notes](docs/RELEASE_0.3.7.md).
 
 [Previews](#-previews) · [Install](#-install) · [First steps](#-start-with-a-chat) · [Import / export](#-import-and-export) · [Automation](#-let-the-model-change-the-scene) · [Credits](#credits-and-origins)
 
@@ -122,13 +122,13 @@ For the chat itself, adjust **chat window / Sheld height** and choose whether to
 
 Open **Animations**, or **Scene tuning → Animations**, and enable outfit or background fades. **Crossfade** blends the old image into the new one. **Fade out, then fade in** shows them one after the other.
 
-Fade-in and fade-out timings start linked; unlink them if you want different durations. Fades start off on a fresh install. **Reset animation defaults** turns them off again and restores Crossfade with 200 ms outfit timings and 350 ms background timings. These settings are shared between PC and mobile, and reduced-motion preferences are respected.
+Fade-in and fade-out timings start linked; unlink them if you want different durations. Controls show seconds: sliders move in 0.1-second steps, and you can type a fraction for an exact value. Fades start off on a fresh install. **Reset animation defaults** turns them off again and restores Crossfade with 0.2-second outfit timings and 0.35-second background timings. These settings are shared between PC and mobile, and reduced-motion preferences are respected.
 
 ### Try the new motion options
 
-The **Animations** tab and **Scene tuning → Animations** now have expandable controls for entrances/exits, speaking emphasis, idle breathing, expression blends, manual reactions, background pan/zoom, a scene fade through black and smoother speaker focus.
+The **Animations** tab and **Scene tuning → Animations** put **Idle breathing** and **Idle background movement** first. Open **Experimental** for entrances/exits, speaking emphasis, expression blends, manual reactions, a scene fade through black and smoother speaker focus.
 
-Each effect starts **off**. Try its small **Preview** first, then enable it in the scene and adjust timing and strength. Breathing can follow the speaker or all visible characters. For reactions, choose a character and play a hop, nod, tilt or shake yourself. Smooth focus uses the existing sprite-dimming settings.
+Each effect starts **off**. Try its small **Preview** first, then enable it in the scene and adjust timing and strength. Breathing can follow the speaker or all visible characters. With all characters enabled, lower **Waiting-character intensity** for a subtler effect on everyone else; 100% keeps it equal and 0% stops their breathing. For reactions, choose a character and play a hop, nod, tilt or shake yourself. Smooth focus uses the existing sprite-dimming settings.
 
 These effects leave your saved heights and fine tuning alone. Reduced-motion preferences are respected, and motion stops when VN mode is off or the page is hidden. **Reset animation defaults** turns the new effects off again.
 
@@ -222,7 +222,7 @@ Custom endpoints must be reachable from the browser and allow requests from it. 
 
 ## 🛠️ What's next?
 
-For 0.3.6, try the new animations with your own sprites and devices. Testing real packs on a clean installation is still a priority too: fresh imports, repeat imports, deliberate conflicts and larger collections. The [0.3.5 review and test checklist](docs/IMPORT_EXPORT_REVIEW_0.3.5.md) records what's been checked and what still needs testing.
+For 0.3.7, try muting/unmuting characters and changing expressions with your own sprites and devices. Optional LunarDebug recordings can help investigate anything unexpected. Testing real packs on a clean installation is still a priority too: fresh imports, repeat imports, deliberate conflicts and larger collections. The [0.3.5 review and test checklist](docs/IMPORT_EXPORT_REVIEW_0.3.5.md) records what's been checked and what still needs testing.
 
 As these tests settle, I may start inviting more users. I also want to improve the menus and mobile controls and write a separate guide with more images. More animation options and ways to reduce the context needed for automation are also on the list.
 

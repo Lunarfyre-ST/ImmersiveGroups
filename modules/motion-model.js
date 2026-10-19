@@ -8,17 +8,21 @@ export const MOTION_EFFECTS=Object.freeze([
     {id:'breathing',title:'Idle breathing',section:'Character movement',duration:4000,min:1000,max:20000,strength:0.6,limit:3,unit:'Scale variation (%)',help:'A subtle repeating motion, anchored near the feet. Pause while a reaction or emphasis is playing.'},
     {id:'reaction',title:'Reaction motions',section:'Character movement',duration:500,min:0,max:3000,strength:8,limit:20,unit:'Strength',help:'Play a hop, nod, tilt or shake manually. Reactions are not selected by the model.'},
     {id:'focus',title:'Smooth speaker focus',section:'Character movement',duration:400,min:0,max:3000,strength:100,limit:100,unit:'Dimming strength (%)',help:'Smooth speaking-order brightness changes. Enable sprite dimming to see this; off retains the existing focus behavior.'},
-    {id:'backgroundPan',title:'Background pan / zoom',section:'Background movement',duration:20000,min:5000,max:120000,strength:2,limit:10,unit:'Travel (%)',help:'Slowly pan and zoom the background, then reverse. Stops while the page is hidden.'},
+    {id:'backgroundPan',title:'Idle background movement',section:'Background movement',duration:20000,min:5000,max:120000,strength:2,limit:10,unit:'Travel (%)',help:'Slowly pan and zoom the background, then reverse. Stops while the page is hidden.'},
 ]);
 export const MOTION_RULES=Object.freeze(Object.fromEntries([
     ...MOTION_EFFECTS.flatMap(effect=>[[`${effect.id}MotionEnabled`,{type:'boolean',value:false}],[`${effect.id}MotionDuration`,{type:'number',min:effect.min,max:effect.max,value:effect.duration}],[`${effect.id}MotionStrength`,{type:'number',min:0,max:effect.limit,value:effect.strength}]]),
     ['entranceMotionStyle',{type:'enum',values:['fade','slide'],value:'fade'}],
     ['breathingMotionScope',{type:'enum',values:['speaker','all'],value:'speaker'}],
+    ['breathingMotionWaitingStrength',{type:'number',min:0,max:100,value:100}],
     ['reactionMotionStyle',{type:'enum',values:['hop','nod','tilt','shake'],value:'hop'}],
     ['backgroundPanMotionDirection',{type:'enum',values:['left','right','up','down'],value:'right'}],
 ]));
 export const MOTION_DEFAULTS=Object.freeze(Object.fromEntries(Object.entries(MOTION_RULES).map(([key,rule])=>[key,rule.value])));
 export const motionKeys=Object.keys(MOTION_RULES);
+export const animationSeconds=key=>key.endsWith('MotionDuration')||/Fade(?:In|Out)$/.test(key);
+export const animationDisplayValue=(key,value)=>animationSeconds(key)?value/1000:value;
+export const animationStoredValue=(key,value)=>animationSeconds(key)?Number(value)*1000:value;
 export function motionValue(key,value){
     const rule=MOTION_RULES[key];if(!rule)return undefined;
     if(rule.type==='boolean')return typeof value==='boolean'?value:rule.value;

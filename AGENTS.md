@@ -53,6 +53,10 @@ not require end users to run npm.
 - Preserve async cancellation and stale-result checks after awaits, including
   chat/group, message/swipe, character, settings, request, and DOM identity.
 - Keep desktop/mobile layout and height preferences independent.
+- Animation duration controls display seconds; stored settings and transfers use
+  milliseconds. Preserve exact typed fractions and existing values. Treat native
+  expression image replacement within a holder as one character lifecycle, and
+  avoid interrupting unrelated entrances on group/settings notifications.
 - Retain window APIs, events, DOM IDs, and native jQuery data contracts unless
   the task requires changing them.
 - Check native SillyTavern behavior before changing internal imports, sprite

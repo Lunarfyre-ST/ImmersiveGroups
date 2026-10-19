@@ -5,17 +5,17 @@ module.exports=async function verifyCrossfades(context,url){
  const main=page.locator('#ig-pane-animations'),field=(key,type)=>main.locator(`[data-animation-setting="${key}"]${type?`[type="${type}"]`:''}`);
  await page.locator('#ig-tab-animations').click();
  for(const kind of ['outfit','background']){assert.equal(await field(kind+'FadeMode').inputValue(),'cross');assert.equal(await field(kind+'FadeLinked').isChecked(),true);assert.equal(await field(kind+'FadeEnabled').isChecked(),false);}
- await field('outfitFadeOut','number').fill('513');await field('outfitFadeOut','number').press('Tab');assert.equal(await field('outfitFadeIn','number').inputValue(),'513');assert.equal(await field('outfitFadeIn','range').inputValue(),'513');
- await field('outfitFadeIn','range').evaluate(n=>{n.value='237';n.dispatchEvent(new Event('input',{bubbles:true}));});assert.equal(await field('outfitFadeOut','number').inputValue(),'237');
- await field('outfitFadeLinked').uncheck();await field('outfitFadeOut','number').fill('700');await field('outfitFadeOut','number').press('Tab');assert.equal(await field('outfitFadeIn','number').inputValue(),'237');
- await field('outfitFadeLinked').check();assert.equal(await field('outfitFadeOut','number').inputValue(),'237');
- await field('outfitFadeMode').selectOption('sequential');await main.locator('[data-animation-reset]').click();assert.equal(await field('outfitFadeMode').inputValue(),'cross');assert.equal(await field('outfitFadeOut','number').inputValue(),'200');
+ await field('outfitFadeOut','number').fill('0.513');await field('outfitFadeOut','number').press('Tab');assert.equal(await field('outfitFadeIn','number').inputValue(),'0.513');assert.equal(await field('outfitFadeIn','range').inputValue(),'0.5');
+ await field('outfitFadeIn','range').evaluate(n=>{n.value='0.2';n.dispatchEvent(new Event('input',{bubbles:true}));});assert.equal(await field('outfitFadeOut','number').inputValue(),'0.2');
+ await field('outfitFadeLinked').uncheck();await field('outfitFadeOut','number').fill('0.7');await field('outfitFadeOut','number').press('Tab');assert.equal(await field('outfitFadeIn','number').inputValue(),'0.2');
+ await field('outfitFadeLinked').check();assert.equal(await field('outfitFadeOut','number').inputValue(),'0.2');
+ await field('outfitFadeMode').selectOption('sequential');await main.locator('[data-animation-reset]').click();assert.equal(await field('outfitFadeMode').inputValue(),'cross');assert.equal(await field('outfitFadeOut','number').inputValue(),'0.2');
  // Both views share the same values; live controls sit between Position and Presets.
  await page.locator('#prome-stage-manage').click();const live=page.locator('.ig-live-tuning');
  assert.equal(await live.evaluate(n=>{const a=[...n.children];return a.indexOf(n.querySelector('[data-live-offsets]'))<a.indexOf(n.querySelector('[data-live-animations]'))&&a.indexOf(n.querySelector('[data-live-animations]'))<a.indexOf(n.querySelector('[data-live-presets]'));}),true);
  await live.locator('[data-live-animations] > summary').click();const liveNumber=live.locator('input[type=number][data-animation-setting="backgroundFadeOut"]');
- await liveNumber.fill('420');await liveNumber.press('Tab');assert.equal(await field('backgroundFadeIn','number').inputValue(),'420');assert.equal(await live.locator('input[type=range][data-animation-setting="backgroundFadeIn"]').inputValue(),'420');
- await live.locator('[data-animation-reset]').click();assert.equal(await liveNumber.inputValue(),'350');assert.equal(await field('backgroundFadeIn','number').inputValue(),'350');
+ await liveNumber.fill('0.42');await liveNumber.press('Tab');assert.equal(await field('backgroundFadeIn','number').inputValue(),'0.42');assert.equal(await live.locator('input[type=range][data-animation-setting="backgroundFadeIn"]').inputValue(),'0.4');
+ await live.locator('[data-animation-reset]').click();assert.equal(await liveNumber.inputValue(),'0.35');assert.equal(await field('backgroundFadeIn','number').inputValue(),'0.35');
  await live.locator('[data-live-close]').click();
  // Real crossfades retain a visual old layer while committing the new sprite.
  await page.evaluate(()=>{controls028.writeAnimationSetting('outfitFadeEnabled',true);controls028.writeAnimationSetting('outfitFadeIn',800);window.node028=document.querySelector('#visual-novel-wrapper .expression-holder img');window.oldSrc028=node028.src;window.other028=[...document.querySelectorAll('#visual-novel-wrapper .expression-holder img')].slice(1).map(n=>[n,n.src,n.style.cssText]);window.done028=null;stage028.changeOutfit('alex.png','Alex/outfit2').then(x=>done028=x);});

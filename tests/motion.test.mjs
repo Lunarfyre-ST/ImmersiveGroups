@@ -1,12 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MOTION_EFFECTS,MOTION_DEFAULTS,motionValue,motionOptions,motionFrames } from '../modules/motion-model.js';
+import { MOTION_EFFECTS,MOTION_DEFAULTS,motionValue,motionOptions,motionFrames,animationDisplayValue,animationStoredValue } from '../modules/motion-model.js';
 import { portablePreferences } from '../modules/character-transfer-model.js';
 test('all eight motion experiments are opt-in with bounded defaults',()=>{
     assert.equal(MOTION_EFFECTS.length,8);
     for(const effect of MOTION_EFFECTS){const options=motionOptions({},effect.id);assert.equal(options.enabled,false);assert.ok(options.duration>=effect.min&&options.duration<=effect.max);assert.ok(options.strength<=effect.limit);assert.equal(motionValue(`${effect.id}MotionDuration`,Infinity),effect.duration);assert.equal(motionValue(`${effect.id}MotionDuration`,-1),effect.min);assert.equal(motionValue(`${effect.id}MotionStrength`,1e6),effect.limit);}
     assert.equal(motionValue('breathingMotionScope','unknown'),'speaker');assert.equal(motionValue('reactionMotionStyle','injected text'),'hop');assert.equal(motionValue('sceneMotionEnabled','true'),false);assert.equal(motionValue('other','private'),undefined);
+});
+
+test('seconds are only a UI conversion and waiting intensity stays bounded and portable',()=>{
+    assert.equal(animationDisplayValue('entranceMotionDuration',350),0.35);
+    assert.equal(animationStoredValue('outfitFadeIn','0.513'),513);
+    assert.equal(animationDisplayValue('breathingMotionStrength',0.6),0.6);
+    assert.equal(motionValue('breathingMotionWaitingStrength',999),100);
+    assert.equal(MOTION_DEFAULTS.breathingMotionWaitingStrength,100);
+    assert.equal(portablePreferences({breathingMotionWaitingStrength:40}).breathingMotionWaitingStrength,40);
 });
 test('motion frames return to neutral without writing settings or height corrections',()=>{
     const settings={...MOTION_DEFAULTS,heightProfiles:{a:{heightCm:155,fineTuneOffset:0}},mobileHeightProfiles:{a:{heightCm:155,fineTuneOffset:12}}},before=structuredClone(settings);

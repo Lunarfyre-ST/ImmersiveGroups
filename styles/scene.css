@@ -801,6 +801,7 @@ body.waifuMode :is(#visual-novel-wrapper,#ig-mobile-sprites) > .expression-holde
 
 .ig-animation-group > label { margin-block:8px; }
 .ig-animation-group select { width:100%; max-width:100%; }
+.ig-animation-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.ig-animation-tabs [aria-selected=true]{font-weight:700;border-color:var(--SmartThemeQuoteColor,#aaa)}
 .ig-motion-controls{border:1px solid var(--SmartThemeBorderColor,#777);border-radius:7px;padding:10px;margin:10px 0;min-width:0}
 .ig-motion-controls>summary{cursor:pointer;font-weight:600;padding:4px 0}.ig-motion-controls>label{display:flex;gap:8px;align-items:center;margin:10px 0;flex-wrap:wrap}.ig-motion-controls select{width:100%;min-width:0}.ig-motion-controls small{display:block;line-height:1.4;margin:8px 0}.ig-motion-controls .prome-number-pair{width:100%;min-width:0}.ig-motion-controls input[type=range]{min-width:0;flex:1}.ig-motion-controls input[type=number]{width:100px;max-width:40%}
 .ig-motion-demo{height:115px;overflow:hidden;position:relative;border-radius:6px;background:#202b39;margin:10px 0}.ig-motion-demo [data-motion-demo=background]{position:absolute;inset:0;background:linear-gradient(160deg,#526d82 0 48%,#40593c 49% 100%)}.ig-motion-demo [data-motion-demo=figure]{position:absolute;bottom:5px;left:calc(50% - 17px);height:65px;width:34px;border-radius:45% 45% 10% 10%;background:#e3b181;box-shadow:0 2px 6px #0005}.ig-motion-demo [data-motion-demo=figure]::before{content:'';position:absolute;top:-22px;left:5px;width:24px;height:26px;border-radius:50%;background:#f4d1a0}

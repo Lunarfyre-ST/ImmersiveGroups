@@ -11,7 +11,7 @@ module.exports=async(context,url)=>{
   window.motionBefore={chat:JSON.stringify(ctx.chat),profiles:JSON.stringify([ctx.extensionSettings.ImmersiveGroups.heightProfiles,ctx.extensionSettings.ImmersiveGroups.mobileHeightProfiles]),overrides:JSON.stringify(ctx.extensionSettings.expressionOverrides)};
   window.motionImage=document.getElementById('expression-alex.png').querySelector('img');
  });
- const speaking=pane.locator('[data-motion-effect=speaking]');await speaking.locator('summary').click();await speaking.getByRole('button',{name:'Preview',exact:true}).click();
+ await pane.locator('[data-animation-tab=experimental]').click();const speaking=pane.locator('[data-motion-effect=speaking]');await speaking.locator('summary').click();await speaking.getByRole('button',{name:'Preview',exact:true}).click();
  await page.waitForFunction(()=>document.querySelector('#ig-pane-animations [data-motion-effect=speaking] [data-motion-demo=figure]').getAnimations().length>0);
  assert.equal(await page.evaluate(()=>motionImage.getAnimations().length),0);await speaking.getByRole('button',{name:'Stop preview',exact:true}).click();
  // Infinite breathing composes with existing individual scales and is cleaned
@@ -27,6 +27,19 @@ module.exports=async(context,url)=>{
  await page.waitForFunction(()=>motionImage.getAnimations().some(a=>a.effect.getTiming().duration===180));
  await page.evaluate(()=>motionControls.writeAnimationSetting('breathingMotionEnabled',false));await page.waitForFunction(()=>motionImage.getAnimations().length===0);assert.equal(await page.evaluate(()=>motionImage.style.scale),'1.1');
  const unsupported=await page.evaluate(()=>{const original=motionImage.animate;motionImage.animate=function(frames,options){if(options?.composite==='add')throw TypeError('Unsupported additive animation');return original.call(this,frames,options);};try{return motion.playReaction('alex.png');}finally{motionImage.animate=original;}});assert.equal(unsupported,false);await page.waitForTimeout(30);assert.equal(await page.evaluate(()=>motionImage.getAnimations().length),0);
+ // Motion diagnostics are optional, contain no character/source identities and
+ // report completion/cancellation independently of scene behavior.
+ await page.evaluate(()=>{window.jobRecords=[];globalThis[Symbol.for('LunarDebug.sink')]={protocol:1,enabled:true,begin(event,fields){jobRecords.push({event,phase:'start',...fields});return {finish(fields){jobRecords.push({event,phase:'end',...fields});}};},emit(event,fields){jobRecords.push({event,...fields});}};motion.playReaction('alex.png');});
+ await page.waitForFunction(()=>jobRecords.some(r=>r.event==='animation.motion'&&r.phase==='end'&&r.outcome==='completed'));
+ await page.evaluate(()=>{motion.playReaction('alex.png');motion.playReaction('alex.png');});
+ await page.waitForFunction(()=>jobRecords.some(r=>r.outcome==='cancelled'&&r.reason==='superseded'));
+ assert.equal(await page.evaluate(()=>/alex|characters\/|http|\.png/i.test(JSON.stringify(jobRecords))),false);
+ await page.waitForFunction(()=>motionImage.getAnimations().length===0);
+ for(const variant of ['disabled','incompatible','throwing']){
+  assert.equal(await page.evaluate(variant=>{globalThis[Symbol.for('LunarDebug.sink')]={protocol:variant==='incompatible'?99:1,enabled:variant!=='disabled',begin(){throw Error('Optional test consumer');},emit(){throw Error('Optional test consumer');}};return motion.playReaction('alex.png');},variant),true);
+  await page.waitForFunction(()=>motionImage.getAnimations().length===0);
+ }
+ await page.evaluate(()=>delete globalThis[Symbol.for('LunarDebug.sink')]);
  // Character entry and exit remain visual-only and use no cloned native images.
  await page.evaluate(()=>{motionControls.writeAnimationSetting('entranceMotionEnabled',true);motionControls.writeAnimationSetting('entranceMotionStyle','slide');motionControls.writeAnimationSetting('entranceMotionDuration',220);const holder=document.createElement('div');holder.id='expression-cedar.png';holder.className='expression-holder';holder.innerHTML='<img src="/characters/Cedar/outfit1/happy.png">';document.getElementById('expression-cedar.png').remove();document.getElementById('visual-novel-wrapper').append(holder);window.entered=holder.querySelector('img');});
  await page.waitForFunction(()=>entered.getAnimations().length>0);await page.waitForFunction(()=>entered.getAnimations().length===0);
