@@ -1,6 +1,6 @@
 ![ImmersiveGroups banner](docs/Banner.jpg)
 
-# 🎭 ImmersiveGroups [EXPERIMENTAL]
+# 🎭 ImmersiveGroups
 
 ImmersiveGroups is a SillyTavern extension for giving your chats a visual novel feel. Keep several characters on screen, give them different outfits, change the background, and add images to the conversation. It works with solo and group chats, on PC and mobile.
 
