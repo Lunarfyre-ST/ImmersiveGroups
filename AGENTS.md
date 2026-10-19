@@ -113,6 +113,12 @@ contract when implementing integration changes.
   with recording off and on. Run companion LunarCore integration regressions
   when its checkout is available; report the exact versions/results and any
   untested combinations. Normal ImmersiveGroups tests must run without it.
+- Whenever analyzing a LunarDebug recording, read and append metadata-only
+  findings to the companion LunarCore checkout's `docs/debug-notes.md`. Use that
+  shared file across both project contexts: record versions/schema, loss status,
+  deduplicated evidence, uncertainty and next checks. Do not copy private content
+  or infer installed hook coverage from version numbers alone. If the companion
+  file is unavailable, report that limitation instead of claiming it was updated.
 
 ## Transfer contract
 
