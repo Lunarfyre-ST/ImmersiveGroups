@@ -21,7 +21,7 @@ export function ExpressionUpload({draft,scene,busy,onUpload,onClose}){
         <strong>{draft.entry.entity} / {draft.entry.name}</strong><code>{draft.entry.folder}</code>
         <p>Add images to this outfit. Recognized filenames select their expression automatically; choose one for any other image. Existing images are kept, with numbered variants added for duplicates.</p>
         <small>Up to 200 images, 20 MiB each and 250 MiB total. These images become outfit expressions; they are not added to chat image galleries.</small>
-        <small>If SillyTavern has already cached this outfit, reopen the chat to refresh its expression choices.</small>
+        <small>Use Manage expressions → Rescan sprite folder if SillyTavern has already cached this outfit’s expression choices.</small>
         {loading&&<p role="status">Loading expression names…</p>}
         {error&&<><p role="alert">{error}</p><button type="button" className="menu_button" disabled={busy} onClick={()=>setAttempt(n=>n+1)}>Retry expression names</button></>}
         {!supported&&<p role="alert">Choose PNG, JPEG, GIF, WebP, AVIF or BMP images.</p>}

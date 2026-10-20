@@ -11,13 +11,15 @@ export async function scanOutfitFolders(characters,files){
     await Promise.all([worker(),worker(),worker()]);return {found,added,failed};
 }
 const uploads=new Map();
+export function queueSpriteMutation(folder,action){
+    folder=spriteFolder(folder);const key=folder.toLowerCase(),previous=uploads.get(key)||Promise.resolve();
+    const job=previous.catch(()=>{}).then(action);uploads.set(key,job);
+    const release=()=>{if(uploads.get(key)===job)uploads.delete(key);};job.then(release,release);return job;
+}
 export function uploadOutfitImages(folder,input,options={}){
     try{folder=spriteFolder(folder);}catch(error){return Promise.reject(error);}
-    const key=folder.toLowerCase(),files=options.zip?input:Array.from(input||[]),plan={...options,...(Array.isArray(options.expressions)?{expressions:[...options.expressions]}:{})};
-    const previous=uploads.get(key)||Promise.resolve();
-    const job=previous.catch(()=>{}).then(()=>performUpload(folder,files,plan));
-    uploads.set(key,job);
-    const release=()=>{if(uploads.get(key)===job)uploads.delete(key);};job.then(release,release);return job;
+    const files=options.zip?input:Array.from(input||[]),plan={...options,...(Array.isArray(options.expressions)?{expressions:[...options.expressions]}:{})};
+    return queueSpriteMutation(folder,()=>performUpload(folder,files,plan));
 }
 async function performUpload(folder,input,{zip=false,expressions=null}={}){
     const images=[];let skipped=0,total=0;

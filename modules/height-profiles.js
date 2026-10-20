@@ -14,6 +14,17 @@ const config=()=>extension_settings[extensionName];
 const el=id=>document.getElementById(id);
 function profileMap(layout=mobileLayout()?'mobile':'desktop'){return layout==='mobile'?config().mobileHeightProfiles:config().heightProfiles;}
 export function profileFor(avatar,layout){const map=profileMap(layout);return owns(map,avatar)?map[avatar]:{};}
+export function characterHeightSettings(avatar){return {heightCm:profileFor(avatar,'desktop').heightCm||REFERENCE_HEIGHT_CM,desktop:{...profileFor(avatar,'desktop')},mobile:{...profileFor(avatar,'mobile')},enabled:Boolean(config().enableHeightProfiles)};}
+export function updateCharacterHeight(avatar,patch,layout='desktop'){
+    if(!getContext().characters?.some(c=>c.avatar===avatar)||!['desktop','mobile'].includes(layout))throw new Error('Choose an available character and layout.');
+    const next={...profileFor(avatar,layout)};
+    for(const [key,min,max] of [['heightCm',30,300],['fineTuneOffset',-99,7900],['offsetY',-1000,1000]])if(owns(patch,key)){
+        const value=Number(patch[key]);if(patch[key]===''||!Number.isFinite(value)||value<min||value>max)throw new Error('Enter a height or adjustment within the displayed range.');next[key]=value;
+    }
+    Object.defineProperty(profileMap(layout),avatar,{value:next,writable:true,enumerable:true,configurable:true});
+    if(owns(patch,'heightCm'))for(const other of ['desktop','mobile'])if(other!==layout)Object.defineProperty(profileMap(other),avatar,{value:{...profileFor(avatar,other),heightCm:next.heightCm},writable:true,enumerable:true,configurable:true});
+    config().enableHeightProfiles=true;saveSettingsDebounced();applyScaleCallback();refreshProfileEditor(true);window.dispatchEvent(new Event('ig-character-profile-change'));
+}
 export function profileFactor(profile={},reference){return heightFactor(profile,reference);}
 export function packFromSource(src,fallback='') {
     try{const match=new URL(src,window.location.href).pathname.match(/\/characters\/(.+)\/[^/]+$/);return match?decodeURIComponent(match[1]):fallback;}catch{return fallback;}
@@ -82,12 +93,7 @@ function loadFields(){
 }
 function writeProfile(key,value){
     const c=selectedCharacter();if(!c)return;
-    const layout=editingLayout(),profile={...profileFor(c.avatar,layout),[key]:value};
-    Object.defineProperty(profileMap(layout),c.avatar,{value:profile,writable:true,enumerable:true,configurable:true});
-    // Centimeters describe the character; only visual fine tuning differs by device.
-    if(key==='heightCm')for(const other of ['desktop','mobile'])if(other!==layout)Object.defineProperty(profileMap(other),c.avatar,{value:{...profileFor(c.avatar,other),heightCm:value},writable:true,enumerable:true,configurable:true});
-    config().enableHeightProfiles=true;
-    rememberSelection();applyScaleCallback();loadFields();
+    updateCharacterHeight(c.avatar,{[key]:value},editingLayout());rememberSelection();loadFields();
 }
 export function setupHeightProfiles(applyScale){
     applyScaleCallback=applyScale;const s=config();

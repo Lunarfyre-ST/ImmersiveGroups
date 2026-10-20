@@ -27,6 +27,9 @@ step and stop. Do not start the next step automatically.
 - `modules/scene-backgrounds.js`, `background-*`, `binding-groups-model.js`:
   backgrounds, defaults, eligibility, and linked outfit changes.
 - `modules/scene-library.js`: bridge from scene services to gallery UI.
+- `modules/expression-files.js`: reviewed native sprite replacement/deletion;
+  folder queues are shared with uploads. Recheck bytes and stem ambiguity before
+  destructive writes; report native partial failure without promising rollback.
 - `modules/scene-automation*.js`, `scene-api.js`, `scene-command-view.js`:
   prompts, command validation, generation lifecycle, and API analysis.
 - `modules/diagnostics.js`: optional metadata-only LunarDebug producer bridge;
@@ -53,6 +56,14 @@ not require end users to run npm.
 - Preserve async cancellation and stale-result checks after awaits, including
   chat/group, message/swipe, character, settings, request, and DOM identity.
 - Keep desktop/mobile layout and height preferences independent.
+- Library character settings use the existing height writer. Shared outfit groups
+  use common names plus optional `commonPreferred`; one preferred visible match
+  resolves ambiguity, multiple preferred matches remain ambiguous. Preserve locks,
+  explicit command precedence and stale-result checks for linked changes.
+- Rescanning clears library inventory caches. Native expression refresh uses the
+  current API selector's existing change handler with its value unchanged; skip
+  it during generation and tolerate absent controls. Never synthesize chat-change
+  events or depend on private native sprite-cache variables.
 - Animation duration controls display seconds; stored settings and transfers use
   milliseconds. Preserve exact typed fractions and existing values. Treat native
   expression image replacement within a holder as one character lifecycle, and

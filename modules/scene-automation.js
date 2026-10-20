@@ -6,7 +6,7 @@ import { extensionName } from '../constants.js';
 import { getSceneContext, stageCharacters, requestAutomaticOutfit } from './stage-controls.js';
 import { onCatalogChange } from './outfit-catalog.js';
 import { ensureBackgrounds, requestAutomaticBackground } from './scene-backgrounds.js';
-import { automationSettings, isCommandless, SCENE_PROMPT_KEY, buildSceneInventory, buildScenePrompt, messageSpeaker, parseSceneCommands, allowedSceneCommand, stripSceneCommands, stripSceneHistoryPrompt, plannerMessages, recentPlannerMessages, DEFAULT_ALL_INSTRUCTIONS, DEFAULT_SPEAKER_INSTRUCTIONS } from './scene-automation-model.js';
+import { automationSettings, isCommandless, SCENE_PROMPT_KEY, buildSceneInventory, buildScenePrompt, messageSpeaker, parseSceneCommands, allowedSceneCommand, sceneCommandRejection, stripSceneCommands, stripSceneHistoryPrompt, plannerMessages, recentPlannerMessages, DEFAULT_ALL_INSTRUCTIONS, DEFAULT_SPEAKER_INSTRUCTIONS } from './scene-automation-model.js';
 import { renderSceneCommandText } from './scene-command-view.js';
 import { callScenePlanner } from './scene-api.js';
 
@@ -62,28 +62,29 @@ async function execute(text,snap,seen=null){
     const trace=diagnosticOperation('automation.execute',{commands:parsed.commands.length,issues:parsed.issues.length,streaming:Boolean(snap.streaming)});
     for(const [commandIndex,command] of parsed.commands.entries()){
         const identity=commandIndex+':'+JSON.stringify(command);if(seen?.has(identity))continue;
-        if(!validSnapshot(snap)){results.push({type:command.type,applied:false,reason:'Chat, message or settings changed.'});break;}
+        if(!validSnapshot(snap)){results.push({type:command.type,applied:false,reason:'Chat, message or settings changed.',diagnosticReason:'stale'});break;}
         seen?.add(identity);
         const scene=getSceneContext();
-        if(!allowedSceneCommand(command,snap.inventory,scene,settings())){results.push({type:command.type,applied:false,reason:'Locked, unavailable or outside the permitted character scope.'});continue;}
+        const rejected=sceneCommandRejection(command,snap.inventory,scene,settings());
+        if(rejected){const messages={locked:'Automatic changes are locked.',scope:'Outside the permitted character or background scope.',unavailable:'Outfit or background is no longer available in the offered catalog.',disabled:'This type of automatic change is disabled.',invalid:'Invalid scene command.'};results.push({type:command.type,applied:false,reason:messages[rejected],diagnosticReason:rejected});continue;}
         try{
             let applied=false;
             const isCurrent=()=>validSnapshot(snap)&&allowedSceneCommand(command,snap.inventory,getSceneContext(),settings());
             if(command.type==='outfit'){
                 const current=scene.characters.find(c=>c.avatar===command.avatar);
-                if(current.currentOutfit===command.folder){results.push({type:'outfit',applied:false,reason:'Already wearing this outfit.'});continue;}
+                if(current.currentOutfit===command.folder){results.push({type:'outfit',applied:false,reason:'Already wearing this outfit.',diagnosticReason:'unchanged'});continue;}
                 applied=await requestAutomaticOutfit({...command,chatId:snap.chatId,groupId:snap.groupId,allowDuringGeneration:true,isCurrent});
             }else{
-                if(scene.backgrounds.current===command.file){results.push({type:'background',applied:false,reason:'Background already selected.'});continue;}
+                if(scene.backgrounds.current===command.file){results.push({type:'background',applied:false,reason:'Background already selected.',diagnosticReason:'unchanged'});continue;}
                 applied=await requestAutomaticBackground({...command,chatId:snap.chatId,groupId:snap.groupId,isCurrent,excludeAvatars:parsed.commands.filter(c=>c.type==='outfit'&&allowedSceneCommand(c,snap.inventory,scene,settings())).map(c=>c.avatar)});
             }
-            results.push({type:command.type,applied,reason:applied?'Applied.':'Change cancelled.'});
-        }catch(error){results.push({type:command.type,applied:false,reason:error.message});}
+            results.push({type:command.type,applied,reason:applied?'Applied.':'Change cancelled.',diagnosticReason:applied?undefined:'other'});
+        }catch(error){results.push({type:command.type,applied:false,reason:error.message,diagnosticReason:'error'});}
     }
     const changed=results.filter(r=>r.applied).length;
     for(const result of results) {
-        const reason=result.applied?undefined:result.reason==='Already wearing this outfit.'||result.reason==='Background already selected.'?'unchanged':result.reason==='Locked, unavailable or outside the permitted character scope.'?'scope_or_lock':result.reason==='Chat, message or settings changed.'?'stale':result.reason==='Change cancelled.'?'other':'error';
-        trace.step({kind:result.type,outcome:result.applied?'applied':reason==='error'?'failed':'skipped',reason});
+        const reason=result.diagnosticReason;
+        trace.step({kind:result.type,outcome:result.applied?'applied':reason==='error'?'failed':['stale','other'].includes(reason)?'cancelled':'skipped',reason});
     }
     trace.finish({outcome:'completed',applied:changed,skipped:results.length-changed});
     status(`${changed} scene change${changed===1?'':'s'} applied.${results.length>changed?' '+results.filter(r=>!r.applied).map(r=>r.reason).join(' '):''}${parsed.issues.length?' '+parsed.issues.join(' '):''}${!results.length&&!parsed.issues.length?' No applicable scene commands.':''}`);

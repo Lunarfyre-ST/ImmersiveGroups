@@ -8,7 +8,7 @@ Started as a modification of PromeVN. [See credits below](#credits-and-origins).
 
 You can change outfits and backgrounds yourself, or let the model choose them as the story moves along. There are also plenty of ways to adjust how the scene looks: character heights, sprite spacing, button colors, transitions and separate PC/mobile layouts.
 
-**Current version: 0.3.9** — add expression images from the library, manage Basic outfits for new characters, and reduce repeated outfit commands. [Release notes](docs/RELEASE_0.3.9.md).
+**Current version: 0.4.0** — expression management, shared outfit groups, character settings in the library, and clearer scene controls. [Release notes](docs/RELEASE_0.4.0.md).
 
 [Previews](#-previews) · [Install](#-install) · [First steps](#-start-with-a-chat) · [Import / export](#-import-and-export) · [Automation](#-let-the-model-change-the-scene) · [Credits](#credits-and-origins)
 
@@ -82,13 +82,17 @@ Open **Manage outfits**, or **Gallery → Open asset library**, to add and organ
 
 - ➕ **Add outfit** accepts a folder name or full path, with an optional sprite ZIP. Choose the character in the form itself.
 - 🔍 **Scan outfit folders** reads outfit names from your local `characters` folder. It doesn't upload images. If SillyTavern runs on another device, those folders also need to exist on that server; otherwise, upload a ZIP instead.
-- 📦 **Upload sprite ZIP** adds images to an outfit. Duplicate filenames get numbered variants so the existing files are kept. You may need to reload SillyTavern to see newly added expressions.
-- 🖼️ **Add expression images** lets you upload individual images to an outfit. Names such as `neutral.png` or `joy-2.png` select their expression automatically. For other filenames, choose an expression before uploading. Existing images are kept. Reopen the chat if SillyTavern's cached expression choices haven't refreshed yet.
+- 📦 **Upload sprite ZIP** adds images to an outfit. Duplicate filenames get numbered variants so the existing files are kept.
+- 🖼️ **Add expression images** lets you upload individual images to an outfit. Names such as `neutral.png` or `joy-2.png` select their expression automatically. For other filenames, choose an expression before uploading. Existing images are kept.
+- 🎭 **Manage expressions** shows thumbnails and expression variants. Preview, replace or remove an individual image. Replacement and deletion ask for confirmation; download the original first if you want a backup.
+- 🔄 **Manage expressions → Rescan sprite folder** picks up files copied directly onto the server and refreshes native expression choices without a browser reload. During generation, it refreshes the library only; rescan again afterward for native choices.
 - ↕️ **Reorder outfits** switches the library to compact rows with up/down arrows. Choose **Done reordering** to return to the previews.
 
 Outfit locks prevent automatic clothing changes while still letting you choose outfits manually. Muted group members are hidden from the scene, and the remaining sprites adjust to the available space.
 
 You can also change each character's button background, Speak button color and text color, including different text colors for individual outfits.
+
+The library's **Character appearance** panel also contains shared height, separate PC/mobile fine tuning and vertical offset, and the automatic outfit lock. These edit the same settings as the main character controls, including characters whose chat isn't open.
 
 <img src="docs/Preview-Colors.jpg" alt="Character button background, Speak button and text color settings" width="320">
 
@@ -96,6 +100,8 @@ You can also change each character's button background, Speak button color and t
 <summary><strong>👥 Shared outfits and folders under the wrong character</strong></summary>
 
 Give matching outfits the same **Shared outfit name**, such as `winter` or `pyjama`. With **All characters outfit selector** enabled under **Controls** or **Scene tuning → Buttons**, you can change the whole active group at once. It only offers names with one clear match for every active character.
+
+Use **Library → Outfit groups** to set this up in one place. For example, assign each character's swimsuit or bikini to **Swimwear**, then choose `swimwear` as the **Linked outfit group** on bath or beach backgrounds. If a character has multiple matches, choose a preferred outfit. Unresolved matches are skipped; locks and hidden outfits are respected. Background cards show **Linked outfit readiness** for the current chat.
 
 If an automatically learned folder appears to belong to another character, the extension sets the entry aside and keeps its description. Check **Library → Tools → Mismatched outfits set aside**. Use **Restore as shared outfit** when the shared folder is intentional, or discard the entry to remove it from the library. Neither action deletes its sprite files. You can also add an intentionally shared folder through **Add outfit**.
 
@@ -111,7 +117,7 @@ Set character heights in **Characters**, then use **Sprites → Fit calibration*
 
 ![Characters displayed at different heights](docs/Preview-Height.jpg)
 
-In **Characters → Character heights**, set **Recent speakers displayed** to 2 or 3 for a smaller mobile cast, or 0 for everyone. Choose whether calibration follows the tallest displayed character or stays at the tallest member of the whole group, including muted characters. These two preferences are separate for PC/mobile.
+Near the top of **Scene tuning**, below Fit calibration and vertical offset, set **Recent speakers displayed** to 2 or 3 for a smaller mobile cast, or 0 for everyone. Choose whether calibration follows the tallest displayed character or stays at the tallest member of the whole group, including muted characters. These two preferences are separate for PC/mobile and remain available in **Characters → Character heights** too.
 
 Sprite artwork isn't always framed consistently, so use **Fine tune** if someone still looks too large or small. Heights are shared across PC and mobile, while fine tuning, fit and visual offsets have separate profiles. If old fine-tune values keep appearing, **Reset all character fine tuning (PC + mobile)** clears them across both profiles without resetting your heights. An outfit can also have its own height override; leave it blank to use the character's normal height.
 
@@ -233,7 +239,7 @@ Custom endpoints must be reachable from the browser and allow requests from it. 
 
 ## 🛠️ What's next?
 
-For 0.3.9, try expression uploads and Basic outfit management with your own sprites and devices, along with the mobile scenes and streaming commands added in 0.3.8. Optional LunarDebug recordings can help investigate anything unexpected. Testing real packs on a clean installation is still a priority too: fresh imports, repeat imports, deliberate conflicts and larger collections. The [0.3.5 review and test checklist](docs/IMPORT_EXPORT_REVIEW_0.3.5.md) records what's been checked and what still needs testing.
+For 0.4.0, try the expression manager, folder rescanning and shared outfit groups with your own artwork and devices. Optional LunarDebug now distinguishes more automation outcomes and, with the companion LunarCore update, summarizes retained command results. Testing real packs on a clean installation is still a priority: fresh imports, repeat imports, deliberate conflicts and larger collections. The [0.3.5 review and test checklist](docs/IMPORT_EXPORT_REVIEW_0.3.5.md) records what's been checked and what still needs testing.
 
 As these tests settle, I may start inviting more users. I also want to improve the menus and mobile controls and write a separate guide with more images. More animation options and ways to reduce the context needed for automation are also on the list.
 

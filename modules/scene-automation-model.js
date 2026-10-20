@@ -121,15 +121,22 @@ export function parseSceneCommands(text){
     const last=new Map();commands.forEach((c,i)=>last.set(c.type==='outfit'?`outfit:${c.avatar}`:'background',i));
     return {commands:commands.filter((c,i)=>last.get(c.type==='outfit'?`outfit:${c.avatar}`:'background')===i),issues};
 }
-export function allowedSceneCommand(command,inventory,scene,settings){
-    const s=automationSettings(settings);if(!s.enabled||isCommandless(s))return false;
+export function sceneCommandRejection(command,inventory,scene,settings){
+    const s=automationSettings(settings);if(!s.enabled||isCommandless(s))return 'disabled';
     if(command.type==='outfit'){
         const offered=inventory.characters.find(c=>c.avatar===command.avatar),current=scene.characters?.find(c=>c.avatar===command.avatar);
-        return Boolean(s.outfits&&offered&&current&&!current.outfitLocked&&(s.scope!=='speaker'||command.avatar===inventory.speakerAvatar)&&offered.outfits.some(o=>o.folder===command.folder)&&current.outfits.some(o=>o.folder===command.folder));
+        if(!s.outfits)return 'disabled';if(current?.outfitLocked)return 'locked';if(s.scope==='speaker'&&command.avatar!==inventory.speakerAvatar)return 'scope';
+        return offered&&current&&offered.outfits.some(o=>o.folder===command.folder)&&current.outfits.some(o=>o.folder===command.folder)?'':'unavailable';
     }
-    if(command.type==='background')return Boolean(s.backgrounds&&!scene.backgrounds?.locked&&!scene.backgrounds?.automationLocked&&inventory.backgrounds.some(b=>b.file===command.file)&&scene.backgrounds?.library?.some(b=>b.file===command.file&&backgroundIsEligible(b,(scene.characters||[]).map(c=>c.avatar),scene.bindingGroups,s.backgroundLinkedOnly)));
-    return false;
+    if(command.type==='background'){
+        if(!s.backgrounds)return 'disabled';if(scene.backgrounds?.locked||scene.backgrounds?.automationLocked)return 'locked';
+        const entry=scene.backgrounds?.library?.find(b=>b.file===command.file);
+        if(!entry||!inventory.backgrounds.some(b=>b.file===command.file))return 'unavailable';
+        return backgroundIsEligible(entry,(scene.characters||[]).map(c=>c.avatar),scene.bindingGroups,s.backgroundLinkedOnly)?'':'scope';
+    }
+    return 'invalid';
 }
+export const allowedSceneCommand=(command,inventory,scene,settings)=>!sceneCommandRejection(command,inventory,scene,settings);
 export function stripSceneCommands(text){return String(text||'').replace(/^[ \t]*::(?:outfit|background)\b[^\r\n]*?::[ \t]*(?:\r?\n|$)/gm,'');}
 export function stripSceneHistoryPrompt(text){
     const protectedParts=[];

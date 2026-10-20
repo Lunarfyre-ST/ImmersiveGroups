@@ -1,6 +1,6 @@
 # Character/settings bundle format
 
-This is the compatibility contract for ImmersiveGroups transfers. The bundle format version is independent of the extension release version. **0.3.8 continues writing version 2 and reading versions 1 and 2.** Animation durations remain milliseconds in stored/exported settings, even though controls display seconds.
+This is the compatibility contract for ImmersiveGroups transfers. The bundle format version is independent of the extension release version. **0.4.0 continues writing version 2 and reading versions 1 and 2.** Animation durations remain milliseconds in stored/exported settings, even though controls display seconds.
 
 ## Container and identity
 
@@ -29,6 +29,8 @@ This is the compatibility contract for ImmersiveGroups transfers. The bundle for
 | `requiredFeatures` | Optional capability list. 0.3.4 rejects unknown mandatory capabilities before writes; its exports currently use an empty list. |
 
 Outfit entries may contain `heightOverrideCm`: a number from 30 to 300, or `null` to inherit the character height. `outfitHeights` is an independent version 2 selection flag. Older bundles without this property do not clear existing overrides. Older extension readers may ignore this optional field and use normal character heights.
+
+Outfit entries may also contain `commonPreferred`: a boolean identifying a preferred match within that character's shared outfit name. It travels only with outfit-entry metadata selection; excluded outfit metadata does not export it. Missing fields preserve existing preferences on import, explicit false clears the preference under acknowledged update policy, and existing metadata remains protected by keep policy. Duplicate preferred matches remain ambiguous and are skipped. Review compares this field and destination changes invalidate approval. Older readers may ignore it, retaining the previous safe behavior of skipping ambiguous matches.
 
 Assets must match their declared owner, outfit or assignment. Duplicate logical destinations are rejected, including sprite filename stems that collide across case or extensions. Checksums cover file bytes, not the authenticity of the bundle’s author.
 

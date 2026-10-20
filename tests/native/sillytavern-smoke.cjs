@@ -58,7 +58,7 @@ const artifactDirectory = path.resolve(__dirname, '../artifacts/native', browser
             await ctx.getCharacters();
             await ctx.selectCharacterById(ctx.characters.findIndex(character => character.avatar === sourceAvatar));
             const sourceFolder = sourceName + '/winter', destinationFolder = destinationName + '/winter';
-            const image = new Blob([Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg=='), value => value.charCodeAt(0))], { type: 'image/png' });
+            const image = new Blob([Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg=='), value => value.charCodeAt(0))], { type: 'image/png' });
             async function uploadSprite(folder, filename, bytes=image) {
                 const form = new FormData(); form.append('name', folder); form.append('label', filename.split('.')[0]); form.append('spriteName', filename.split('.')[0]); form.append('avatar', bytes, filename);
                 await request('/api/sprites/upload', form, true);
@@ -73,6 +73,21 @@ const artifactDirectory = path.resolve(__dirname, '../artifacts/native', browser
             const expressionRows=await sprites(expressionFolder);
             assertNative(expressionResult.uploaded===2&&expressionRows.length===3,'Expression images must preserve existing sprites');
             assertNative(expressionRows.filter(row=>row.label==='neutral').length===2&&expressionRows.some(row=>row.label==='joy'),'Native server must recognize assigned expression filenames');
+            const joyReview=await ImmersiveGroupsSceneLibrary.reviewExpression(expressionFolder,expressionRows.find(row=>row.label==='joy').path);
+            await ImmersiveGroupsSceneLibrary.editExpression(joyReview);
+            const neutralReview=await ImmersiveGroupsSceneLibrary.reviewExpression(expressionFolder,expressionRows.find(row=>row.path.includes('neutral-1.png')).path);
+            await ImmersiveGroupsSceneLibrary.editExpression(neutralReview,new File([image],'replacement.png',{type:'image/png'}));
+            assertNative((await sprites(expressionFolder)).length===2,'Reviewed native image edits must affect only the selected file');
+            const stage=await import('/scripts/extensions/third-party/ImmersiveGroups/modules/stage-controls.js');
+            await stage.changeOutfit(sourceAvatar,expressionFolder);
+            await ImmersiveGroupsSceneLibrary.outfitExpressions(expressionFolder);
+            await uploadSprite(expressionFolder,'surprise.png'); // Server write outside the library cache.
+            assertNative((await ImmersiveGroupsSceneLibrary.refreshOutfit(expressionFolder)).length===3,'External server additions must appear after rescanning');
+            assertNative(ImmersiveGroupsSceneLibrary.refreshNativeExpressions().includes('choices refreshed'),'Native cache refresh control unavailable');
+            for(let attempt=0;attempt<100&&!document.querySelector('#image_list [data-filename="surprise.png"]');attempt++)await new Promise(resolve=>setTimeout(resolve,50));
+            assertNative(Boolean(document.querySelector('#image_list [data-filename="surprise.png"]')),'Native expression choices did not refresh without a browser reload');
+            await stage.changeOutfit(sourceAvatar,sourceFolder);
+            ImmersiveGroupsSceneLibrary.removeOutfit({avatar:sourceAvatar,folder:expressionFolder});
             function assertNative(value,message){if(!value)throw Error(message);}
             const backgroundName = prefix + '-room.png', backgroundForm = new FormData(); backgroundForm.append('avatar', image, backgroundName);
             const background = (await (await request('/api/backgrounds/upload', backgroundForm, true)).text()).trim();

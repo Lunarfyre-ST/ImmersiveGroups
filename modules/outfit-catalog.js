@@ -143,6 +143,7 @@ export function editOutfit(avatar, folder, patch) {
     if (typeof patch.label === 'string') entry.label = patch.label.trim().slice(0,80) || folder.split('/').pop();
     if (typeof patch.description === 'string') entry.description = patch.description.trim().slice(0,1000);
     if (typeof patch.commonName === 'string') entry.commonName = patch.commonName.trim().slice(0,80);
+    if (typeof patch.commonPreferred === 'boolean') entry.commonPreferred = patch.commonPreferred;
     if (typeof patch.fontColor === 'string') entry.fontColor = /^#[a-f0-9]{6}$/i.test(patch.fontColor) ? patch.fontColor : '';
     if (typeof patch.hidden === 'boolean' || patch.hidden === null) entry.hidden = patch.hidden;
     changed();
@@ -230,7 +231,7 @@ export function sceneOutfitContext(characters, currentFolder) {
         const folder=currentFolder(character),current=outfitOptions(character,true).find(o=>o.folder===folder);
         return { avatar: character.avatar, name: character.name,
         currentOutfit: folder,currentOutfitName:current?.label||'',currentOutfitDescription:current?.description||'',outfitLocked: Boolean(catalogFor(character.avatar).locked),
-        outfits: outfitOptions(character).map(({folder,label,description,commonName}) => ({folder,name:label,description,commonName})) };
+        outfits: outfitOptions(character).map(({folder,label,description,commonName,commonPreferred}) => ({folder,name:label,description,commonName,commonPreferred})) };
     });
 }
 

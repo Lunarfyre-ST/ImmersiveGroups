@@ -7,7 +7,7 @@ import { mobileSpritesActive, mobileSprite, syncMobileSprites } from './mobile-s
 import { setupBackgrounds, refreshBackgrounds, backgroundSceneContext } from './scene-backgrounds.js';
 import { seedOutfits, rememberOutfit, rememberNativeOutfits, outfitOptions, catalogFor, setOutfitLock, onCatalogChange, discoverOutfits, automaticOutfitAllowed, sceneOutfitContext, outfitFolderAllowed, displayedOutfitAllowed, repairOutfitOwnership } from './outfit-catalog.js';
 import { setupOutfitEditor, openOutfitEditor } from './outfit-editor.js';
-import { commonOutfitChoices, commonOutfitTargets, commonOutfitKey, commonOutfitName } from './common-outfits-model.js';
+import { commonOutfitChoices, commonOutfitTargets, commonOutfitKey, commonOutfitName, commonOutfitMatch } from './common-outfits-model.js';
 import { createOutfitPicker } from './outfit-picker.js';
 import { setupSettingsDependencies } from './settings-dependencies.js';
 import { setupLiveTuning } from './live-tuning.js';
@@ -162,7 +162,7 @@ export async function applyCommonOutfit(name,{automatic=false,isCurrent=()=>true
     const valid=()=>epoch===batchEpoch&&scope===currentScope()&&members===JSON.stringify(stageCharacters().map(c=>c.avatar).sort())&&isCurrent();
     const results=await Promise.allSettled(planned.targets.filter(t=>!excluded.has(t.avatar)).map(async target=>{
         if(!valid())return false;
-        const stillMatching=()=>{if(!valid())return false;const c=stageCharacters().find(c=>c.avatar===target.avatar),matches=c?outfitOptions(c).filter(o=>commonOutfitName(o)===name):[];return matches.length===1&&matches[0].folder===target.folder;};
+        const stillMatching=()=>{if(!valid())return false;const c=stageCharacters().find(c=>c.avatar===target.avatar),match=c?commonOutfitMatch(outfitOptions(c),name):null;return match?.folder===target.folder;};
         return changeOutfit(target.avatar,target.folder,{source:automatic?'automatic':'manual',chatId:getContext().getCurrentChatId?.(),groupId:getContext().groupId,allowDuringGeneration:automatic,isCurrent:stillMatching});
     }));
     const applied=results.filter(r=>r.status==='fulfilled'&&r.value).length,failed=results.filter(r=>r.status==='rejected').length;
@@ -321,7 +321,9 @@ function balanceControls(bar,centered) {
     const cards=[...roster.children].filter(node=>!node.hidden);
     const content=cards.reduce((sum,node)=>sum+node.getBoundingClientRect().width,0)+Math.max(0,cards.length-1)*gap+2;
     const available=bar.clientWidth-16-2*Math.max(leftWidth,rightWidth);
-    const balance=centered&&content<=available;
+    // A fitted grid already fills its row. Margins calculated from an early
+    // intrinsic measurement must not reduce that row after fonts/styles load.
+    const balance=centered&&roster.dataset.fit!=='true'&&content<=available;
     const start=balance?Math.max(0,rightWidth-leftWidth):0,end=balance?Math.max(0,leftWidth-rightWidth):0;
     if(roster.style.marginInlineStart!==`${start}px`)roster.style.marginInlineStart=`${start}px`;
     if(roster.style.marginInlineEnd!==`${end}px`)roster.style.marginInlineEnd=`${end}px`;
@@ -397,7 +399,9 @@ export function setupStageControls() {
     setupOutfitEditor({characters:stageCharacters,currentFolder});
     setupSceneLibrary({characters:stageCharacters,currentFolder,changeOutfit});
     liveTuning=setupLiveTuning(get('prome-stage-manage'),()=>openOutfitEditor(lastAvatar));
-    const resize=new ResizeObserver(schedule);resize.observe(bar);resize.observe(get('ig-stage-tools'));resize.observe(get('prome-stage-roster'));
+    const resize=new ResizeObserver(schedule);for(const id of ['prome-stage-controls','ig-stage-tools','prome-stage-roster','ig-stage-bottom','ig-bottom-combined','ig-bottom-speak','ig-bottom-outfits']){const host=get(id);if(host)resize.observe(host);}
+    if(document.readyState!=='complete')window.addEventListener('load',schedule,{once:true});
+    document.fonts?.ready.then(schedule).catch(()=>{});
     get('prome-stage-shared').addEventListener('change',schedule);
     onCatalogChange(schedule);bindSettings();setupSettingsDependencies();
     for(const name of ['CHAT_CHANGED','GROUP_UPDATED','CHARACTER_MESSAGE_RENDERED','MESSAGE_SWIPED','MESSAGE_DELETED','GENERATION_STARTED','GENERATION_ENDED','GROUP_MEMBER_DRAFTED','SETTINGS_UPDATED'])if(event_types[name])eventSource.on(event_types[name],schedule);
