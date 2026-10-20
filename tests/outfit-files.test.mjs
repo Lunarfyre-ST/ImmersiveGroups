@@ -1,7 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {uniqueSpriteName,scanFolderCandidates,spriteFolder,readZipImage} from '../modules/outfit-files-model.js';
+import {uniqueSpriteName,scanFolderCandidates,spriteFolder,readZipImage,detectSpriteExpression,expressionSpriteName} from '../modules/outfit-files-model.js';
 import JSZip from '../vendor/jszip.js';
+test('expression images match native filename labels and require explicit unknown assignments',()=>{
+ const labels=['neutral','joy','custom_expression'];
+ assert.equal(detectSpriteExpression('JOY-2.PNG',labels),'joy');assert.equal(detectSpriteExpression('neutral.variant.webp',labels),'neutral');assert.equal(detectSpriteExpression('custom_expression.png',labels),'custom_expression');
+ for(const name of ['holiday.png','neutral_1.png','neutrality.jpg'])assert.equal(detectSpriteExpression(name,labels),'');
+ assert.equal(expressionSpriteName('holiday.PNG','joy'),'joy.png');
+ for(const label of ['','../joy','joy-sad','joy.variant','joy\n','😀'])assert.throws(()=>expressionSpriteName('holiday.png',label));
+ const used=new Set(['joy']);assert.equal(uniqueSpriteName(expressionSpriteName('holiday.png','joy'),used).filename,'joy-1.png');
+});
 test('sprite duplicates preserve stems and increment numeric variants case-insensitively',()=>{
  const used=new Set(['neutral','neutral-1','neutral-2','joy']);
  assert.deepEqual(uniqueSpriteName('neutral-1.png',used),{stem:'neutral-3',filename:'neutral-3.png',label:'neutral'});

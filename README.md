@@ -8,7 +8,7 @@ Started as a modification of PromeVN. [See credits below](#credits-and-origins).
 
 You can change outfits and backgrounds yourself, or let the model choose them as the story moves along. There are also plenty of ways to adjust how the scene looks: character heights, sprite spacing, button colors, transitions and separate PC/mobile layouts.
 
-**Current version: 0.3.8** — mobile library scrolling, recent-speaker scenes, shared-height fixes and scene commands during streaming. [Release notes](docs/RELEASE_0.3.8.md).
+**Current version: 0.3.9** — add expression images from the library, manage Basic outfits for new characters, and reduce repeated outfit commands. [Release notes](docs/RELEASE_0.3.9.md).
 
 [Previews](#-previews) · [Install](#-install) · [First steps](#-start-with-a-chat) · [Import / export](#-import-and-export) · [Automation](#-let-the-model-change-the-scene) · [Credits](#credits-and-origins)
 
@@ -83,6 +83,7 @@ Open **Manage outfits**, or **Gallery → Open asset library**, to add and organ
 - ➕ **Add outfit** accepts a folder name or full path, with an optional sprite ZIP. Choose the character in the form itself.
 - 🔍 **Scan outfit folders** reads outfit names from your local `characters` folder. It doesn't upload images. If SillyTavern runs on another device, those folders also need to exist on that server; otherwise, upload a ZIP instead.
 - 📦 **Upload sprite ZIP** adds images to an outfit. Duplicate filenames get numbered variants so the existing files are kept. You may need to reload SillyTavern to see newly added expressions.
+- 🖼️ **Add expression images** lets you upload individual images to an outfit. Names such as `neutral.png` or `joy-2.png` select their expression automatically. For other filenames, choose an expression before uploading. Existing images are kept. Reopen the chat if SillyTavern's cached expression choices haven't refreshed yet.
 - ↕️ **Reorder outfits** switches the library to compact rows with up/down arrows. Choose **Done reordering** to return to the previews.
 
 Outfit locks prevent automatic clothing changes while still letting you choose outfits manually. Muted group members are hidden from the scene, and the remaining sprites adjust to the available space.
@@ -99,6 +100,8 @@ Give matching outfits the same **Shared outfit name**, such as `winter` or `pyja
 If an automatically learned folder appears to belong to another character, the extension sets the entry aside and keeps its description. Check **Library → Tools → Mismatched outfits set aside**. Use **Restore as shared outfit** when the shared folder is intentional, or discard the entry to remove it from the library. Neither action deletes its sprite files. You can also add an intentionally shared folder through **Add outfit**.
 
 Automatic common-folder discovery and automatic Basic hiding start off on fresh installs. The library's **Filters** can hide Basic outfits or show outfits with/without images without changing the outfits available in chat or automation. **Tools → Check outfit images** retries unavailable image checks.
+
+New characters also have a **Basic** entry in the library, even before you open their chat. You can rename, describe, hide or remove it there. **Remove from catalog** keeps the image files and prevents automatic discovery from adding that entry back; use **Add outfit** with its original folder to restore it.
 
 </details>
 
@@ -198,6 +201,8 @@ First, give outfits and backgrounds useful descriptions in the library. Link sha
 
 Under **Automation**, enable **scene context / automation** and choose which changes you want to allow. Start with **Prompt mode**: outfit and background information is added to your normal roleplay request, and the model can include scene commands in its reply. **Preview context & token count** shows what will be sent.
 
+The current outfit stays in the scene context, but its command is left out of the offered changes. The instructions ask the model to keep it until an actual clothing change is needed. This helps reduce repeated commands; model behavior can still vary.
+
 You can offer outfits for all active unlocked characters, or only the speaking character. Gallery image instructions have their own switch. Outfit/background commands look like this:
 
 ```text
@@ -228,7 +233,7 @@ Custom endpoints must be reachable from the browser and allow requests from it. 
 
 ## 🛠️ What's next?
 
-For 0.3.8, try the mobile library, recent-speaker limits and streaming commands with your own sprites and devices. Optional LunarDebug recordings can help investigate anything unexpected. Testing real packs on a clean installation is still a priority too: fresh imports, repeat imports, deliberate conflicts and larger collections. The [0.3.5 review and test checklist](docs/IMPORT_EXPORT_REVIEW_0.3.5.md) records what's been checked and what still needs testing.
+For 0.3.9, try expression uploads and Basic outfit management with your own sprites and devices, along with the mobile scenes and streaming commands added in 0.3.8. Optional LunarDebug recordings can help investigate anything unexpected. Testing real packs on a clean installation is still a priority too: fresh imports, repeat imports, deliberate conflicts and larger collections. The [0.3.5 review and test checklist](docs/IMPORT_EXPORT_REVIEW_0.3.5.md) records what's been checked and what still needs testing.
 
 As these tests settle, I may start inviting more users. I also want to improve the menus and mobile controls and write a separate guide with more images. More animation options and ways to reduce the context needed for automation are also on the list.
 

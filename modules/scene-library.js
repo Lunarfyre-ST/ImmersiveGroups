@@ -12,14 +12,15 @@ import { backgroundSceneContext, getBackgroundPath, ensureBackgrounds, readBackg
 import { bindingGroups, saveBindingGroup, removeBindingGroup, expandedBindings, backgroundIsEligible, backgroundIsLinked } from './binding-groups-model.js';
 import { expressionInventory, commonOutfitName } from './common-outfits-model.js';
 import { saveSettingsDebounced } from '../../../../../script.js';
+import { getExpressionsList } from '../../../expressions/index.js';
 
 export function setupSceneLibrary(services){
     const characters=()=>getContext().characters?.filter(c=>c?.avatar)||[];
-    const assets=new Map(),inspect=taskQueue(3);
+    const assets=new Map(),inspect=taskQueue(3);let assetRevision=0;
     const changed=()=>window.dispatchEvent(new Event('ig-scene-library-change'));
     async function inspectOutfit(folder){
         const previous=assets.get(folder);if(previous)return previous.pending||previous;
-        const record={imageState:'checking',hasImages:null,src:''};assets.set(folder,record);
+        const record={imageState:'checking',hasImages:null,src:'',revision:++assetRevision};assets.set(folder,record);
         record.pending=inspect(async()=>{try{
             if(!validFolder(folder))throw Error('Invalid folder');
             const response=await fetch(`/api/sprites/get?name=${encodeURIComponent(folder)}`);if(!response.ok)throw Error('Sprite folder unavailable');
@@ -31,8 +32,8 @@ export function setupSceneLibrary(services){
     const active=()=>new Set(services.characters().map(c=>c.avatar));
     const getEntries=()=>{
         const present=active(),known=characters(),s=extension_settings[extensionName];
-        const records=Object.keys(s.outfitCatalog||{}).map(avatar=>known.find(c=>c.avatar===avatar)||{avatar,name:avatar.replace(/\.[^/.]+$/,'')+' (unavailable)'});
-        const outfits=records.flatMap(c=>outfitOptions(c,true).map(entry=>({kind:'outfit',id:JSON.stringify(['outfit',c.avatar,entry.folder]),name:entry.label,description:entry.description||'',folder:entry.folder,avatar:c.avatar,entity:c.name,characterBindings:[c.avatar],heightOverrideCm:entry.heightOverrideCm??null,fontColor:entry.fontColor||'',commonName:entry.commonName||'',commonLabel:commonOutfitName(entry),basic:entry.folder===c.name||entry.folder===c.avatar.replace(/\.[^/.]+$/,''),imageState:assets.get(entry.folder)?.imageState||'unchecked',hasImages:assets.get(entry.folder)?.hasImages??null,hidden:hiddenOutfit(c,entry),inChat:present.has(c.avatar),current:present.has(c.avatar)&&services.currentFolder(c)===entry.folder})));
+        const records=[...known,...Object.keys(s.outfitCatalog||{}).filter(avatar=>!known.some(c=>c.avatar===avatar)).map(avatar=>({avatar,name:avatar.replace(/\.[^/.]+$/,'')+' (unavailable)',unavailable:true}))];
+        const outfits=records.flatMap(c=>outfitOptions(c,true).map(entry=>({kind:'outfit',id:JSON.stringify(['outfit',c.avatar,entry.folder]),name:entry.label,description:entry.description||'',folder:entry.folder,avatar:c.avatar,entity:c.name,characterBindings:[c.avatar],heightOverrideCm:entry.heightOverrideCm??null,fontColor:entry.fontColor||'',commonName:entry.commonName||'',commonLabel:commonOutfitName(entry),basic:entry.folder===c.name||entry.folder===c.avatar.replace(/\.[^/.]+$/,''),previewRevision:assets.get(entry.folder)?.revision||0,imageState:assets.get(entry.folder)?.imageState||'unchecked',hasImages:assets.get(entry.folder)?.hasImages??null,hidden:hiddenOutfit(c,entry),inChat:present.has(c.avatar),current:present.has(c.avatar)&&services.currentFolder(c)===entry.folder})));
         const background=backgroundSceneContext(),avatars=[...present];
         return [...outfits,...background.library.map(entry=>({kind:'background',id:JSON.stringify(['background',entry.file]),name:entry.file,entity:'Backgrounds',src:entry.available?getBackgroundPath(entry.file):'',...entry,filterCharacters:expandedBindings(entry.characterBindings,entry.presetBindings,s.bindingGroups),inChat:backgroundIsEligible(entry,avatars,s.bindingGroups,false),linked:backgroundIsLinked(entry,avatars,s.bindingGroups),current:background.current===entry.file}))];
     };
@@ -46,7 +47,7 @@ export function setupSceneLibrary(services){
         getColors:avatar=>({...catalogFor(avatar).colors}),setColors:setCharacterColors,
         getMismatchedOutfits:quarantinedOutfits,discardMismatchedOutfit:discardQuarantinedOutfit,
         getCommonOutfitNames:()=>[...new Set(getEntries().filter(e=>e.kind==='outfit'&&!e.hidden).map(e=>e.commonLabel).filter(Boolean))].sort(),
-        reorderOutfit:(entry,target)=>{if(entry.avatar!==target.avatar)throw new Error('Choose outfits from the same character.');const list=catalogFor(entry.avatar).outfits,index=list.findIndex(e=>e.folder===entry.folder),next=list.findIndex(e=>e.folder===target.folder);if(index>=0&&next>=0)moveOutfit(entry.avatar,entry.folder,next-index);},
+        reorderOutfit:(entry,target)=>{if(entry.avatar!==target.avatar)throw new Error('Choose outfits from the same character.');const character=characters().find(c=>c.avatar===entry.avatar),list=character?outfitOptions(character,true):catalogFor(entry.avatar).outfits,index=list.findIndex(e=>e.folder===entry.folder),next=list.findIndex(e=>e.folder===target.folder);if(index>=0&&next>=0)moveOutfit(entry.avatar,entry.folder,next-index);},
         restoreSharedOutfit:(avatar,folder)=>{const c=characters().find(c=>c.avatar===avatar);if(!c)throw new Error('Character is no longer available.');return rememberOutfit(c,folder,{explicit:true});},
         updateOutfit:(entry,patch)=>editOutfit(entry.avatar,entry.folder,patch),
         removeOutfit:entry=>removeOutfit(entry.avatar,entry.folder),moveOutfit:(entry,delta)=>moveOutfit(entry.avatar,entry.folder,delta),
@@ -55,6 +56,7 @@ export function setupSceneLibrary(services){
         discover:avatar=>{const c=characters().find(c=>c.avatar===avatar);if(!c)throw new Error('Choose a character.');return discoverOutfits(c,active().has(avatar)?services.currentFolder(c):c.name,true);},
         importFolders:(avatar,files)=>{const c=characters().find(c=>c.avatar===avatar);if(!c)throw new Error('Choose a character.');return importFolderNames(c,files,active().has(avatar)?services.currentFolder(c):c.name);},
         updateBackground,chooseBackground:pickBackground,scanFolders:files=>scanOutfitFolders(characters(),files),uploadSprites:async(folder,...args)=>{folder=spriteFolder(folder);try{return await uploadOutfitImages(folder,...args);}finally{assets.delete(folder);await inspectOutfit(folder);changed();}},
+        getExpressionLabels:async()=>{const labels=await getExpressionsList();if(!Array.isArray(labels)||!labels.length)throw new Error('Expression names could not be loaded. Try again after opening SillyTavern’s expressions settings.');return labels;},
         previewOutfit:async folder=>(await inspectOutfit(folder)).src,outfitExpressions:async folder=>(await inspectOutfit(folder)).expressions||[]
     });
     window.ImmersiveGroupsSceneLibrary=api;

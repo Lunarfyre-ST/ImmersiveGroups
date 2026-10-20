@@ -5,6 +5,19 @@ import {callScenePlanner,extractPlannerText} from '../modules/scene-api.js';
 const character=(avatar,name,locked=false)=>({avatar,name,outfitLocked:locked,currentOutfit:name+'/one',outfits:[{folder:name+'/one',name:'Main',description:'Travel clothes'},{folder:name+'/two',name:'Sleep',description:'For sleeping'}]});
 const scene=()=>({characters:[character('a.png','A'),character('b.png','B'),character('c.png','C',true)],backgrounds:{current:'forest.jpg',locked:false,automationLocked:false,library:[{file:'forest.jpg',available:true,description:'Outdoors',characterBindings:[]},{file:'room.jpg',available:true,description:'A room',characterBindings:['a.png','b.png','c.png']},{file:'a-only.jpg',available:true,characterBindings:['a.png']},{file:'gone.jpg',available:false,characterBindings:[]}]}});
 const enabled={enabled:true,backgrounds:true,backgroundLinkedOnly:false};
+test('prompts retain current scene context but offer commands only for actual changes',()=>{
+ const current=scene(),inventory=buildSceneInventory(current,'b.png',enabled),before=JSON.stringify(inventory);
+ for(const api of [false,true]){
+  const prompt=buildScenePrompt(inventory,enabled,{api});
+  assert.ok(prompt.includes(inventory.characters[0].currentOutfit));
+  for(const c of inventory.characters)assert.equal(prompt.includes(outfitCommand(c.avatar,c.currentOutfit)),false);
+  assert.ok(prompt.includes(backgroundCommand('room.jpg')));
+  assert.ok(prompt.includes(outfitCommand('b.png','B/two')));assert.ok(prompt.includes('do not confirm, refresh or reapply it'));
+ }
+ assert.equal(JSON.stringify(inventory),before);
+ inventory.characters.forEach(c=>{c.outfits=c.outfits.filter(o=>o.folder===c.currentOutfit);});inventory.backgrounds=[];
+ assert.ok(buildScenePrompt(inventory,enabled).includes('No changes are available.'));
+});
 test('0.2 upgrades untouched outfit instructions and preserves edited prompts and API preferences',()=>{
  const old={instructionsAll:'You may change outfits for any listed character, but only when the scene makes the change appropriate. Prioritize the speaking character. Do not change other characters just because they are listed.',instructionsSpeaker:'Only the speaking character listed below may receive an outfit change. Do not generate outfit commands for anyone else. Change their outfit only when the scene makes it appropriate.',apiTransport:'custom',apiUrl:'http://localhost:8080/v1/chat/completions',apiAutoAfterReply:true};
  const upgraded=automationSettings(old);assert.equal(upgraded.instructionsAll,DEFAULT_ALL_INSTRUCTIONS);assert.equal(upgraded.instructionsSpeaker,DEFAULT_SPEAKER_INSTRUCTIONS);assert.equal(upgraded.apiTransport,'custom');assert.equal(upgraded.apiUrl,old.apiUrl);assert.equal(upgraded.apiAutoAfterReply,true);

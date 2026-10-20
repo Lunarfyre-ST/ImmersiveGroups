@@ -65,6 +65,15 @@ const artifactDirectory = path.resolve(__dirname, '../artifacts/native', browser
             }
             const sprites = async folder => { const response = await fetch('/api/sprites/get?name=' + encodeURIComponent(folder), { cache: 'no-store' }); if (!response.ok) throw Error('Native sprite inventory failed'); return response.json(); };
             await uploadSprite(sourceFolder, 'neutral.png');
+            const expressionFolder=sourceName+'/expression-test';
+            await uploadSprite(expressionFolder,'neutral.png');
+            const expressionLabels=await ImmersiveGroupsSceneLibrary.getExpressionLabels();
+            assertNative(expressionLabels.includes('neutral')&&expressionLabels.includes('joy'),'Native expression names unavailable');
+            const expressionResult=await ImmersiveGroupsSceneLibrary.uploadSprites(expressionFolder,[new File([image],'neutral.png',{type:'image/png'}),new File([image],'holiday.png',{type:'image/png'})],{expressions:['neutral','joy']});
+            const expressionRows=await sprites(expressionFolder);
+            assertNative(expressionResult.uploaded===2&&expressionRows.length===3,'Expression images must preserve existing sprites');
+            assertNative(expressionRows.filter(row=>row.label==='neutral').length===2&&expressionRows.some(row=>row.label==='joy'),'Native server must recognize assigned expression filenames');
+            function assertNative(value,message){if(!value)throw Error(message);}
             const backgroundName = prefix + '-room.png', backgroundForm = new FormData(); backgroundForm.append('avatar', image, backgroundName);
             const background = (await (await request('/api/backgrounds/upload', backgroundForm, true)).text()).trim();
             const data = await new Promise(resolve => { const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.readAsDataURL(image); });

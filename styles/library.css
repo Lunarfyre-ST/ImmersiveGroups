@@ -33,6 +33,7 @@
 .ig-library-panel-content { display:flex; flex-direction:column; gap:14px; overflow-y:auto; min-height:0; padding:16px; }
 .ig-library-panel-content :is(form,fieldset) { display:flex; flex-direction:column; gap:12px; min-width:0; margin:0; }
 .ig-library-panel-content label { display:flex; flex-wrap:wrap; align-items:center; gap:6px; font-size:13px; min-width:0; }
+.ig-library-expression-upload { display:flex; flex-direction:column; gap:12px; min-width:0; overflow-wrap:anywhere; }
 .ig-library-panel-content label:has(> :is(select,input:not([type=checkbox]):not([type=color]))) { flex-direction:column; align-items:stretch; }
 .ig-library-panel-content :is(select,input:not([type=checkbox]):not([type=color])) { width:100%; min-width:0; max-width:100%; box-sizing:border-box; }
 .ig-library-panel-content small { display:block; font-size:12px; opacity:.8; line-height:1.5; overflow-wrap:anywhere; }

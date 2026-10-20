@@ -1,5 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 export const spriteImageName=name=>/\.(png|jpe?g|gif|webp|avif|bmp)$/i.test(name)&&!String(name).startsWith('.')&&!/[\r\n\0]/.test(name);
+export const validExpressionLabel=value=>typeof value==='string'&&value.length>0&&value.length<=100&&value.trim()===value&&/^[\p{L}\p{N}_ ]+$/u.test(value);
+export function detectSpriteExpression(filename,labels){
+    const stem=String(filename).split(/[\\/]/).pop().replace(/\.[^.]+$/,''),label=stem.match(/^(.+?)(?:[-.].*)?$/)?.[1];
+    return labels.find(value=>validExpressionLabel(value)&&value.toLowerCase()===label?.toLowerCase())||'';
+}
+export function expressionSpriteName(filename,label){
+    if(!spriteImageName(filename)||!validExpressionLabel(label))throw new Error('Choose a valid expression for every image.');
+    const ext=filename.match(/\.[^.]+$/)[0].toLowerCase();
+    // Native expression lookup derives the label from the filename, not the
+    // multipart label field. Rename unknown filenames before collision handling.
+    return label+ext;
+}
 export function uniqueSpriteName(filename,used){
     const leaf=String(filename).split(/[\\/]/).pop(),match=leaf.match(/^(.*)(\.[^.]+)$/);
     if(!match||!spriteImageName(leaf))throw new Error('Unsupported sprite image.');

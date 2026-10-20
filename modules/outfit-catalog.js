@@ -128,10 +128,16 @@ export function hiddenOutfit(character, entry) {
     return Boolean(settings().hideBasicOutfit === true && basic && record.outfits.some(e => /\/outfit[ _-]?1$/i.test(e.folder)));
 }
 export function outfitOptions(character, includeHidden = false) {
-    return catalogFor(character.avatar).outfits.filter(entry => validFolder(entry.folder) && outfitFolderAllowed(character,entry.folder) && (includeHidden || !hiddenOutfit(character, entry)));
+    const record=catalogFor(character.avatar),entries=[...record.outfits];
+    // An unvisited character has no saved catalog yet. Expose its native Basic
+    // entry without seeding settings or resurrecting an explicitly removed entry.
+    if(!character.unavailable&&validFolder(character.name)&&!record.ignored.includes(character.name)&&!entries.some(e=>e.folder===character.name))entries.push({folder:character.name,label:'Basic',description:'',hidden:null,source:'default'});
+    return entries.filter(entry => validFolder(entry.folder) && outfitFolderAllowed(character,entry.folder) && (includeHidden || !hiddenOutfit(character, entry)));
 }
 export function editOutfit(avatar, folder, patch) {
-    const record = catalogFor(avatar), entry = record.outfits.find(e => e.folder === folder);
+    const record = catalogFor(avatar),character=getContext().characters?.find(c=>c.avatar===avatar);
+    if(character&&folder===character.name&&!record.ignored.includes(folder)&&!record.outfits.some(e=>e.folder===folder))rememberOutfit(character,folder,{notify:false});
+    const entry = record.outfits.find(e => e.folder === folder);
     if (!entry) return;
     if (own(patch,'heightOverrideCm')) entry.heightOverrideCm=outfitHeightOverride(patch.heightOverrideCm);
     if (typeof patch.label === 'string') entry.label = patch.label.trim().slice(0,80) || folder.split('/').pop();
@@ -142,6 +148,12 @@ export function editOutfit(avatar, folder, patch) {
     changed();
 }
 export function moveOutfit(avatar, folder, delta) {
+    const character=getContext().characters?.find(c=>c.avatar===avatar),record=catalogFor(avatar);
+    if(character&&folder===character.name&&!record.outfits.some(e=>e.folder===folder)){
+        const options=outfitOptions(character,true),index=options.findIndex(e=>e.folder===folder);
+        if(index<0||index+delta<0||index+delta>=options.length)return;
+        rememberOutfit(character,folder,{notify:false});
+    }
     const list = catalogFor(avatar).outfits, index = list.findIndex(e => e.folder === folder), next = index + delta;
     if (index < 0 || next < 0 || next >= list.length) return;
     [list[index], list[next]] = [list[next], list[index]]; changed();
