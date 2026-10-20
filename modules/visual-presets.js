@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Explicit visual-only schema: chat content and automation settings never enter exports.
 import { defaultSettings } from '../constants.js';
-const bounds={stageFitColumns:[1,8],stageSpeakHeight:[0,80],stageSpeakWidth:[0,400],stageSpeakFontSize:[0,32],stageNameLetters:[1,40],stageControlHeight:[24,56],stageFontSize:[10,22],stageOutfitWidth:[80,260],stageGap:[2,16],stageIdleOpacity:[20,100],spriteSpacingPercent:[20,160],layoutSpriteScale:[1,600],spriteOffsetY:[-1000,1000],stageOffsetX:[-1000,1000],stageOffsetY:[-1000,1000],outfitPopupOffsetX:[-1000,1000],outfitPopupOffsetY:[-1000,1000],outfitMenuRows:[2,12]};
-const enums={stageLayout:['characters','shared'],stageFlow:['scroll','wrap','stack'],stageFadeTarget:['outfits','all','none'],stageSpeakPlacement:['top','bottom'],stageOutfitPlacement:['top','bottom'],stageBackgroundPlacement:['top','bottom']};
+const bounds={recentSpeakerLimit:[0,50],stageFitColumns:[1,8],stageSpeakHeight:[0,80],stageSpeakWidth:[0,400],stageSpeakFontSize:[0,32],stageNameLetters:[1,40],stageControlHeight:[24,56],stageFontSize:[10,22],stageOutfitWidth:[80,260],stageGap:[2,16],stageIdleOpacity:[20,100],spriteSpacingPercent:[20,160],layoutSpriteScale:[1,600],spriteOffsetY:[-1000,1000],stageOffsetX:[-1000,1000],stageOffsetY:[-1000,1000],outfitPopupOffsetX:[-1000,1000],outfitPopupOffsetY:[-1000,1000],outfitMenuRows:[2,12]};
+const enums={heightReferenceMode:['visible','group'],stageLayout:['characters','shared'],stageFlow:['scroll','wrap','stack'],stageFadeTarget:['outfits','all','none'],stageSpeakPlacement:['top','bottom'],stageOutfitPlacement:['top','bottom'],stageBackgroundPlacement:['top','bottom']};
 const colors=['stageAllOutfitColor'];
 const bools=['stageShowAllOutfits','stageAutoFit','stageAbbreviate','stageShowSpeak','stageShowOutfits','stageShowNames','stageShowLocks','stageShowManager','stageShowBackgroundArrows','stageNamesAbove','stageCenterCards'];
 export const visualKeys=[...Object.keys(bounds),...Object.keys(enums),...bools,...colors];

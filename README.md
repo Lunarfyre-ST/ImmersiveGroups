@@ -8,7 +8,7 @@ Started as a modification of PromeVN. [See credits below](#credits-and-origins).
 
 You can change outfits and backgrounds yourself, or let the model choose them as the story moves along. There are also plenty of ways to adjust how the scene looks: character heights, sprite spacing, button colors, transitions and separate PC/mobile layouts.
 
-**Current version: 0.3.7** — steadier character entrances, simpler animation controls and more useful optional debugging. [Release notes](docs/RELEASE_0.3.7.md).
+**Current version: 0.3.8** — mobile library scrolling, recent-speaker scenes, shared-height fixes and scene commands during streaming. [Release notes](docs/RELEASE_0.3.8.md).
 
 [Previews](#-previews) · [Install](#-install) · [First steps](#-start-with-a-chat) · [Import / export](#-import-and-export) · [Automation](#-let-the-model-change-the-scene) · [Credits](#credits-and-origins)
 
@@ -108,7 +108,9 @@ Set character heights in **Characters**, then use **Sprites → Fit calibration*
 
 ![Characters displayed at different heights](docs/Preview-Height.jpg)
 
-Sprite artwork isn't always framed consistently, so use **Fine tune** if someone still looks too large or small. Heights are shared across PC and mobile, while fine tuning, fit and visual offsets have separate profiles. An outfit can also have its own height override; leave it blank to use the character's normal height.
+In **Characters → Character heights**, set **Recent speakers displayed** to 2 or 3 for a smaller mobile cast, or 0 for everyone. Choose whether calibration follows the tallest displayed character or stays at the tallest member of the whole group, including muted characters. These two preferences are separate for PC/mobile.
+
+Sprite artwork isn't always framed consistently, so use **Fine tune** if someone still looks too large or small. Heights are shared across PC and mobile, while fine tuning, fit and visual offsets have separate profiles. If old fine-tune values keep appearing, **Reset all character fine tuning (PC + mobile)** clears them across both profiles without resetting your heights. An outfit can also have its own height override; leave it blank to use the character's normal height.
 
 <img src="docs/Preview-HeightSettings.jpg" alt="Height, fine tuning and vertical offset controls" width="320">
 
@@ -131,6 +133,8 @@ The **Animations** tab and **Scene tuning → Animations** put **Idle breathing*
 Each effect starts **off**. Try its small **Preview** first, then enable it in the scene and adjust timing and strength. Breathing can follow the speaker or all visible characters. With all characters enabled, lower **Waiting-character intensity** for a subtler effect on everyone else; 100% keeps it equal and 0% stops their breathing. For reactions, choose a character and play a hop, nod, tilt or shake yourself. Smooth focus uses the existing sprite-dimming settings.
 
 These effects leave your saved heights and fine tuning alone. Reduced-motion preferences are respected, and motion stops when VN mode is off or the page is hidden. **Reset animation defaults** turns the new effects off again.
+
+For phones, enable **Idle background movement → Full-height vertical background pan on mobile**. It moves through the available crop with a gentle drift; increase the one-way duration for slower movement. Desktop keeps its regular pan.
 
 ## 🗂️ Backgrounds, images and the library
 
@@ -203,6 +207,8 @@ You can offer outfits for all active unlocked characters, or only the speaking c
 
 Commands need their own lines and must use the exact names supplied to the model. They can go before, between or after the narration. The displayed command text is hidden by default, while the original message keeps it. Opening a chat or selecting an old swipe doesn't replay old scene commands.
 
+Complete command lines now apply while a reply streams; partial commands wait. A command at the very end without a newline applies when the reply finishes. Manual outfit selectors also work during generation. Stopping a reply cancels pending changes but keeps changes that already happened. API analysis still waits until generation finishes.
+
 ### 📝 Scene descriptions without automatic changes
 
 Choose **Prompt mode** and enable **Descriptions only — no automation commands** to give the model current outfit, background and matching group descriptions as reference. This can include locked characters. Turn off Gallery image instructions separately if you don't want image commands either.
@@ -222,7 +228,7 @@ Custom endpoints must be reachable from the browser and allow requests from it. 
 
 ## 🛠️ What's next?
 
-For 0.3.7, try muting/unmuting characters and changing expressions with your own sprites and devices. Optional LunarDebug recordings can help investigate anything unexpected. Testing real packs on a clean installation is still a priority too: fresh imports, repeat imports, deliberate conflicts and larger collections. The [0.3.5 review and test checklist](docs/IMPORT_EXPORT_REVIEW_0.3.5.md) records what's been checked and what still needs testing.
+For 0.3.8, try the mobile library, recent-speaker limits and streaming commands with your own sprites and devices. Optional LunarDebug recordings can help investigate anything unexpected. Testing real packs on a clean installation is still a priority too: fresh imports, repeat imports, deliberate conflicts and larger collections. The [0.3.5 review and test checklist](docs/IMPORT_EXPORT_REVIEW_0.3.5.md) records what's been checked and what still needs testing.
 
 As these tests settle, I may start inviting more users. I also want to improve the menus and mobile controls and write a separate guide with more images. More animation options and ways to reduce the context needed for automation are also on the list.
 

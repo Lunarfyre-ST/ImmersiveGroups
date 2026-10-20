@@ -10,6 +10,7 @@ import {
 	isUserSpriteEnabled,
 } from "../utils.js";
 import { updateSpriteLayers } from "./stage-controls.js";
+import { layoutSettings } from './responsive.js';
 
 export function applyAutoHideSprites() {
 	if (
@@ -70,6 +71,7 @@ export async function handleAutoHideSprites() {
 	// Get all characters within the '#visual-novel-wrapper' div
 	const vnWrapper = $("#visual-novel-wrapper");
 	const allSprites = vnWrapper.children('div');
+    if(Number(layoutSettings().recentSpeakerLimit)>0){allSprites.removeClass('displayNone');await updateSpriteLayers(vnWrapper);return;}
 
 	// If the user is not in a group or auto-hide is disabled, exit
 	if (groupIndex === -1 || !isAutoHideSpritesEnabled()) {

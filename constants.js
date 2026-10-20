@@ -197,6 +197,8 @@ export const defaultSettings = {
 	shadowBlur: 9,
 	shadowOpacity: 100,
 	enableHeightProfiles: false,
+    recentSpeakerLimit: 0,
+    heightReferenceMode: 'visible',
 	heightMode: "manual",
 	// Legacy conversion reference; new character defaults live in height-model.js.
 	referenceHeightCm: 180,

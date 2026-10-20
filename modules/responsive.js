@@ -4,7 +4,7 @@ import { extension_settings } from '../../../../extensions.js';
 import { saveSettingsDebounced } from '../../../../../script.js';
 import { extensionName } from '../constants.js';
 
-export const layoutKeys = new Set(['stageShowAllOutfits','stageAllOutfitColor','stageAutoFit','stageFitColumns','stageSpeakHeight','stageSpeakWidth','stageSpeakFontSize','stageAbbreviate','stageNameLetters','stageLayout','stageFlow','stageShowSpeak','stageShowOutfits','stageShowNames','stageShowLocks','stageShowManager','stageShowBackgroundArrows','stageControlHeight','stageFontSize','stageOutfitWidth','stageGap','stageIdleOpacity','stageFadeTarget','stageNamesAbove','stageCenterCards','stageSpeakPlacement','stageOutfitPlacement','stageBackgroundPlacement','spriteSpacingPercent','layoutSpriteScale','spriteOffsetY','stageOffsetX','stageOffsetY','outfitPopupOffsetX','outfitPopupOffsetY','outfitMenuRows']);
+export const layoutKeys = new Set(['recentSpeakerLimit','heightReferenceMode','stageShowAllOutfits','stageAllOutfitColor','stageAutoFit','stageFitColumns','stageSpeakHeight','stageSpeakWidth','stageSpeakFontSize','stageAbbreviate','stageNameLetters','stageLayout','stageFlow','stageShowSpeak','stageShowOutfits','stageShowNames','stageShowLocks','stageShowManager','stageShowBackgroundArrows','stageControlHeight','stageFontSize','stageOutfitWidth','stageGap','stageIdleOpacity','stageFadeTarget','stageNamesAbove','stageCenterCards','stageSpeakPlacement','stageOutfitPlacement','stageBackgroundPlacement','spriteSpacingPercent','layoutSpriteScale','spriteOffsetY','stageOffsetX','stageOffsetY','outfitPopupOffsetX','outfitPopupOffsetY','outfitMenuRows']);
 export function mobileLayout() {
     const s = extension_settings[extensionName];
     if (s.layoutMode === 'desktop') return false;
@@ -18,6 +18,8 @@ export function layoutSettings(layout = mobileLayout() ? 'mobile' : 'desktop') {
     return layout === 'mobile' ? { ...s, ...Object.fromEntries(Object.entries(s.mobileLayoutSettings || {}).filter(([key]) => layoutKeys.has(key))) } : s;
 }
 export function writeLayoutSetting(key, value, layout = editingLayout()) {
+    if(key==='recentSpeakerLimit')value=Math.max(0,Math.min(50,Math.floor(Number(value)||0)));
+    if(key==='heightReferenceMode')value=value==='group'?'group':'visible';
     const s = extension_settings[extensionName];
     if (layoutKeys.has(key) && layout === 'mobile') (s.mobileLayoutSettings ||= {})[key] = value;
     else s[key] = value;

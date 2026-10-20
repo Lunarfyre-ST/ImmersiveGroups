@@ -828,3 +828,7 @@ body.ig-smooth-speaker-focus :is(#visual-novel-wrapper,#ig-mobile-sprites,#expre
 #local_image_floating_panel .ig-quick-images{height:min(570px,65dvh)}
 @media(max-width:600px){.ig-media-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ig-background-popover{width:calc(100vw - 16px);height:min(630px,calc(100dvh - 40px))}.ig-media-card img{height:90px}.ig-background-popover>header strong{font-size:14px}}
 .ig-media-card>span:first-of-type{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.ig-media-footer>[role=status],.ig-media-footer small[role=status]{max-height:36px;overflow:auto}
+
+.ig-recent-hidden{display:none!important}
+.ig-settings-shell [data-prome-stage-setting=heightReferenceMode]{width:100%;max-width:100%;min-width:0}
+.ig-settings-shell #prome-profile-reset-all{white-space:normal;max-width:100%;min-width:0}

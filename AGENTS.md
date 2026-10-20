@@ -57,6 +57,13 @@ not require end users to run npm.
   milliseconds. Preserve exact typed fractions and existing values. Treat native
   expression image replacement within a holder as one character lifecycle, and
   avoid interrupting unrelated entrances on group/settings notifications.
+- Centimeter heights are shared; never use a stale mobile copy over the desktop
+  height. Keep fine tuning and offsets independent and preserve explicit zeros.
+  Recent-speaker visibility is separate from the active roster used by commands.
+  Group-reference height includes muted members; visible-reference height follows
+  the limited cast. Streaming executes complete lines only, with bounded queued
+  work and append-only/message/swipe/chat guards. Already applied changes are not
+  rolled back when streaming stops or is revised.
 - Retain window APIs, events, DOM IDs, and native jQuery data contracts unless
   the task requires changing them.
 - Check native SillyTavern behavior before changing internal imports, sprite

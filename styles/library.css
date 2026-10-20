@@ -189,3 +189,13 @@
 .ig-transfer-outfit-list{display:grid;gap:8px;max-height:300px;overflow:auto;overscroll-behavior:contain}
 .ig-transfer-outfit-row{display:grid;gap:4px;padding:8px;border:1px solid var(--SmartThemeBorderColor,#777);border-radius:6px;min-width:0}.ig-transfer-outfit-row code{font-size:11px;overflow-wrap:anywhere}
 .ig-transfer-conflict-warning{display:grid;gap:8px;padding:12px;border:1px solid #d7a66e;border-radius:6px;background:#bd824018;min-width:0}.ig-transfer-conflict-warning[hidden]{display:none}.ig-transfer-conflict-warning p{margin:0}.ig-transfer-conflict-warning ul{margin:0;padding-inline-start:20px;max-height:170px;overflow:auto;overflow-wrap:anywhere}
+
+/* On phones the toolbar and results share one scroll surface, so controls cannot
+   consume the whole viewport and trap the results in a tiny second scroller. */
+@media(max-width:600px), (max-height:600px){
+ .ig-unified-library .ig-library-main{display:block;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y pinch-zoom;-webkit-overflow-scrolling:touch;min-height:0}
+ .ig-unified-library .ig-library-toolbar{overflow:visible}
+ .ig-unified-library .ig-library-results-scroll{overflow:visible;min-height:0}
+ .ig-unified-library .ig-library-results-scroll > .local-image-modal-content{overflow:visible;flex:none}
+ .ig-unified-library > .local-image-modal-header{max-height:25dvh;overflow-y:auto}
+}

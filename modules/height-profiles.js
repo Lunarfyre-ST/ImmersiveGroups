@@ -4,7 +4,9 @@ import { mobileLayout, editingLayout, layoutSettings } from './responsive.js';
 import { getContext, extension_settings } from '../../../../extensions.js';
 import { saveSettingsDebounced, eventSource, event_types } from '../../../../../script.js';
 import { extensionName } from '../constants.js';
-import { bounded, heightFactor, tallestHeight, migrateHeightSettings, migrateFineTuning, REFERENCE_HEIGHT_CM, withOutfitHeight } from './height-model.js';
+import { bounded, heightFactor, tallestHeight, migrateHeightSettings, migrateFineTuning, REFERENCE_HEIGHT_CM, withOutfitHeight, sharedHeightProfile, resetAllFineTuning } from './height-model.js';
+import { sceneCharacters, visibleCharacters } from './scene-visibility.js';
+import { diagnostic } from './diagnostics.js';
 export { bounded } from './height-model.js';
 
 const owns=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k);
@@ -31,9 +33,10 @@ function activeFolder(character){
 }
 function effectiveProfile(character,layout,folder=activeFolder(character)){
     const entry=config().outfitCatalog?.[character.avatar]?.outfits?.find(o=>o.folder===folder);
-    try{return withOutfitHeight(profileFor(character.avatar,layout),entry);}catch{return profileFor(character.avatar,layout);}
+    const profile=sharedHeightProfile(profileFor(character.avatar,'desktop'),profileFor(character.avatar,layout));
+    try{return withOutfitHeight(profile,entry);}catch{return profile;}
 }
-function activeReference(){const characters=groupCharacters();return tallestHeight(Object.fromEntries(characters.map(c=>[c.avatar,effectiveProfile(c,'desktop')])),characters.map(c=>c.avatar));}
+function activeReference(){const characters=layoutSettings().heightReferenceMode==='group'?sceneCharacters(true):visibleCharacters();return tallestHeight(Object.fromEntries(characters.map(c=>[c.avatar,effectiveProfile(c,'desktop')])),characters.map(c=>c.avatar));}
 export function spriteProfileFactor(node){
     if(!config().enableHeightProfiles)return 1;
     const character=characterFor(node);if(!character)return 1;
@@ -100,6 +103,7 @@ export function setupHeightProfiles(applyScale){
     el('prome-profile-y').addEventListener('change',event=>writeProfile('offsetY',bounded(event.target.value,-1000,1000,0)));
     el('prome-profile-y-slider').addEventListener('input',event=>writeProfile('offsetY',Number(event.target.value)));
     el('prome-profile-reset').addEventListener('click',()=>writeProfile('fineTuneOffset',0));
+    el('prome-profile-reset-all').addEventListener('click',()=>{const avatars=[...new Set([...(getContext().characters||[]).map(c=>c.avatar),...Object.keys(s.heightProfiles||{}),...Object.keys(s.mobileHeightProfiles||{})])];resetAllFineTuning(s,avatars);diagnostic('height.reset_all',{characters:avatars.length,changed:true});saveSettingsDebounced();applyScale();refreshProfileEditor(true);});
     for(const name of ['CHAT_CHANGED','GROUP_UPDATED','CHARACTER_MESSAGE_RENDERED','MESSAGE_SWIPED','SETTINGS_UPDATED'])if(event_types[name])eventSource.on(event_types[name],scheduleRefresh);
     new MutationObserver(records=>{if(records.some(r=>r.target?.closest?.('#visual-novel-wrapper,#expression-wrapper,#ig-mobile-sprites')))scheduleRefresh();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['src']});
     el('prome-height-profile-editor').addEventListener('focusout',scheduleRefresh);

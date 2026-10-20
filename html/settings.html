@@ -75,7 +75,9 @@
 <details id="prome-height-profile-editor" open=""><summary>Character heights</summary>
 <div class="prome-drawer-content prome_details_padding">
 <label><input id="prome-profiles-enabled" type="checkbox"> Use character heights</label>
-<p class="prome-help">The tallest active character is the reference. Use Sprites → Fit calibration to adjust overall size. Changing a value enables height scaling.</p>
+<label>Recent speakers displayed (0 = all)<input class="text_pole" type="number" min="0" max="50" step="1" data-prome-stage-setting="recentSpeakerLimit" aria-label="Recent speakers displayed"></label>
+<label>Height reference<select data-prome-stage-setting="heightReferenceMode" aria-label="Height reference"><option value="visible">Tallest currently displayed character</option><option value="group">Tallest group member, including muted characters</option></select></label>
+<p class="prome-help">Limit visible sprites to recent speakers, or leave 0 to show everyone. The reference can follow visible characters or stay at the tallest group member, including muted members. Use Sprites → Fit calibration for overall size. Heights are shared; fine tuning is separate for PC and mobile.</p>
 
 <fieldset class="prome-drawer-content" id="prome-profile-fields">
 <label>Character height (cm)<input class="text_pole" id="prome-profile-cm" min="30" max="300" type="number" value="165"></label>
@@ -84,6 +86,8 @@
 <label class="prome-number-setting"><span>Character Y offset (px; positive = lower)</span><span class="prome-number-pair"><input id="prome-profile-y-slider" aria-label="Character Y offset" type="range" min="-200" max="200" step="1"><input id="prome-profile-y" aria-label="Character Y offset value" class="text_pole" type="number" min="-1000" max="1000" step="1"></span></label>
 <button class="menu_button" id="prome-profile-reset" type="button">Reset fine tuning</button>
 </fieldset>
+<button class="menu_button" id="prome-profile-reset-all" type="button">Reset all character fine tuning (PC + mobile)</button>
+<small>Resets every saved character’s fine-tune adjustment on both devices. Heights, Y offsets, outfit overrides and saved presets are kept.</small>
 <small>Default character height: 165 cm. Height is shared across PC and mobile. Fine tuning and Fit calibration are saved separately for each profile. Previous height settings are kept in a migration backup.</small>
 </div>
 <details class="ig-scale-breakdown"><summary>Scaling breakdown</summary><output id="prome-profile-preview"></output></details></details>
@@ -443,13 +447,13 @@
 </div>
 </div>
 </details></section>
-<section role="tabpanel" tabindex="0" id="ig-pane-about" data-ig-pane="about" aria-labelledby="ig-tab-about"><div class="prome-settings-section"><h3>ImmersiveGroups <span data-ig-version>0.3.7</span></h3><p>An independent combined extension with character scene controls and image galleries, maintained by <a href="https://github.com/Lunarfyre-ST" rel="noopener noreferrer" target="_blank">Lunarfyre-ST</a>.</p><p><a href="https://github.com/Lunarfyre-ST/ImmersiveGroups" rel="noopener noreferrer" target="_blank">ImmersiveGroups on GitHub</a></p><h4>Original projects</h4><p><a href="https://github.com/Bronya-Rand/Prome-VN-Extension" rel="noopener noreferrer" target="_blank">Prome Visual Novel Extension 1.2.4</a> — by Bronya-Rand, with the original UI credit also naming Prometheus.</p><p><a href="https://github.com/mechamarmot/SillyTavern-LocalImage" rel="noopener noreferrer" target="_blank">SillyTavern-LocalImage 1.6.0</a> — by mechamarmot.</p><p>ImmersiveGroups modifies and combines both projects. The original authors are credited for their work; this release does not imply their endorsement.</p><p>Distributed under GNU AGPL version 3, without warranty. Original license texts, dependency notices and modified source are included.</p><div class="local-image-panel-toolbar"><a data-ig-document="CREDITS.md" target="_blank">Credits &amp; changes</a><a data-ig-document="LICENSE" target="_blank">License</a><a data-ig-document="README.md" target="_blank">Source &amp; documentation</a></div></div></section></div></div>
+<section role="tabpanel" tabindex="0" id="ig-pane-about" data-ig-pane="about" aria-labelledby="ig-tab-about"><div class="prome-settings-section"><h3>ImmersiveGroups <span data-ig-version>0.3.8</span></h3><p>An independent combined extension with character scene controls and image galleries, maintained by <a href="https://github.com/Lunarfyre-ST" rel="noopener noreferrer" target="_blank">Lunarfyre-ST</a>.</p><p><a href="https://github.com/Lunarfyre-ST/ImmersiveGroups" rel="noopener noreferrer" target="_blank">ImmersiveGroups on GitHub</a></p><h4>Original projects</h4><p><a href="https://github.com/Bronya-Rand/Prome-VN-Extension" rel="noopener noreferrer" target="_blank">Prome Visual Novel Extension 1.2.4</a> — by Bronya-Rand, with the original UI credit also naming Prometheus.</p><p><a href="https://github.com/mechamarmot/SillyTavern-LocalImage" rel="noopener noreferrer" target="_blank">SillyTavern-LocalImage 1.6.0</a> — by mechamarmot.</p><p>ImmersiveGroups modifies and combines both projects. The original authors are credited for their work; this release does not imply their endorsement.</p><p>Distributed under GNU AGPL version 3, without warranty. Original license texts, dependency notices and modified source are included.</p><div class="local-image-panel-toolbar"><a data-ig-document="CREDITS.md" target="_blank">Credits &amp; changes</a><a data-ig-document="LICENSE" target="_blank">License</a><a data-ig-document="README.md" target="_blank">Source &amp; documentation</a></div></div></section></div></div>
 <!-- Letterbox Configuration -->
 <!-- Sprite Configuration -->
 <!-- Tint Configuration -->
 <div class="prome_vn_block flex-container flexFlowColumn">
 <small class="flex-container justifyCenter alignitemscenter">
-<span>ImmersiveGroups <span data-ig-version>0.3.7</span> · Credits in About</span>
+<span>ImmersiveGroups <span data-ig-version>0.3.8</span> · Credits in About</span>
 </small>
 <small class="flex-container justifyCenter alignitemscenter flexFlowRow">
 <small class="menu_button menu_button_icon" id="prome-keybinds">

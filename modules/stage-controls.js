@@ -19,6 +19,7 @@ import { power_user } from '../../../../power-user.js';
 import * as expressions from '../../../expressions/index.js';
 import { extensionName, defaultSettings } from '../constants.js';
 import { applyScale } from './scale.js';
+import { visibleCharacters } from './scene-visibility.js';
 import { bounded, packFromSource } from './height-profiles.js';
 import { outfitAutomationStatus } from './scene-automation-model.js';
 
@@ -49,13 +50,15 @@ function manualPosition(node) {
 }
 export function applySpriteSlots() {
     const active = Boolean(config()?.enableVN_UI && config()?.stableSpriteSlots !== false && getContext().groupId != null);
-    const members = stageCharacters();
+    const allMembers=stageCharacters(),members = visibleCharacters(),selected=new Set(members.map(c=>c.avatar));
     const nodes = [...document.querySelectorAll('#visual-novel-wrapper > .expression-holder, #ig-mobile-sprites > .expression-holder')];
     for (const node of nodes) {
         const index = members.findIndex(c => (node.id === `expression-${c.avatar}` || node.id === `ig-expression-${c.avatar}`));
         const enabled = active && index >= 0 && !manualPosition(node);
         node.classList.toggle('prome-stable-slot', enabled);
-        node.classList.toggle('ig-muted-sprite',Boolean(config()?.enableVN_UI&&getContext().groupId!=null&&index<0));
+        const avatar=node.dataset.avatar||node.id.replace(/^(?:ig-)?expression-/,'');
+        node.classList.toggle('ig-recent-hidden',Boolean(config()?.enableVN_UI&&getContext().groupId!=null&&allMembers.some(c=>c.avatar===avatar)&&!selected.has(avatar)));
+        node.classList.toggle('ig-muted-sprite',Boolean(config()?.enableVN_UI&&getContext().groupId!=null&&!allMembers.some(c=>c.avatar===avatar)));
         if (enabled) {
             const center = `${slotCenter(index, members.length, layoutSettings().spriteSpacingPercent)}%`;
             if (node.style.getPropertyValue('--prome-slot-center') !== center) node.style.setProperty('--prome-slot-center', center);
@@ -153,11 +156,10 @@ export async function changeOutfit(avatar, requestedFolder, { source = 'manual',
 }
 export async function applyCommonOutfit(name,{automatic=false,isCurrent=()=>true,excludeAvatars=[]}={}) {
     name=commonOutfitKey(name);
-    if(!automatic&&isGenerating())throw new Error('Wait for generation to finish before changing all outfits.');
     const scope=currentScope(),members=JSON.stringify(stageCharacters().map(c=>c.avatar).sort()),epoch=++batchEpoch,characters=sceneOutfitContext(stageCharacters(),currentFolder);
     if(!automatic&&!commonOutfitChoices(characters).some(o=>o.key===name))throw new Error('This outfit is no longer shared by every active character.');
     const planned=commonOutfitTargets(characters,name,{respectLocks:automatic}),excluded=new Set(excludeAvatars);
-    const valid=()=>epoch===batchEpoch&&scope===currentScope()&&members===JSON.stringify(stageCharacters().map(c=>c.avatar).sort())&&isCurrent()&&(automatic||!isGenerating());
+    const valid=()=>epoch===batchEpoch&&scope===currentScope()&&members===JSON.stringify(stageCharacters().map(c=>c.avatar).sort())&&isCurrent();
     const results=await Promise.allSettled(planned.targets.filter(t=>!excluded.has(t.avatar)).map(async target=>{
         if(!valid())return false;
         const stillMatching=()=>{if(!valid())return false;const c=stageCharacters().find(c=>c.avatar===target.avatar),matches=c?outfitOptions(c).filter(o=>commonOutfitName(o)===name):[];return matches.length===1&&matches[0].folder===target.folder;};
@@ -189,7 +191,7 @@ function createCard(character) {
     const name=document.createElement('span');name.className='prome-character-label';
     const picker=createOutfitPicker(`${character.name} outfit`,()=>({entries:outfitOptions(character),value:pendingOutfits.get(avatar)?.folder||currentFolder(character)})),outfit=picker.button;
     outfit.addEventListener('change',async()=>{
-        const folder=outfit.value;if(!folder||isGenerating())return;
+        const folder=outfit.value;if(!folder)return;
         const job=Symbol();pendingOutfits.set(avatar,{folder,job});lastAvatar=avatar;
         root.classList.add('prome-outfit-loading');message(`Changing ${character.name}’s outfit…`);
         try {const changed=await changeOutfit(avatar,folder);if(pendingOutfits.get(avatar)?.job===job)message(changed?'':'Outfit change cancelled: the chat or sprite changed.');}
@@ -212,7 +214,7 @@ function captureOutfits(characters) {
 export function refreshStageControls() {
     const characters=stageCharacters();
     syncMobileSprites(characters,activeFolder,()=>{applySpriteSlots();applyScale();applySpeakerDimming();schedule();});
-    applySpriteSlots();applySpeakerDimming();captureOutfits(characters);
+    applySpriteSlots();applyScale();applySpeakerDimming();captureOutfits(characters);
     const bar=get('prome-stage-controls');if(!bar)return;
     applyScale();
     const settings=layoutSettings(),automation=outfitAutomationStatus(config().sceneAutomation);bar.hidden=!settings.enableVN_UI||settings.sheldCharacterControls===false;
@@ -257,7 +259,7 @@ export function refreshStageControls() {
         card.speak.title=`Ask ${named} to speak (sends your draft if present)`;card.speak.setAttribute('aria-label',`Ask ${named} to speak`);card.name.title=named;
         card.speakName.hidden=settings.stageShowNames===false;
         card.name.textContent=short;card.name.hidden=settings.stageShowSpeak!==false||settings.stageShowNames===false;
-        card.outfit.hidden=settings.stageShowOutfits===false;card.outfit.disabled=busy;
+        card.outfit.hidden=settings.stageShowOutfits===false;card.outfit.disabled=false;
         const locked=Boolean(catalogFor(c.avatar).locked);card.lock.hidden=settings.stageShowLocks===false||settings.stageShowOutfits===false;
         card.lock.setAttribute('aria-pressed',String(locked));card.lock.classList.toggle('is-locked',locked);
         card.lock.querySelector('i').className=`fa-solid ${locked?'fa-lock':'fa-lock-open'}`;
@@ -294,7 +296,7 @@ export function refreshStageControls() {
     if(allOutfitPicker){
         const common=commonOutfitChoices(sceneOutfitContext(characters,currentFolder)),button=allOutfitPicker.button;
         const selected=common.find(o=>o.targets.every(t=>characters.some(c=>c.avatar===t.avatar&&currentFolder(c)===t.folder)));
-        button.hidden=!settings.stageShowAllOutfits||characters.length<2;button.disabled=busy||!common.length;
+        button.hidden=!settings.stageShowAllOutfits||characters.length<2;button.disabled=!common.length;
         allOutfitPicker.update(common.map(o=>({folder:o.key,label:o.label})),selected?.key||'');
         button.firstElementChild.textContent=selected?`All: ${selected.label}`:'All outfits';
         button.title=common.length?'Change every active character to a matching outfit. Individual manual outfit locks do not block this explicit choice.':'No unambiguous outfit names are shared by every active character.';

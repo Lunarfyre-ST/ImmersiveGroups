@@ -4,6 +4,8 @@ import { extensionName } from '../constants.js';
 import { MOTION_EFFECTS, motionOptions, motionFrames } from './motion-model.js';
 import { fadeExpressionChange, cancelExpressionFade } from './scene-animations.js';
 import { diagnostic, diagnosticOperation } from './diagnostics.js';
+import { visibleCharacters } from './scene-visibility.js';
+import { mobileLayout } from './responsive.js';
 
 const selector='#visual-novel-wrapper > .expression-holder img, #ig-mobile-sprites > .expression-holder img, #expression-wrapper .expression-holder img';
 const states=new Map(),active=new Set(),jobs=new WeakMap(),nativeWaiting=new WeakSet();
@@ -14,7 +16,7 @@ const allowed=()=>Boolean(settings().enableVN_UI&&!reduced()&&!document.hidden);
 const options=id=>motionOptions(settings(),id);
 const enabled=id=>allowed()&&options(id).enabled;
 const scope=()=>{const c=getContext();return JSON.stringify([c.groupId,c.characterId,c.getCurrentChatId?.()]);};
-function currentCharacters(){const c=getContext(),group=c.groups?.find(g=>String(g.id)===String(c.groupId));return group?(group.members||[]).filter(a=>!(group.disabled_members||[]).includes(a)).map(a=>c.characters?.find(v=>v.avatar===a)).filter(Boolean):[c.characters?.[c.characterId]].filter(Boolean);}
+function currentCharacters(){return visibleCharacters();}
 function identity(image){const holder=image.closest('.expression-holder');return holder?.id==='expression-holder'?getContext().characters?.[getContext().characterId]?.avatar:holder?.dataset.avatar||holder?.id.replace(/^(?:ig-)?expression-/,'');}
 function visible(image){
     const group=getContext().groupId!=null,root=group?(document.body.classList.contains('ig-mobile-group')?'#ig-mobile-sprites':'#visual-novel-wrapper'):'#expression-wrapper';
@@ -32,7 +34,8 @@ function animate(node,id,frames,{loop=false,preview=false,exiting=false,cleanup=
     try{
         const timing={duration:config.duration,iterations:loop?Infinity:1,direction:loop?'alternate':'normal',easing:'ease-in-out',fill:'none'};
         const play=(keyframes,options)=>{const animation=node.animate(keyframes,options);void animation.finished.catch(()=>{});animations.push(animation);};
-        const movement=frames.map(({opacity,...values})=>values);
+        const movement=frames.map(({opacity,backgroundPosition,...values})=>values);
+        if(id==='backgroundPan'&&frames.some(f=>f.backgroundPosition))play(frames.map(f=>({backgroundPosition:f.backgroundPosition})),timing);
         if(movement.some(f=>Object.keys(f).some(k=>k!=='offset'))){
             play([{transformOrigin:id==='backgroundPan'?'50% 50%':'50% 100%'}],timing);
             play(movement,{...timing,composite:'add'});
@@ -77,7 +80,9 @@ function syncBackground(){
     if(background!==node){if(background)cancel(background);background=node;backgroundSource=src;}
     else if(src!==backgroundSource){backgroundSource=src;if(node)cancel(node,'backgroundPan');sceneFade();}
     if(!node||!src||src==='none'||!enabled('backgroundPan')){if(node)cancel(node,'backgroundPan');return;}
-    if(!jobs.get(node)?.has('backgroundPan'))animate(node,'backgroundPan',motionFrames('backgroundPan',options('backgroundPan')),{loop:true});
+    const config=options('backgroundPan'),vertical=Boolean(config.mobileVertical&&mobileLayout()),current=jobs.get(node)?.get('backgroundPan');
+    if(current&&current.vertical!==vertical)current.cancel('layout_changed');
+    if(!jobs.get(node)?.has('backgroundPan')){const job=animate(node,'backgroundPan',motionFrames('backgroundPan',{...config,vertical}),{loop:true});if(job)job.vertical=vertical;}
 }
 function sync(){
     frame=0;const nextScope=scope();
@@ -137,7 +142,7 @@ export function previewMotion(id,host){
     for(const node of host.querySelectorAll('[data-motion-demo]'))cancel(node);
     const figure=host.querySelector('[data-motion-demo=figure]'),backdrop=host.querySelector('[data-motion-demo=background]');
     const target=['backgroundPan','scene'].includes(id)?backdrop:figure;if(!allowed())return false;
-    const job=animate(target,id,motionFrames(id,options(id)),{preview:true});return Boolean(job);
+    const config=options(id),job=animate(target,id,motionFrames(id,{...config,vertical:id==='backgroundPan'&&config.mobileVertical&&mobileLayout()}),{preview:true});return Boolean(job);
 }
 export function stopMotionPreview(host){for(const node of host.querySelectorAll('[data-motion-demo]'))cancel(node);}
 export function setupSceneMotion(){

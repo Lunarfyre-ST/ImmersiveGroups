@@ -17,6 +17,7 @@ export const MOTION_RULES=Object.freeze(Object.fromEntries([
     ['breathingMotionWaitingStrength',{type:'number',min:0,max:100,value:100}],
     ['reactionMotionStyle',{type:'enum',values:['hop','nod','tilt','shake'],value:'hop'}],
     ['backgroundPanMotionDirection',{type:'enum',values:['left','right','up','down'],value:'right'}],
+    ['backgroundPanMotionMobileVertical',{type:'boolean',value:false}],
 ]));
 export const MOTION_DEFAULTS=Object.freeze(Object.fromEntries(Object.entries(MOTION_RULES).map(([key,rule])=>[key,rule.value])));
 export const motionKeys=Object.keys(MOTION_RULES);
@@ -31,7 +32,7 @@ export function motionValue(key,value){
 }
 export function motionOptions(settings,id){
     const read=suffix=>motionValue(`${id}Motion${suffix}`,settings[`${id}Motion${suffix}`]);
-    return {enabled:read('Enabled')===true,duration:read('Duration'),strength:read('Strength'),style:read('Style'),scope:read('Scope'),direction:read('Direction')};
+    return {enabled:read('Enabled')===true,duration:read('Duration'),strength:read('Strength'),style:read('Style'),scope:read('Scope'),direction:read('Direction'),mobileVertical:read('MobileVertical')};
 }
 export function motionFrames(id,options,exiting=false){
     const amount=options.strength||0,neutral={translate:'0px 0px',scale:1,rotate:'0deg'};
@@ -45,6 +46,7 @@ export function motionFrames(id,options,exiting=false){
         return [neutral,{translate:`0px ${-amount*2}px`,offset:.4},neutral];
     }
     if(id==='backgroundPan'){
+        if(options.vertical){const frames=[{backgroundPosition:'50% 0%',scale:1+amount/50,translate:`0% ${amount/2}%`},{backgroundPosition:'50% 100%',scale:1+amount/50,translate:`0% ${-amount/2}%`}];return options.direction==='up'?frames.reverse():frames;}
         const horizontal=['left','right'].includes(options.direction),sign=['left','up'].includes(options.direction)?-1:1;
         return [{scale:1+amount/50,translate:'0% 0%'},{scale:1+amount/40,translate:horizontal?`${sign*amount/2}% 0%`:`0% ${sign*amount/2}%`}];
     }

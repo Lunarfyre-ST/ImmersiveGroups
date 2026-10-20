@@ -6,29 +6,16 @@ import { extensionName } from '../constants.js';
 import { bounded } from './height-profiles.js';
 import { motionOptions } from './motion-model.js';
 import { updateMotionSpeaker } from './scene-motion.js';
+import { speakerOrder } from './speaker-model.js';
+export { speakerOrder } from './speaker-model.js';
+import { setSceneSpeaker } from './scene-visibility.js';
 let activeSpeaker='';
-export function setActiveSpeaker(avatar=''){activeSpeaker=avatar;}
+export function setActiveSpeaker(avatar=''){activeSpeaker=avatar;setSceneSpeaker(avatar);}
 export function setupSpeakerTracking(){
-    if(event_types.GROUP_MEMBER_DRAFTED)eventSource.on(event_types.GROUP_MEMBER_DRAFTED,id=>{activeSpeaker=getContext().characters?.[id]?.avatar||'';applySpeakerDimming();});
-    for(const name of ['GENERATION_ENDED','GENERATION_STOPPED','CHAT_CHANGED'])if(event_types[name])eventSource.on(event_types[name],()=>{activeSpeaker='';applySpeakerDimming();});
+    if(event_types.GROUP_MEMBER_DRAFTED)eventSource.on(event_types.GROUP_MEMBER_DRAFTED,id=>{activeSpeaker=getContext().characters?.[id]?.avatar||'';setSceneSpeaker(activeSpeaker);applySpeakerDimming();});
+    for(const name of ['GENERATION_ENDED','GENERATION_STOPPED','CHAT_CHANGED'])if(event_types[name])eventSource.on(event_types[name],()=>{activeSpeaker='';setSceneSpeaker('');applySpeakerDimming();});
 }
 
-export function speakerOrder(chat, characters, activeAvatar = '') {
-    const avatars = new Set(characters.map(c => c.avatar));
-    const order = activeAvatar && avatars.has(activeAvatar) ? [activeAvatar] : [];
-    for (let i = chat.length - 1; i >= 0; i--) {
-        const message = chat[i]; if (!message || message.is_user || message.is_system) continue;
-        let avatar = message.original_avatar;
-        if (!avatars.has(avatar) && typeof message.force_avatar === 'string') avatar = characters.find(c => message.force_avatar.includes(encodeURIComponent(c.avatar)))?.avatar;
-        if (!avatars.has(avatar)) {
-            const named = characters.filter(c => c.name === message.name);
-            avatar = named.length === 1 ? named[0].avatar : '';
-        }
-        if (avatars.has(avatar) && !order.includes(avatar)) order.push(avatar);
-        if (order.length === avatars.size) break;
-    }
-    return order;
-}
 export function dimPercent(avatar, order, settings) {
     if (!order.length) return 0;
     const rank = order.indexOf(avatar);

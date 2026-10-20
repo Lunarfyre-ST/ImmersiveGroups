@@ -13,6 +13,7 @@ import { callScenePlanner } from './scene-api.js';
 const root=()=>extension_settings[extensionName],settings=()=>automationSettings(root().sceneAutomation);
 let epoch=0,ticket=null,drafted='',previewSpeaker='',apiBusy=false,apiAbort=null,previewTimer,domFrame=null,panel,statusText='Scene automation is off.',apiKey='',tokenSerial=0;
 let pendingApi=null,autoTimer=null,groupRunning=false;
+let streamTimer=null;
 const chatKey=()=>{const c=getContext();return JSON.stringify([c.groupId??null,c.getCurrentChatId?.()??null,c.groupId==null?c.characters?.[c.characterId]?.avatar||'':null]);};
 function lastReply(){const chat=getContext().chat||[];for(let i=chat.length-1;i>=0;i--)if(!chat[i].is_user&&!chat[i].is_system)return {message:chat[i],index:i};return null;}
 function speaker({force_chid}={}){
@@ -21,7 +22,7 @@ function speaker({force_chid}={}){
 }
 function inventory(avatar){return buildSceneInventory(getSceneContext(),avatar,settings());}
 function status(text){statusText=text;const node=panel?.querySelector('[data-scene-status]');if(node)node.textContent=text;}
-function cancel(){epoch++;ticket=null;pendingApi=null;clearTimeout(autoTimer);autoTimer=null;apiAbort?.abort();}
+function cancel(){epoch++;ticket=null;pendingApi=null;clearTimeout(autoTimer);autoTimer=null;clearTimeout(streamTimer);streamTimer=null;apiAbort?.abort();}
 let commandObserver=null,commandChat=null,allCommandRows=false;
 const commandRows=new Set();
 function renderCommands(rows){
@@ -43,7 +44,7 @@ function changedCommandRows(records){
         if(row)rows.add(row);
         for(const node of record.addedNodes||[])if(node.nodeType===Node.ELEMENT_NODE){if(node.matches('.mes_text'))rows.add(node);for(const child of node.querySelectorAll('.mes_text'))rows.add(child);}
     }
-    if(rows.size)renderCommands(rows);
+    if(rows.size){renderCommands(rows);scheduleStreaming();}
 }
 
 function updateInjection(avatar=speaker(),skip=false){
@@ -54,12 +55,15 @@ function updateInjection(avatar=speaker(),skip=false){
 }
 async function prepare(avatar){if(settings().backgrounds)await ensureBackgrounds();return inventory(avatar);}
 function snapshot(message,index,offered,automatic=false){return {key:chatKey(),epoch,message,index,automatic,text:message.mes,swipe:message.swipe_id,inventory:offered,chatId:getContext().getCurrentChatId?.(),groupId:getContext().groupId};}
-function validSnapshot(snap){const c=getContext(),s=settings();return s.enabled&&!isCommandless(s)&&(!snap.recent||snap.recent.every(r=>c.chat?.includes(r.message)&&r.message.mes===r.text&&r.message.swipe_id===r.swipe))&&(!snap.automatic||(s.mode==='api'&&s.apiAutoAfterReply&&c.chat?.at(-1)===snap.message))&&snap.epoch===epoch&&snap.key===chatKey()&&c.chat?.[snap.index]===snap.message&&snap.message.mes===snap.text&&snap.message.swipe_id===snap.swipe;}
-async function execute(text,snap){
+function validSnapshot(snap){const c=getContext(),s=settings();return s.enabled&&!isCommandless(s)&&(!snap.recent||snap.recent.every(r=>c.chat?.includes(r.message)&&r.message.mes===r.text&&r.message.swipe_id===r.swipe))&&(!snap.automatic||(s.mode==='api'&&s.apiAutoAfterReply&&c.chat?.at(-1)===snap.message))&&snap.epoch===epoch&&snap.key===chatKey()&&c.chat?.[snap.index]===snap.message&&(snap.streaming?String(snap.message.mes).startsWith(snap.text):snap.message.mes===snap.text)&&snap.message.swipe_id===snap.swipe;}
+async function execute(text,snap,seen=null){
     const parsed=parseSceneCommands(text),results=[];
-    const trace=diagnosticOperation('automation.execute',{commands:parsed.commands.length,issues:parsed.issues.length});
-    for(const command of parsed.commands){
+    if(seen&&parsed.commands.length&&parsed.commands.every((command,index)=>seen.has(index+':'+JSON.stringify(command))))return {results,issues:parsed.issues};
+    const trace=diagnosticOperation('automation.execute',{commands:parsed.commands.length,issues:parsed.issues.length,streaming:Boolean(snap.streaming)});
+    for(const [commandIndex,command] of parsed.commands.entries()){
+        const identity=commandIndex+':'+JSON.stringify(command);if(seen?.has(identity))continue;
         if(!validSnapshot(snap)){results.push({type:command.type,applied:false,reason:'Chat, message or settings changed.'});break;}
+        seen?.add(identity);
         const scene=getSceneContext();
         if(!allowedSceneCommand(command,snap.inventory,scene,settings())){results.push({type:command.type,applied:false,reason:'Locked, unavailable or outside the permitted character scope.'});continue;}
         try{
@@ -106,6 +110,9 @@ async function completed(id,type){
     if(current.epoch!==epoch||current.key!==chatKey())return;
     if(index<current.initial.length-1)return;
     if(message===current.initial.message&&message.mes===current.initial.text&&message.swipe_id===current.initial.swipe)return;
+    current.finishing=true;clearTimeout(streamTimer);streamTimer=null;
+    await current.streamWork;
+    if(current.epoch!==epoch||current.key!==chatKey()||getContext().chat?.[index]!==message)return;
     ticket=null;
     const actualSpeaker=messageSpeaker(message,stageCharacters());
     // In speaker-only mode a generation cannot retarget itself by naming someone else.
@@ -115,7 +122,26 @@ async function completed(id,type){
         pendingApi={...snapshot(message,index,current.inventory,true),queuedAt:Date.now()};
         status(groupRunning?'API analysis queued for the end of the group round…':'API analysis queued until roleplay generation finishes…');syncUi();scheduleAutomaticApi();return;
     }
-    return execute(message.mes,snapshot(message,index,current.inventory));
+    return execute(message.mes,snapshot(message,index,current.inventory),current.seen);
+}
+function scheduleStreaming(){
+    if(streamTimer!==null||!ticket||ticket.finishing||ticket.mode!=='prompt')return;
+    streamTimer=setTimeout(()=>{
+        streamTimer=null;const current=ticket;if(!current||current.finishing||!isGenerating())return;
+        if(current.streamBusy){current.streamAgain=true;return;}current.streamBusy=true;
+        current.streamWork=(current.streamWork||Promise.resolve()).then(async()=>{
+            if(ticket!==current||current.finishing||current.epoch!==epoch||current.key!==chatKey())return;
+            const chat=getContext().chat||[],index=chat.length-1,message=chat[index];
+            if(!message||message.is_user||message.is_system||index<current.initial.length-1||message===current.initial.message&&message.mes===current.initial.text&&message.swipe_id===current.initial.swipe)return;
+            if(current.inventory.scope==='speaker'&&messageSpeaker(message,stageCharacters())!==current.inventory.speakerAvatar)return;
+            const text=String(message.mes||''),prefix=text.slice(0,text.lastIndexOf('\n')+1);
+            if(!prefix)return;
+            if(current.streamMessage&&(message!==current.streamMessage||message.swipe_id!==current.streamSwipe||!text.startsWith(current.streamPrefix))){cancel();status('Streaming reply was revised; further scene changes cancelled. Already applied changes remain.');return;}
+            current.streamMessage=message;current.streamSwipe=message.swipe_id;current.streamPrefix=prefix;current.seen||=new Set();
+            if(!parseSceneCommands(prefix).commands.some((command,index)=>!current.seen.has(index+':'+JSON.stringify(command))))return;
+            await execute(prefix,{...snapshot(message,index,current.inventory),streaming:true,text:prefix},current.seen);
+        }).catch(()=>{if(ticket===current)status('Streaming scene command could not be applied.');}).finally(()=>{current.streamBusy=false;if(current.streamAgain&&ticket===current&&!current.finishing){current.streamAgain=false;scheduleStreaming();}});
+    },60);
 }
 async function applyLastReply(){
     if(isGenerating()||apiBusy)throw new Error('Wait for the current generation to finish.');
@@ -255,6 +281,7 @@ export function setupSceneAutomation(){
     if(event_types.GROUP_MEMBER_DRAFTED)eventSource.on(event_types.GROUP_MEMBER_DRAFTED,id=>{drafted=getContext().characters?.[id]?.avatar||'';updateInjection();schedulePreview();});
     if(event_types.GROUP_WRAPPER_FINISHED)eventSource.on(event_types.GROUP_WRAPPER_FINISHED,()=>{groupRunning=false;drafted='';updateInjection();scheduleAutomaticApi();});
     if(event_types.CHARACTER_MESSAGE_RENDERED)eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED,completed);
+    if(event_types.STREAM_TOKEN_RECEIVED)eventSource.on(event_types.STREAM_TOKEN_RECEIVED,scheduleStreaming);
     if(event_types.GENERATION_ENDED)eventSource.on(event_types.GENERATION_ENDED,()=>{const pending=ticket;setTimeout(()=>{if(ticket===pending&&pending?.mode==='prompt')completed((getContext().chat?.length||0)-1);scheduleAutomaticApi();},0);});
     if(event_types.GENERATION_STOPPED)eventSource.on(event_types.GENERATION_STOPPED,()=>{cancel();status('Generation stopped; pending scene changes cancelled.');});
     for(const name of ['CHAT_CHANGED','GROUP_CHAT_CHANGED','GROUP_UPDATED'])if(event_types[name])eventSource.on(event_types[name],()=>{cancel();groupRunning=false;drafted='';updateInjection();renderCommands();schedulePreview();});

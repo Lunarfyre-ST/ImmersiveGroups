@@ -155,6 +155,9 @@ const artifactDirectory = path.resolve(__dirname, '../artifacts/native', browser
         await page.getByRole('dialog', { name: 'Library filters', exact: true }).waitFor();
         await page.keyboard.press('Escape');
         await page.getByRole('dialog', { name: 'Library filters', exact: true }).waitFor({ state: 'hidden' });
+        const libraryScroll=page.locator('.ig-unified-library .ig-library-main');
+        await libraryScroll.evaluate(node=>{node.scrollTop=node.scrollHeight;});
+        assert.ok(await libraryScroll.evaluate(node=>node.clientHeight>200&&node.scrollTop>0),'Mobile library toolbar and results must share a usable scroll surface.');
         await page.screenshot({ path: path.join(artifactDirectory, 'mobile-viewport.png') });
         await fs.writeFile(path.join(artifactDirectory, 'report.json'), JSON.stringify(report, null, 2) + '\n');
         console.log(`PASS: native ${browserName} startup, sprite/background/gallery uploads, repeat/update imports, PNG/JSON cards, remapping, chat preservation, and mobile viewport.`);

@@ -1,6 +1,6 @@
 # Character/settings bundle format
 
-This is the compatibility contract for ImmersiveGroups transfers. The bundle format version is independent of the extension release version. **0.3.7 continues writing version 2 and reading versions 1 and 2.** Animation durations remain milliseconds in stored/exported settings, even though controls display seconds.
+This is the compatibility contract for ImmersiveGroups transfers. The bundle format version is independent of the extension release version. **0.3.8 continues writing version 2 and reading versions 1 and 2.** Animation durations remain milliseconds in stored/exported settings, even though controls display seconds.
 
 ## Container and identity
 
@@ -58,3 +58,5 @@ Descriptions, lore and custom prompt text can influence model context. Review a 
 Pack identity is remembered locally after successful UI exports under the same bundle name; changing names or installations may create a new identity. Revisions compare numeric components (missing trailing components count as zero), then prerelease identifiers; releases sort after prereleases. This is a constrained pack-version format, not the extension version or a general SemVer implementation.
 
 Successful imports may retain local per-destination outfit receipts containing source avatar/folder, pack identity/version, selection and metadata policy. A receipt describes the last processed selection, including kept values/files, rather than a fully installed revision. Unversioned bundles remain readable. Receipts and export drafts are local and excluded from portable settings; they never carry acknowledgements. Old readers may ignore the optional `pack` field.
+
+0.3.8 height writers emit the shared centimeter height for both layouts, retaining independent fine-tune/Y corrections. Recent-speaker limit and reference mode are optional visual preferences; absent fields retain existing values. Transfer schema versions are unchanged.
