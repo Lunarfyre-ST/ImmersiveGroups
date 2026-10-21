@@ -80,9 +80,9 @@ function syncBackground(){
     if(background!==node){if(background)cancel(background);background=node;backgroundSource=src;}
     else if(src!==backgroundSource){backgroundSource=src;if(node)cancel(node,'backgroundPan');sceneFade();}
     if(!node||!src||src==='none'||!enabled('backgroundPan')){if(node)cancel(node,'backgroundPan');return;}
-    const config=options('backgroundPan'),vertical=Boolean(config.mobileVertical&&mobileLayout()),current=jobs.get(node)?.get('backgroundPan');
-    if(current&&current.vertical!==vertical)current.cancel('layout_changed');
-    if(!jobs.get(node)?.has('backgroundPan')){const job=animate(node,'backgroundPan',motionFrames('backgroundPan',{...config,vertical}),{loop:true});if(job)job.vertical=vertical;}
+    const config=options('backgroundPan'),mobile=mobileLayout(),vertical=Boolean(config.mobileVertical&&mobile),panAxis=mobile?(vertical?'vertical':'horizontal'):'desktop',current=jobs.get(node)?.get('backgroundPan');
+    if(current&&current.panAxis!==panAxis)current.cancel('layout_changed');
+    if(!jobs.get(node)?.has('backgroundPan')){const job=animate(node,'backgroundPan',motionFrames('backgroundPan',{...config,vertical,horizontal:mobile&&!vertical}),{loop:true});if(job)job.panAxis=panAxis;}
 }
 function sync(){
     frame=0;const nextScope=scope();
@@ -142,7 +142,7 @@ export function previewMotion(id,host){
     for(const node of host.querySelectorAll('[data-motion-demo]'))cancel(node);
     const figure=host.querySelector('[data-motion-demo=figure]'),backdrop=host.querySelector('[data-motion-demo=background]');
     const target=['backgroundPan','scene'].includes(id)?backdrop:figure;if(!allowed())return false;
-    const config=options(id),job=animate(target,id,motionFrames(id,{...config,vertical:id==='backgroundPan'&&config.mobileVertical&&mobileLayout()}),{preview:true});return Boolean(job);
+    const config=options(id),mobile=id==='backgroundPan'&&mobileLayout(),job=animate(target,id,motionFrames(id,{...config,vertical:mobile&&config.mobileVertical,horizontal:mobile&&!config.mobileVertical}),{preview:true});return Boolean(job);
 }
 export function stopMotionPreview(host){for(const node of host.querySelectorAll('[data-motion-demo]'))cancel(node);}
 export function setupSceneMotion(){

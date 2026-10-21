@@ -47,6 +47,7 @@ export function motionFrames(id,options,exiting=false){
     }
     if(id==='backgroundPan'){
         if(options.vertical){const frames=[{backgroundPosition:'50% 0%',scale:1+amount/50,translate:`0% ${amount/2}%`},{backgroundPosition:'50% 100%',scale:1+amount/50,translate:`0% ${-amount/2}%`}];return options.direction==='up'?frames.reverse():frames;}
+        if(options.horizontal){const frames=[{backgroundPosition:'0% 50%',scale:1+amount/50,translate:`${amount/2}% 0%`},{backgroundPosition:'100% 50%',scale:1+amount/50,translate:`${-amount/2}% 0%`}];return options.direction==='left'?frames.reverse():frames;}
         const horizontal=['left','right'].includes(options.direction),sign=['left','up'].includes(options.direction)?-1:1;
         return [{scale:1+amount/50,translate:'0% 0%'},{scale:1+amount/40,translate:horizontal?`${sign*amount/2}% 0%`:`0% ${sign*amount/2}%`}];
     }

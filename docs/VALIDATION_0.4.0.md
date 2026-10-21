@@ -2,7 +2,7 @@
 
 ## Automated coverage
 
-- Node 24.19.0: lint, syntax/import/metadata checks and 159 unit tests pass.
+- Node 24.19.0: lint, syntax/import/metadata checks and 160 unit tests pass.
 - Complete Playwright Chromium 151.0.7922.34 and Firefox 153.0 suites pass;
   focused 0.4.0 cases run again after final UI/lifecycle refinements.
 - Saved auto-fit geometry is compared before/after an actual reload with five
@@ -22,6 +22,8 @@
   cancellation without writes, actual removal/replacement, content changes after
   review, ambiguous filename stems and cross-folder/external-path rejection.
   Image checksums are local review evidence and are never diagnostic fields.
+- Mobile idle background coverage checks horizontal/vertical crop frames, reversal,
+  dropdown persistence and switching back to unchanged desktop movement.
 - Phone checks cover panel overflow and thumbnail/text separation. The final
   phone expression-manager screenshot was visually inspected.
 - Native-refresh guards cover changed chat, generation in progress, missing

@@ -25,6 +25,10 @@ test('recent visibility prioritizes the active and latest distinct speakers, wit
 test('mobile full-height pan changes only background positioning and supports reverse',()=>{
  const frames=motionFrames('backgroundPan',{vertical:true,direction:'down',strength:2});assert.deepEqual(frames.map(f=>f.backgroundPosition),['50% 0%','50% 100%']);assert.ok(frames.every(f=>f.scale>1));assert.deepEqual(motionFrames('backgroundPan',{vertical:true,direction:'up',strength:2}),[...frames].reverse());
 });
+test('mobile horizontal background crop traverses the width and reverses without changing desktop frames',()=>{
+ const options={strength:2,direction:'right'},frames=motionFrames('backgroundPan',{...options,horizontal:true});assert.deepEqual(frames.map(f=>f.backgroundPosition),['0% 50%','100% 50%']);assert.ok(frames.every(f=>f.translate.endsWith(' 0%')));
+ assert.deepEqual(motionFrames('backgroundPan',{...options,horizontal:true,direction:'left'}),[...frames].reverse());assert.ok(motionFrames('backgroundPan',options).every(f=>f.backgroundPosition===undefined));
+});
 test('export carries the shared centimeter height while preserving independent visual corrections',()=>{
  const s={heightProfiles:{a:{heightCm:155,fineTuneOffset:3}},mobileHeightProfiles:{a:{heightCm:180,fineTuneOffset:-5,offsetY:12}}},before=structuredClone(s);
  const bundle=captureCharacterBundle(s,[{avatar:'a',name:'A'}],['a'],{heights:true});

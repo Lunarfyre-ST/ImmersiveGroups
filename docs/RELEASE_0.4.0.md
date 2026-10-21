@@ -17,6 +17,9 @@
 - **Character appearance** in the library also edits shared height, independent
   PC/mobile fine tuning and vertical offsets, and the automatic outfit lock.
   These are the same settings used by the main character editor.
+- Idle background movement has a **Mobile scrolling** dropdown: Horizontal
+  (default) or Vertical. Both traverse the available crop; saved vertical choices
+  are preserved and desktop movement is unchanged.
 - **Recent speakers displayed** and **Height reference** are near the top of
   Scene tuning, below calibration/offset controls. Existing locations remain.
 - Fitted character rows avoid centering margins that reduce available grid width.

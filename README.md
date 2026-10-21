@@ -143,7 +143,7 @@ Each effect starts **off**. Try its small **Preview** first, then enable it in t
 
 These effects leave your saved heights and fine tuning alone. Reduced-motion preferences are respected, and motion stops when VN mode is off or the page is hidden. **Reset animation defaults** turns the new effects off again.
 
-For phones, enable **Idle background movement → Full-height vertical background pan on mobile**. It moves through the available crop with a gentle drift; increase the one-way duration for slower movement. Desktop keeps its regular pan.
+For phones, enable **Idle background movement** and use **Mobile scrolling** to choose **Horizontal** (default) or **Vertical**. It moves across the available crop with a gentle drift; increase the one-way duration for slower movement. Desktop keeps its regular pan.
 
 ## 🗂️ Backgrounds, images and the library
 
