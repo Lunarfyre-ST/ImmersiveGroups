@@ -68,12 +68,21 @@ function exit(state){
     if(!enabled('entrance')||!state.snapshot?.rect.width)return;
     const {src,rect,opacity,filter,fit,position}=state.snapshot,copy=document.createElement('div');copy.className='ig-motion-exit';copy.setAttribute('aria-hidden','true');
     Object.assign(copy.style,{position:'fixed',left:`${rect.x}px`,top:`${rect.y}px`,width:`${rect.width}px`,height:`${rect.height}px`,backgroundImage:`url(${JSON.stringify(src)})`,backgroundSize:['contain','cover'].includes(fit)?fit:'100% 100%',backgroundPosition:position,backgroundRepeat:'no-repeat',opacity,filter,pointerEvents:'none',zIndex:'100'});
-    document.body.append(copy);animate(copy,'entrance',motionFrames('entrance',options('entrance'),true),{exiting:true,cleanup:()=>copy.remove()});
+    document.body.append(copy);const release=containMotionViewport(copy,'ig-motion-exit-viewport');animate(copy,'entrance',motionFrames('entrance',options('entrance'),true),{exiting:true,cleanup:()=>{release();copy.remove();}});
 }
 function sceneFade(){
     if(!enabled('scene'))return;for(const job of [...active])if(job.id==='scene'&&!job.preview)job.cancel();const layer=document.createElement('div');layer.className='ig-motion-scene-fade';layer.setAttribute('aria-hidden','true');
     Object.assign(layer.style,{position:'fixed',inset:'0',background:'#000',pointerEvents:'none',zIndex:'9990'});document.body.append(layer);
     animate(layer,'scene',motionFrames('scene',options('scene')),{cleanup:()=>layer.remove()});
+}
+// Clip decorative motion at the viewport. Clipping an animated element itself
+// cannot contain its transformed border box. Keep native background identity,
+// styles and sibling fades intact, and restore siblings on cancellation.
+function containMotionViewport(node,className){
+    const layer=document.createElement('div');layer.className=className;layer.setAttribute('aria-hidden','true');
+    Object.assign(layer.style,{position:'fixed',inset:'0',contain:'paint',overflow:'hidden',pointerEvents:'none',zIndex:getComputedStyle(node).zIndex});
+    node.before(layer);layer.append(node);
+    return ()=>{if(layer.parentNode)layer.replaceWith(...layer.childNodes);};
 }
 function syncBackground(){
     const node=document.getElementById('bg1'),src=node?.style.backgroundImage||'';
@@ -82,7 +91,7 @@ function syncBackground(){
     if(!node||!src||src==='none'||!enabled('backgroundPan')){if(node)cancel(node,'backgroundPan');return;}
     const config=options('backgroundPan'),mobile=mobileLayout(),vertical=Boolean(config.mobileVertical&&mobile),panAxis=mobile?(vertical?'vertical':'horizontal'):'desktop',current=jobs.get(node)?.get('backgroundPan');
     if(current&&current.panAxis!==panAxis)current.cancel('layout_changed');
-    if(!jobs.get(node)?.has('backgroundPan')){const job=animate(node,'backgroundPan',motionFrames('backgroundPan',{...config,vertical,horizontal:mobile&&!vertical}),{loop:true});if(job)job.panAxis=panAxis;}
+    if(!jobs.get(node)?.has('backgroundPan')){const cleanup=containMotionViewport(node,'ig-motion-background-viewport'),job=animate(node,'backgroundPan',motionFrames('backgroundPan',{...config,vertical,horizontal:mobile&&!vertical}),{loop:true,cleanup});if(job)job.panAxis=panAxis;}
 }
 function sync(){
     frame=0;const nextScope=scope();

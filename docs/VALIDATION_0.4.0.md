@@ -24,6 +24,10 @@
   Image checksums are local review evidence and are never diagnostic fields.
 - Mobile idle background coverage checks horizontal/vertical crop frames, reversal,
   dropdown persistence and switching back to unchanged desktop movement.
+- Viewport regressions simulate native transformed-root/mobile page geometry:
+  maximum-strength horizontal/vertical background movement and oversized character
+  exits cannot scroll the document. Internal chat scrolling and motion cleanup
+  remain available. Physical phone confirmation is still needed.
 - Phone checks cover panel overflow and thumbnail/text separation. The final
   phone expression-manager screenshot was visually inspected.
 - Native-refresh guards cover changed chat, generation in progress, missing

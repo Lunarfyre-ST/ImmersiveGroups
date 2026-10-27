@@ -20,6 +20,8 @@
 - Idle background movement has a **Mobile scrolling** dropdown: Horizontal
   (default) or Vertical. Both traverse the available crop; saved vertical choices
   are preserved and desktop movement is unchanged.
+- Idle backgrounds and character exit effects stay inside the viewport, avoiding
+  unwanted downward/rightward page scrolling on mobile browsers.
 - **Recent speakers displayed** and **Height reference** are near the top of
   Scene tuning, below calibration/offset controls. Existing locations remain.
 - Fitted character rows avoid centering margins that reduce available grid width.
