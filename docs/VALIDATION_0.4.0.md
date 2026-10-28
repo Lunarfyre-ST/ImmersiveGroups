@@ -24,6 +24,12 @@
   Image checksums are local review evidence and are never diagnostic fields.
 - Mobile idle background coverage checks horizontal/vertical crop frames, reversal,
   dropdown persistence and switching back to unchanged desktop movement.
+- Background-switch regressions check painted pixels after cross/sequential fades
+  with idle pan and scene fade enabled. Native node/parent and ongoing pan remain
+  stable across switches; reduced motion restores the background to the body.
+  Persistent black was not reproduced in desktop Chromium/Firefox; the reported
+  phone compositor behavior needs confirmation after removing reparenting during
+  background switches. No physical mobile/WebKit validation was performed.
 - Viewport regressions simulate native transformed-root/mobile page geometry:
   maximum-strength horizontal/vertical background movement and oversized character
   exits cannot scroll the document. Internal chat scrolling and motion cleanup

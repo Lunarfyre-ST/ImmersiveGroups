@@ -87,7 +87,10 @@ function containMotionViewport(node,className){
 function syncBackground(){
     const node=document.getElementById('bg1'),src=node?.style.backgroundImage||'';
     if(background!==node){if(background)cancel(background);background=node;backgroundSource=src;}
-    else if(src!==backgroundSource){backgroundSource=src;if(node)cancel(node,'backgroundPan');sceneFade();}
+    // The pan frames do not depend on the image. Leave its viewport and native
+    // node in place while the independent background fade owns opacity; moving
+    // that node during a fade can disrupt mobile browser compositing.
+    else if(src!==backgroundSource){backgroundSource=src;sceneFade();}
     if(!node||!src||src==='none'||!enabled('backgroundPan')){if(node)cancel(node,'backgroundPan');return;}
     const config=options('backgroundPan'),mobile=mobileLayout(),vertical=Boolean(config.mobileVertical&&mobile),panAxis=mobile?(vertical?'vertical':'horizontal'):'desktop',current=jobs.get(node)?.get('backgroundPan');
     if(current&&current.panAxis!==panAxis)current.cancel('layout_changed');
