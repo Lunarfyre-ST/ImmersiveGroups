@@ -2,7 +2,7 @@
 
 ## Automated coverage
 
-- Node 24.19.0: lint, syntax/import/metadata checks and 160 unit tests pass.
+- Node 24.19.0: lint, syntax/import/metadata checks and 162 unit tests pass.
 - Complete Playwright Chromium 151.0.7922.34 and Firefox 153.0 suites pass;
   focused 0.4.0 cases run again after final UI/lifecycle refinements.
 - Saved auto-fit geometry is compared before/after an actual reload with five
@@ -25,11 +25,15 @@
 - Mobile idle background coverage checks horizontal/vertical crop frames, reversal,
   dropdown persistence and switching back to unchanged desktop movement.
 - Background-switch regressions check painted pixels after cross/sequential fades
-  with idle pan and scene fade enabled. Native node/parent and ongoing pan remain
-  stable across switches; reduced motion restores the background to the body.
-  Persistent black was not reproduced in desktop Chromium/Firefox; the reported
-  phone compositor behavior needs confirmation after removing reparenting during
-  background switches. No physical mobile/WebKit validation was performed.
+  with idle pan and scene fade enabled. Mobile keeps the native node under the
+  body and animates only background size/position, without element transforms or
+  a paint-containment wrapper. Reduced motion restores native painting. Pure
+  tests cover cover/contain, stretched, auto/fixed sizes and unloaded fallbacks.
+  The user reports Samsung Internet backgrounds recover with idle movement off;
+  avoiding reparenting only on background switches did not resolve it. Mobile
+  now avoids the wrapper entirely. Persistent black was not reproduced in desktop
+  Chromium/Firefox; physical Samsung Internet confirmation remains required.
+  No physical mobile/WebKit validation was performed.
 - Viewport regressions simulate native transformed-root/mobile page geometry:
   maximum-strength horizontal/vertical background movement and oversized character
   exits cannot scroll the document. Internal chat scrolling and motion cleanup

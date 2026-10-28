@@ -16,10 +16,11 @@ module.exports=async(context,url)=>{
  await page.route(url,async route=>{const response=await route.fetch();await route.fulfill({response,body:(await response.text()).replace('<body>',`<body><div id="bg1" style='position:absolute;inset:0;width:100%;height:100%;z-index:-1;background-image:url("/backgrounds/forest.jpg");background-size:cover;background-attachment:fixed'></div>`)});});
  await page.route('**/backgrounds/**',route=>route.fulfill({contentType:'image/svg+xml',body:`<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect width="900" height="600" fill="${route.request().url().includes('town')?'purple':'teal'}"/></svg>`}));
  await page.goto(url);await page.waitForFunction(()=>window.ImmersiveGroups?.getStatus().status==='ready');
- await page.addStyleTag({content:'html{transform:translateZ(0)}body{height:100dvh;overflow:hidden;background:black}#sheld{position:fixed;inset:0}#extensions_settings{display:none}body > :not(.ig-motion-background-viewport):not(#bg1):not(.ig-background-transition):not(.ig-motion-scene-fade){visibility:hidden}'});
+ await page.addStyleTag({content:'html{transform:translateZ(0);backface-visibility:hidden;perspective:1000px}body{height:100dvh;overflow:hidden;background:black}#sheld{position:fixed;inset:0}#extensions_settings{display:none}body > :not(.ig-motion-background-viewport):not(#bg1):not(.ig-background-transition):not(.ig-motion-scene-fade){visibility:hidden}'});
  await page.evaluate(async()=>{window.mc=await import('/scripts/extensions/third-party/ImmersiveGroups/modules/animation-controls.js');const s=ctx.extensionSettings.ImmersiveGroups;s.layoutMode='mobile';s.backgroundFadeEnabled=true;s.backgroundFadeIn=120;s.backgroundFadeOut=120;s.backgroundFadeLinked=true;mc.writeAnimationSetting('backgroundPanMotionEnabled',true);mc.writeAnimationSetting('sceneMotionEnabled',true);});
- await page.waitForFunction(()=>document.querySelector('.ig-motion-background-viewport'));
- await page.evaluate(()=>{window.backgroundNode=document.getElementById('bg1');window.backgroundParent=backgroundNode.parentNode;window.panAnimation=backgroundNode.getAnimations()[0];window.backgroundMoves=0;new MutationObserver(records=>{backgroundMoves+=records.filter(r=>[...r.removedNodes].includes(backgroundNode)).length;}).observe(document.body,{childList:true,subtree:true});});
+ await page.waitForFunction(()=>document.getElementById('bg1').getAnimations().some(a=>a.effect.getKeyframes().some(f=>f.backgroundSize)));
+ assert.equal(await page.evaluate(()=>document.getElementById('bg1').parentNode===document.body&&!document.querySelector('.ig-motion-background-viewport')),true);
+ await page.evaluate(()=>{window.backgroundNode=document.getElementById('bg1');window.backgroundParent=backgroundNode.parentNode;window.backgroundMoves=0;new MutationObserver(records=>{backgroundMoves+=records.filter(r=>[...r.removedNodes].includes(backgroundNode)).length;}).observe(document.body,{childList:true,subtree:true});});
  for(const mode of ['cross','sequential']){
   await page.evaluate(value=>mc.writeAnimationSetting('backgroundFadeMode',value),mode);
   for(const file of ['town','forest']){
@@ -27,12 +28,12 @@ module.exports=async(context,url)=>{
    await page.waitForFunction(()=>Boolean(document.querySelector('.ig-background-transition')));
    await page.waitForFunction(()=>!document.querySelector('.ig-background-transition,.ig-motion-scene-fade')&&!backgroundNode.getAnimations().some(a=>a.effect.getKeyframes().some(f=>f.opacity!==undefined)));
    assert.equal(await page.evaluate(()=>getComputedStyle(backgroundNode).opacity),'1');
-   assert.equal(await page.evaluate(()=>document.getElementById('bg1')===backgroundNode&&backgroundNode.parentNode===backgroundParent&&backgroundNode.getAnimations().includes(panAnimation)&&backgroundMoves===0),true);
+   assert.equal(await page.evaluate(()=>document.getElementById('bg1')===backgroundNode&&backgroundNode.parentNode===backgroundParent&&backgroundNode.getAnimations().every(a=>a.effect.getKeyframes().every(f=>f.scale===undefined&&f.translate===undefined&&f.transform===undefined))&&backgroundMoves===0),true);
    assert.deepEqual(pixel(await page.screenshot({clip:{x:20,y:20,width:1,height:1}})),file==='town'?[128,0,128]:[0,128,128]);
    assert.deepEqual(await page.evaluate(()=>{window.scrollTo(99999,99999);return [scrollX,scrollY];}),[0,0]);
   }
  }
- await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>!document.querySelector('.ig-motion-background-viewport'));
+ await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>document.getElementById('bg1').getAnimations().length===0);
  assert.equal(await page.evaluate(()=>backgroundNode.parentNode===document.body),true);
  assert.deepEqual(pixel(await page.screenshot({clip:{x:20,y:20,width:1,height:1}})),[0,128,128]);
  await page.close();

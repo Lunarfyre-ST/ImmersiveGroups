@@ -6,9 +6,11 @@ import { fadeExpressionChange, cancelExpressionFade } from './scene-animations.j
 import { diagnostic, diagnosticOperation } from './diagnostics.js';
 import { visibleCharacters } from './scene-visibility.js';
 import { mobileLayout } from './responsive.js';
+import { backgroundPaintFrames } from './background-motion-model.js';
 
 const selector='#visual-novel-wrapper > .expression-holder img, #ig-mobile-sprites > .expression-holder img, #expression-wrapper .expression-holder img';
 const states=new Map(),active=new Set(),jobs=new WeakMap(),nativeWaiting=new WeakSet();
+const backgroundImages=new WeakMap();
 let installed=false,frame=0,speaker='',previousScope='',background=null,backgroundSource='',suppressExits=false;
 const settings=()=>extension_settings[extensionName]||{};
 const reduced=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -34,8 +36,8 @@ function animate(node,id,frames,{loop=false,preview=false,exiting=false,cleanup=
     try{
         const timing={duration:config.duration,iterations:loop?Infinity:1,direction:loop?'alternate':'normal',easing:'ease-in-out',fill:'none'};
         const play=(keyframes,options)=>{const animation=node.animate(keyframes,options);void animation.finished.catch(()=>{});animations.push(animation);};
-        const movement=frames.map(({opacity,backgroundPosition,...values})=>values);
-        if(id==='backgroundPan'&&frames.some(f=>f.backgroundPosition))play(frames.map(f=>({backgroundPosition:f.backgroundPosition})),timing);
+        const movement=frames.map(({opacity,backgroundPosition,backgroundSize,...values})=>values);
+        if(id==='backgroundPan'&&frames.some(f=>f.backgroundPosition))play(frames.map(f=>({backgroundPosition:f.backgroundPosition,...(f.backgroundSize?{backgroundSize:f.backgroundSize}:{})})),timing);
         if(movement.some(f=>Object.keys(f).some(k=>k!=='offset'))){
             play([{transformOrigin:id==='backgroundPan'?'50% 50%':'50% 100%'}],timing);
             play(movement,{...timing,composite:'add'});
@@ -84,17 +86,34 @@ function containMotionViewport(node,className){
     node.before(layer);layer.append(node);
     return ()=>{if(layer.parentNode)layer.replaceWith(...layer.childNodes);};
 }
+function mobileBackgroundFrames(node,src,frames){
+    const styleKey=JSON.stringify([node.className,node.style.backgroundSize]);
+    let record=backgroundImages.get(node);
+    if(!record||record.src!==src||record.styleKey!==styleKey){
+        cancel(node,'backgroundPan');
+        record={src,styleKey,size:getComputedStyle(node).backgroundSize,image:new Image()};backgroundImages.set(node,record);
+        const match=/^url\("(.*)"\)$/.exec(src);
+        if(match){
+            const refresh=()=>{if(backgroundImages.get(node)===record&&background===node&&backgroundSource===src&&enabled('backgroundPan')&&mobileLayout())schedule();};
+            record.image.onload=record.image.onerror=refresh;
+            record.image.src=match[1].replace(/\\(["\\])/g,'$1');
+        }
+    }else if(!jobs.get(node)?.has('backgroundPan'))record.size=getComputedStyle(node).backgroundSize;
+    return backgroundPaintFrames(frames,{width:node.clientWidth,height:node.clientHeight,naturalWidth:record.image.naturalWidth,naturalHeight:record.image.naturalHeight,size:record.size});
+}
 function syncBackground(){
     const node=document.getElementById('bg1'),src=node?.style.backgroundImage||'';
     if(background!==node){if(background)cancel(background);background=node;backgroundSource=src;}
-    // The pan frames do not depend on the image. Leave its viewport and native
-    // node in place while the independent background fade owns opacity; moving
-    // that node during a fade can disrupt mobile browser compositing.
+    // Source changes never move the native node during its independent fade.
     else if(src!==backgroundSource){backgroundSource=src;sceneFade();}
     if(!node||!src||src==='none'||!enabled('backgroundPan')){if(node)cancel(node,'backgroundPan');return;}
     const config=options('backgroundPan'),mobile=mobileLayout(),vertical=Boolean(config.mobileVertical&&mobile),panAxis=mobile?(vertical?'vertical':'horizontal'):'desktop',current=jobs.get(node)?.get('backgroundPan');
     if(current&&current.panAxis!==panAxis)current.cancel('layout_changed');
-    if(!jobs.get(node)?.has('backgroundPan')){const cleanup=containMotionViewport(node,'ig-motion-background-viewport'),job=animate(node,'backgroundPan',motionFrames('backgroundPan',{...config,vertical,horizontal:mobile&&!vertical}),{loop:true,cleanup});if(job)job.panAxis=panAxis;}
+    let frames=motionFrames('backgroundPan',{...config,vertical,horizontal:mobile&&!vertical});
+    if(mobile)frames=mobileBackgroundFrames(node,src,frames);
+    const paintKey=mobile?JSON.stringify(frames):'';
+    const running=jobs.get(node)?.get('backgroundPan');if(running&&running.paintKey!==paintKey)running.cancel('settings_changed');
+    if(!jobs.get(node)?.has('backgroundPan')){const cleanup=mobile?()=>{}:containMotionViewport(node,'ig-motion-background-viewport'),job=animate(node,'backgroundPan',frames,{loop:true,cleanup});if(job){job.panAxis=panAxis;job.paintKey=paintKey;}}
 }
 function sync(){
     frame=0;const nextScope=scope();
@@ -165,7 +184,7 @@ export function setupSceneMotion(){
     }).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['src','class','hidden','style']});
     // Native background styles are observed independently of sprite mutations.
     let backgroundObserver;
-    const watchBackground=()=>{const node=document.getElementById('bg1');if(node===backgroundObserver?.node)return;backgroundObserver?.observer.disconnect();if(node){const observer=new MutationObserver(schedule);observer.observe(node,{attributes:true,attributeFilter:['style']});backgroundObserver={node,observer};}};
+    const watchBackground=()=>{const node=document.getElementById('bg1');if(node===backgroundObserver?.node)return;backgroundObserver?.observer.disconnect();if(node){const observer=new MutationObserver(schedule);observer.observe(node,{attributes:true,attributeFilter:['style','class']});backgroundObserver={node,observer};}};
     new MutationObserver(watchBackground).observe(document.body,{childList:true});watchBackground();
     const restart=event=>{const reason=({'ig-layout-change':'layout_changed',resize:'viewport_changed',visibilitychange:'visibility_changed',change:'motion_changed'})[event?.type]||'unknown';if(event?.type==='ig-layout-change'){schedule();return;}diagnostic('motion.lifecycle',{stage:'restart',reason});stop(false,true,reason);suppressExits=true;schedule();};
     window.addEventListener('ig-layout-change',restart);window.addEventListener('resize',restart);

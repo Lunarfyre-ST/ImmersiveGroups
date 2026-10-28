@@ -22,6 +22,10 @@
   are preserved and desktop movement is unchanged.
 - Background switches keep the idle-motion layer in place during fades, avoiding
   removal/reinsertion of the native background while opacity is animated.
+- Mobile idle movement pans and zooms the background image directly, keeping
+  SillyTavern's native background outside the new clipping wrapper associated
+  with black backgrounds in Samsung Internet. Direction and duration controls
+  remain available; desktop movement and character exit containment are unchanged.
 - Idle backgrounds and character exit effects stay inside the viewport, avoiding
   unwanted downward/rightward page scrolling on mobile browsers.
 - **Recent speakers displayed** and **Height reference** are near the top of
