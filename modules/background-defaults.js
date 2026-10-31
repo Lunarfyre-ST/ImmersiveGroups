@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { getContext } from '../../../../extensions.js';
 import { saveSettingsDebounced, eventSource, event_types, chat_metadata } from '../../../../../script.js';
-import { chooseBackgroundDefault } from './background-model.js';
+import { chooseBackgroundDefault, rememberBackgroundChoice } from './background-model.js';
 const el=(tag,text='')=>{const n=document.createElement(tag);n.textContent=text;return n;};
 const own=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k);
 // Only extension settings are saved here. Never save, reload, or edit chat messages.
@@ -12,7 +12,7 @@ export function setupBackgroundDefaults({settings,characters,readFiles,pick}) {
     const scope=()=>JSON.stringify([chatKey(),avatars()]);
     const report=text=>{if(status)status.textContent=text;};
     function cancel(){clearTimeout(timer);epoch++;}
-    function manual(file){cancel();stoppedScope=scope();const key=chatKey();if(key&&typeof file==='string'&&file){Object.defineProperty(settings().backgroundChatChoices||={},key,{value:file,writable:true,enumerable:true,configurable:true});saveSettingsDebounced();}report('Manual background choice kept for this chat.');}
+    function manual(file){cancel();stoppedScope=scope();const key=chatKey();if(key&&typeof file==='string'&&file){Object.defineProperty(settings().backgroundChatChoices||={},key,{value:file,writable:true,enumerable:true,configurable:true});rememberBackgroundChoice(settings(),file);saveSettingsDebounced();}report('Manual background choice kept for this chat.');}
     async function apply(token,expected){
         const valid=()=>token===epoch&&scope()===expected&&settings().backgroundAutoLoad&&stoppedScope!==expected&&!chat_metadata?.custom_background;
         if(!valid())return;
@@ -21,7 +21,7 @@ export function setupBackgroundDefaults({settings,characters,readFiles,pick}) {
             const s=settings(),key=chatKey(),saved=s.backgroundRestoreChat&&own(s.backgroundChatChoices,key)?s.backgroundChatChoices[key]:'';
             const choice=files.includes(saved)?{file:saved,reason:'saved chat background'}:chooseBackgroundDefault(files,s,avatars());
             if(!choice){report('No matching default or shared linked background.');return;}
-            if(!valid())return;pick(choice.file,{automatic:true});report(`Loaded ${choice.file} (${choice.reason}).`);
+            if(!valid())return;pick(choice.file,{automatic:true,isCurrent:valid});report(`Loaded ${choice.file} (${choice.reason}).`);
         }catch(error){report(error.message);console.warn('[ImmersiveGroups] Background default:',error.message);}
     }
     function schedule(){
@@ -31,16 +31,20 @@ export function setupBackgroundDefaults({settings,characters,readFiles,pick}) {
         timer=setTimeout(()=>apply(token,current),delay);
     }
     // Native user choices also cancel in-flight fetches and pending delayed defaults.
-    document.addEventListener('click',event=>{const node=event.target.closest?.('.bg_example');if(node&&node.dataset.igAutomatic!=='true')manual(node.getAttribute('bgfile'));},true);
+    document.addEventListener('click',event=>{
+        const node=event.target.closest?.('.bg_example'),control=event.target.closest?.('.jg-button,.mobile-only-menu-toggle');
+        const selecting=document.getElementById('Backgrounds')?.classList.contains('bg-selection-mode')&&node?.getAttribute('custom')!=='true';
+        if(node&&!(control&&node.contains(control))&&!selecting&&node.dataset.igAutomatic!=='true')manual(node.getAttribute('bgfile'));
+    },true);
     for(const key of ['CHAT_CHANGED','GROUP_UPDATED'])if(event_types[key])eventSource.on(event_types[key],()=>{refreshCharacters();schedule();});
     const pane=document.getElementById('ig-pane-backgrounds'),section=el('details');section.className='ig-advanced ig-background-defaults';section.append(el('summary','On chat load'));
-    const enabled=el('input');enabled.type='checkbox';enabled.checked=Boolean(settings().backgroundAutoLoad);enabled.dataset.bgAuto='';const enabledLabel=el('label');enabledLabel.append(enabled,document.createTextNode(' Load a matching background when opening a chat'));section.append(enabledLabel);
+    const enabled=el('input');enabled.type='checkbox';enabled.checked=Boolean(settings().backgroundAutoLoad);enabled.dataset.bgAuto='';const enabledLabel=el('label');enabledLabel.append(enabled,document.createTextNode(' Load a matching background when opening a chat'));section.append(enabledLabel,el('small','Off by default. Enable this to restore saved and linked backgrounds when you open a chat.'));
     const delay=el('input');delay.type='number';delay.className='text_pole';delay.min=0;delay.max=10000;delay.step=100;delay.value=settings().backgroundAutoDelay??1000;delay.setAttribute('aria-label','Background load delay (ms)');const delayLabel=el('label','Delay (milliseconds, 0–10000)');delayLabel.append(delay);section.append(delayLabel);
     const restore=el('input');restore.type='checkbox';restore.checked=settings().backgroundRestoreChat!==false;const restoreLabel=el('label');restoreLabel.append(restore,document.createTextNode(' Restore the last background chosen for this chat first'));section.append(restoreLabel);
     const fallback=el('select');fallback.setAttribute('aria-label','Global default background');const fallbackLabel=el('label','Global fallback');fallbackLabel.append(fallback);section.append(fallbackLabel);
     const loadingOptions=el('fieldset');loadingOptions.className='ig-background-loading-options';loadingOptions.append(el('legend','Loading behavior'),delayLabel,restoreLabel,fallbackLabel);section.append(loadingOptions);
     const syncLoading=()=>{loadingOptions.disabled=!enabled.checked;};syncLoading();
-    const priority=el('details');priority.append(el('summary','How background priority works'),el('small','Priority: saved chat choice → exact group → shared character rule → individual character rule → global fallback → first shared linked background. Rules of the same kind use the order below. Native chat background locks always take precedence. A manual choice cancels pending loading.'));section.append(priority);
+    const priority=el('details');priority.append(el('summary','How background priority works'),el('small','Priority: saved chat choice → exact group → shared character rule → individual character rule → global fallback → most recently selected matching linked background → first shared linked background. Rules of the same kind use the order below. Native chat background locks always take precedence. A manual choice cancels pending loading.'));section.append(priority);
     const toolbar=el('div');toolbar.className='ig-tool-actions';const refresh=el('button','Refresh backgrounds');refresh.type='button';refresh.className='menu_button';const forget=el('button','Forget saved background for this chat');forget.type='button';forget.className='menu_button';toolbar.append(refresh,forget);section.append(toolbar);
     const list=el('div');list.dataset.bgRules='';section.append(list);
     const form=el('details');form.append(el('summary','Add default rule'));
@@ -65,7 +69,7 @@ export function setupBackgroundDefaults({settings,characters,readFiles,pick}) {
     restore.addEventListener('change',()=>{settings().backgroundRestoreChat=restore.checked;saveSettingsDebounced();});
     fallback.addEventListener('change',()=>{settings().backgroundGlobalDefault=fallback.value;saveSettingsDebounced();});
     refresh.addEventListener('click',load);section.addEventListener('toggle',()=>{if(section.open&&!files.length)load();});
-    forget.addEventListener('click',()=>{const key=chatKey();if(key)delete settings().backgroundChatChoices?.[key];saveSettingsDebounced();report('Saved background forgotten; applies on next chat load.');});
+    forget.addEventListener('click',()=>{const key=chatKey();if(key)delete settings().backgroundChatChoices?.[key];saveSettingsDebounced();report('Saved choice forgotten. A linked fallback may still select the same background.');});
     add.addEventListener('click',()=>{const selected=[...members.querySelectorAll('input:checked')].map(n=>n.value);if(!file.value||!selected.length){report('Choose a background and at least one character.');return;}if(match.value==='character'&&selected.length!==1){report('A single-character rule needs exactly one selected character.');return;}(settings().backgroundDefaultRules||=[]).push({label:title.value.trim(),file:file.value,characters:selected,match:match.value,enabled:true});saveSettingsDebounced();renderRules();report('Default rule added.');});
     refreshCharacters();schedule();return {cancel,manual,schedule};
 }

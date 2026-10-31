@@ -169,6 +169,7 @@ export const defaultSettings = {
     backgroundDefaultRules: [],
     backgroundGlobalDefault: "",
     backgroundChatChoices: {},
+    backgroundRecentChoices: [],
     layoutPresets: {},
     backgroundAutomationLocked: false,
     backgroundFavorites: [],

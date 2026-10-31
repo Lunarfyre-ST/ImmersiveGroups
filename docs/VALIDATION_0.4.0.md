@@ -2,7 +2,7 @@
 
 ## Automated coverage
 
-- Node 24.19.0: lint, syntax/import/metadata checks and 162 unit tests pass.
+- Node 24.22.1: lint, syntax/import/metadata checks and 163 unit tests pass.
 - Complete Playwright Chromium 151.0.7922.34 and Firefox 153.0 suites pass;
   focused 0.4.0 cases run again after final UI/lifecycle refinements.
 - Saved auto-fit geometry is compared before/after an actual reload with five
@@ -24,6 +24,12 @@
   Image checksums are local review evidence and are never diagnostic fields.
 - Mobile idle background coverage checks horizontal/vertical crop frames, reversal,
   dropdown persistence and switching back to unchanged desktop movement.
+- Background restoration checks saved-chat priority, recent matching links across
+  chats and reloads, explicit defaults, missing files, native locks and cancellation.
+  Recent history stays local, is excluded from transfers and follows renamed or
+  discarded backgrounds. Native selection mode and menu clicks do not record picks.
+- Scene tuning and library appearance inputs have contrast checks for dark and
+  light theme colors, including a conflicting browser-default field background.
 - Background-switch regressions check painted pixels after cross/sequential fades
   with idle pan and scene fade enabled. Mobile keeps the native node under the
   body and animates only background size/position, without element transforms or
@@ -46,7 +52,9 @@
 ## Native SillyTavern
 
 - Disposable loopback SillyTavern 1.18.0 with a fresh `validation-040` profile;
-  Chromium and Firefox smoke tests pass. No live user profile/library used.
+  Chromium and Firefox smoke tests passed for the earlier 0.4.0 validation.
+  The recent-linked-background fallback has browser-fixture coverage and has
+  not been retested against the native server. No live user profile/library used.
 - Reviewed native expression listing, individual sprite upload/delete and API
   selection handler behavior. Native replacement removes matching stems before
   writing; the UI describes this actual partial-failure boundary.

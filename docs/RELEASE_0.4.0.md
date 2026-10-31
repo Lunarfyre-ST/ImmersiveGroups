@@ -14,6 +14,12 @@
   hidden outfits, explicit scene commands and async cancellation retain priority.
 - Background cards show **Linked outfit readiness**, including disabled linking,
   locked characters, missing matches, ambiguity and already-selected outfits.
+- With **Load a matching background when opening a chat** enabled, a new chat
+  can use the most recently selected matching linked background. A chat's saved
+  choice, explicit rules and the global fallback retain their existing priority.
+  Recent selections are stored locally and start being recorded with this update.
+- Improved input contrast in Scene tuning and library panels for light and dark
+  themes.
 - **Character appearance** in the library also edits shared height, independent
   PC/mobile fine tuning and vertical offsets, and the automatic outfit lock.
   These are the same settings used by the main character editor.

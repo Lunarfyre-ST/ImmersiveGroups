@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { backgroundChoices, chooseBackgroundDefault } from '../modules/background-model.js';
+import { backgroundChoices, chooseBackgroundDefault, rememberBackgroundChoice } from '../modules/background-model.js';
 
 test('linked backgrounds do not require stars and follow active character filters',()=>{
     const files=['forest','room','town','other','shared'];
@@ -33,4 +33,16 @@ test('default backgrounds use explicit priority and ordered ties',()=>{
     s.backgroundDefaultRules=[];s.backgroundGlobalDefault='missing';
     assert.equal(chooseBackgroundDefault(files,s,['a','b']).file,'shared');
     assert.equal(chooseBackgroundDefault(files,s,['a','b','c']),null);
+});
+
+test('recent manual background is reused only when linked and available, after explicit defaults',()=>{
+    const files=['forest','town','beach'],settings={backgroundBindings:{forest:['a','b'],town:['a','b'],beach:['c']}};
+    rememberBackgroundChoice(settings,'town');rememberBackgroundChoice(settings,'beach');
+    assert.equal(chooseBackgroundDefault(files,settings,['a','b']).file,'town');
+    assert.equal(chooseBackgroundDefault(files,settings,['c']).file,'beach');
+    assert.equal(chooseBackgroundDefault(['forest','beach'],settings,['a','b']).file,'forest');
+    settings.backgroundGlobalDefault='forest';assert.equal(chooseBackgroundDefault(files,settings,['a','b']).file,'forest');
+    rememberBackgroundChoice(settings,'town');assert.deepEqual(settings.backgroundRecentChoices,['town','beach']);
+    for(let i=0;i<105;i++)rememberBackgroundChoice(settings,String(i));
+    assert.equal(settings.backgroundRecentChoices.length,100);
 });

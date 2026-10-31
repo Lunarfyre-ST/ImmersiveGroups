@@ -24,6 +24,7 @@ const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://fix
  if(process.env.IG_BROWSER_ONLY==='background-visibility'){await require('./background-visibility.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
  if(process.env.IG_BROWSER_ONLY==='viewport-overflow'){await require('./viewport-overflow.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
  if(process.env.IG_BROWSER_ONLY==='v040'){await require('./v040.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
+ if(process.env.IG_BROWSER_ONLY==='v014'){await require('./v014.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
  if(process.env.IG_BROWSER_ONLY==='v039'){await require('./v039.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
  if(process.env.IG_BROWSER_ONLY==='v038'){await require('./v038.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
  if(process.env.IG_BROWSER_ONLY==='v037'){await require('./v037.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}

@@ -10,6 +10,7 @@ export function forgetBackground(settings,file){
     settings.backgroundDefaultRules=(settings.backgroundDefaultRules||[]).filter(r=>r.file!==file);
     if(settings.backgroundGlobalDefault===file)settings.backgroundGlobalDefault='';
     for(const [key,value] of Object.entries(settings.backgroundChatChoices||{}))if(value===file)delete settings.backgroundChatChoices[key];
+    if(Array.isArray(settings.backgroundRecentChoices))settings.backgroundRecentChoices=settings.backgroundRecentChoices.filter(value=>value!==file);
 }
 export function relinkBackground(settings,oldFile,newFile){
     if(oldFile===newFile)throw new Error('Choose a different background.');
@@ -26,5 +27,6 @@ export function relinkBackground(settings,oldFile,newFile){
     settings.backgroundDefaultRules=(settings.backgroundDefaultRules||[]).map(r=>r.file===oldFile?{...r,file:newFile}:r);
     if(settings.backgroundGlobalDefault===oldFile)settings.backgroundGlobalDefault=newFile;
     for(const [key,value] of Object.entries(settings.backgroundChatChoices||{}))if(value===oldFile)settings.backgroundChatChoices[key]=newFile;
+    if(Array.isArray(settings.backgroundRecentChoices))settings.backgroundRecentChoices=[...new Set(settings.backgroundRecentChoices.map(value=>value===oldFile?newFile:value))];
     forgetBackground(settings,oldFile);
 }

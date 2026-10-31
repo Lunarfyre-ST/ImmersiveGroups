@@ -16,6 +16,13 @@ export function nextLinkedBackground(files,settings,activeAvatars,current,direct
     return pool[index<0?(step<0?pool.length-1:0):(index+step+pool.length)%pool.length];
 }
 
+// Keep a bounded local history; eligibility is always checked at restore time.
+export function rememberBackgroundChoice(settings,file){
+    if(typeof file!=='string'||!file)return;
+    const recent=Array.isArray(settings.backgroundRecentChoices)?settings.backgroundRecentChoices:[];
+    settings.backgroundRecentChoices=[file,...recent.filter(value=>typeof value==='string'&&value&&value!==file)].slice(0,100);
+}
+
 // Rule order breaks ties inside each priority class; filenames never execute commands.
 export function chooseBackgroundDefault(files,settings,activeAvatars) {
     const avatars=[...new Set(activeAvatars)],active=new Set(avatars);
@@ -29,5 +36,7 @@ export function chooseBackgroundDefault(files,settings,activeAvatars) {
     if(rule)return {file:rule.file,reason:rule.match==='exact'?'exact group default':rule.match==='all'?'shared character default':'character default'};
     if(files.includes(settings.backgroundGlobalDefault))return {file:settings.backgroundGlobalDefault,reason:'global fallback'};
     const linked=backgroundChoices(files,settings,avatars).linked;
+    const recent=(Array.isArray(settings.backgroundRecentChoices)?settings.backgroundRecentChoices:[]).find(file=>linked.includes(file));
+    if(recent)return {file:recent,reason:'recent linked background'};
     return linked.length?{file:linked[0],reason:'first shared linked background'}:null;
 }

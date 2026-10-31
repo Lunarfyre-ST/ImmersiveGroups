@@ -43,6 +43,14 @@
 .ig-background-outfit-link details small { display:block; margin-top:5px; }
 .ig-live-tuning [data-live-cast] { display:flex; flex-direction:column; gap:8px; }
 .ig-live-tuning [data-live-cast] :is(select,input) { width:100%; min-width:0; max-width:100%; }
+/* Keep text and field backgrounds paired even when a browser supplies its own
+   light input background or a SillyTavern theme colors inherited text. */
+:is(.ig-live-tuning,.ig-library-panel-content) :is(input[type=text],input[type=number],input[type=search],select,textarea) {
+    color:var(--SmartThemeBodyColor,#eee);
+    background-color:var(--SmartThemeBlurTintColor,#252933);
+    border:1px solid var(--SmartThemeBorderColor,#777);
+    text-shadow:none;
+}
 .ig-library-panel-content label:has(> :is(select,input:not([type=checkbox]):not([type=color]))) { flex-direction:column; align-items:stretch; }
 .ig-library-panel-content :is(select,input:not([type=checkbox]):not([type=color])) { width:100%; min-width:0; max-width:100%; box-sizing:border-box; }
 .ig-library-panel-content small { display:block; font-size:12px; opacity:.8; line-height:1.5; overflow-wrap:anywhere; }
