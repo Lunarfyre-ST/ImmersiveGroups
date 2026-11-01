@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Small non-modal panels stay outside transformed chat containers.
 let nextId = 0;
-export function floatingPanel(anchor, panel, { onClose = () => {}, maxHeight = () => Infinity, offset = () => ({}), lockSide = false, pinPosition = false } = {}) {
+export function floatingPanel(anchor, panel, { onClose = () => {}, maxHeight = () => Infinity, offset = () => ({}), lockSide = false, pinPosition = false, allowOverlap = false } = {}) {
     let side, pinned;
     panel.id ||= `ig-floating-${++nextId}`;
     panel.classList.add('ig-floating-panel');panel.hidden = true;
@@ -27,7 +27,7 @@ export function floatingPanel(anchor, panel, { onClose = () => {}, maxHeight = (
         const rect=anchor.getBoundingClientRect(), box=panel.getBoundingClientRect();
         const above=rect.top-top-8, below=top+height-rect.bottom-8;
         const useAbove=lockSide?(side??=(below<100&&above>below)):box.height>below&&above>below;
-        panel.style.maxHeight=`${Math.max(40,Math.min(height-24,maxHeight(),useAbove?above:below))}px`;
+        if(!allowOverlap)panel.style.maxHeight=`${Math.max(40,Math.min(height-24,maxHeight(),useAbove?above:below))}px`;
         const size=panel.getBoundingClientRect();
         const adjustment=offset();
         panel.style.left=`${Math.max(left+8,Math.min(rect.right-size.width+(Number(adjustment.x)||0),left+width-size.width-8))}px`;

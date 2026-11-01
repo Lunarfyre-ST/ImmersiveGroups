@@ -842,3 +842,11 @@ body.ig-smooth-speaker-focus :is(#visual-novel-wrapper,#ig-mobile-sprites,#expre
  .ig-floating-panel header button,.ig-floating-panel .menu_button{min-width:44px;min-height:44px;box-sizing:border-box}
 }
 .ig-media-memory{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.ig-media-memory > button:first-child{white-space:normal;overflow-wrap:anywhere}
+/* Keep the background grid spacious; chat-load controls expand when needed. */
+.ig-media-footer.ig-background-footer{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start}
+.ig-background-footer > [data-bg-quick-status]{grid-column:1/-1}
+.ig-background-memory{min-width:0;margin:0}
+.ig-background-memory > summary{cursor:pointer;overflow-wrap:anywhere;padding:7px 4px;line-height:1.3}
+.ig-background-memory > summary:focus-visible{outline:2px solid #c59759;outline-offset:2px}
+.ig-background-memory .ig-media-memory{margin-top:6px}
+.ig-background-memory [data-bg-memory-detail]{display:block;margin-top:6px!important}
