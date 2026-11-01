@@ -10,6 +10,12 @@
   speaker settings remain independent and the live height reference is editable.
 - Library character edits preserve shared centimeters, independent fine tuning,
   exact fractions and explicit mobile zero. Existing main-editor regressions run.
+- A browser fixture using SillyTavern 1.18.0 mobile expression sizing compares
+  solo and group sprites at equal fit and fine-tune settings, including tall,
+  wide and small images, portrait, landscape, and forced-mobile layout. It also
+  checks both height-reference modes after muting the taller group members and
+  preserves stored height profiles. This sizing change has not been tested on
+  the user's phone or against a running native SillyTavern server.
 - Shared preferences resolve one explicit preferred match, skip duplicate
   preferences and respect locks. Actual common-outfit execution chooses the
   preferred folder. Changing preference during a delayed request rejects the old

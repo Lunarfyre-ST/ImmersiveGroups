@@ -29,6 +29,7 @@ const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://fix
  if(process.env.IG_BROWSER_ONLY==='v038'){await require('./v038.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
  if(process.env.IG_BROWSER_ONLY==='v037'){await require('./v037.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
  if(process.env.IG_BROWSER_ONLY==='v036'){await require('./v036.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
+ if(process.env.IG_BROWSER_ONLY==='mobile-sprite-parity'){await require('./mobile-sprite-parity.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
  if(process.env.IG_BROWSER_ONLY==='heights'){await require('./height-regressions.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
  if(process.env.IG_BROWSER_ONLY==='planner'){await require('./planner-regressions.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
  if(process.env.IG_BROWSER_ONLY==='async'){await require('./async-regressions.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);await browser.close();server.close();return;}
@@ -267,6 +268,7 @@ const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://fix
  await require('./v028.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);
  await require('./v028-ownership.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);
  await require('./height-regressions.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);
+ await require('./mobile-sprite-parity.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);
  await require('./v036.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);
  await require('./v037.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);
  await require('./v038.cjs')(browserContext,`http://127.0.0.1:${server.address().port}`);

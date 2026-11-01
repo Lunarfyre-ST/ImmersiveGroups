@@ -627,8 +627,13 @@ body.waifuMode.spriteDefocusTint.worldTint.tintCharacter.tintShared #expression-
 body.waifuMode.ig-hide-quick-replies #qr--bar { display:none !important; }
 #ig-mobile-sprites[hidden] { display:none !important; }
 #ig-mobile-sprites { position:fixed; inset:0; width:100%; height:100dvh; pointer-events:none; z-index:1; }
-#ig-mobile-sprites > .expression-holder { position:absolute; bottom:0; top:auto; width:max-content; height:100%; max-width:none; max-height:none; display:flex !important; align-items:flex-end; transform-origin:bottom; }
-#ig-mobile-sprites > .expression-holder img { height:100%; width:auto; max-width:none; max-height:none; object-fit:contain; }
+/* Match native mobile solo limits before applying the independent height factor. */
+#ig-mobile-sprites > .expression-holder { position:absolute; bottom:0; top:auto; width:max-content; height:90vh; max-width:90vw; max-height:90vh; display:flex !important; align-items:stretch; transform-origin:bottom; }
+#ig-mobile-sprites > .expression-holder img { height:auto; width:auto; min-width:100px; min-height:100px; max-width:90vh; max-height:90vh; object-fit:contain; }
+@media (max-width:1000px) {
+ #ig-mobile-sprites > .expression-holder { max-width:100vw; }
+}
+@media (max-width:1000px) and (orientation:portrait) { #ig-mobile-sprites > .expression-holder img { object-fit:cover; } }
 body.ig-mobile-group #expression-wrapper, body.ig-mobile-group #visual-novel-wrapper { display:none !important; }
 @media (max-width:500px) {
  .ig-background-controls select { max-width:125px; }

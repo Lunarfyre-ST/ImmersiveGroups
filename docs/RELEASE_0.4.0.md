@@ -36,6 +36,9 @@
   unwanted downward/rightward page scrolling on mobile browsers.
 - **Recent speakers displayed** and **Height reference** are near the top of
   Scene tuning, below calibration/offset controls. Existing locations remain.
+- Mobile group sprites use the same base frame and image limits as solo sprites.
+  At the same calculated scale, fit and fine-tuning settings, they render at the
+  same size. Group and visible height-reference modes retain their behavior.
 - Fitted character rows avoid centering margins that reduce available grid width.
   Sizing refreshes after page/font readiness and observes bottom rows too. Saved
   five-character reload geometry is covered; the reported live squishing still
