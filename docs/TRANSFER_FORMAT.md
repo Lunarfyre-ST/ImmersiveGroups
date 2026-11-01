@@ -1,6 +1,6 @@
 # Character/settings bundle format
 
-This is the compatibility contract for ImmersiveGroups transfers. The bundle format version is independent of the extension release version. **0.4.0 continues writing version 2 and reading versions 1 and 2.** Animation durations remain milliseconds in stored/exported settings, even though controls display seconds.
+This is the compatibility contract for ImmersiveGroups transfers. The bundle format version is independent of the extension release version. **0.4.1 continues writing version 2 and reading versions 1 and 2.** Animation durations remain milliseconds in stored/exported settings, even though controls display seconds.
 
 ## Container and identity
 

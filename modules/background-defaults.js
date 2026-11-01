@@ -6,11 +6,11 @@ const el=(tag,text='')=>{const n=document.createElement(tag);n.textContent=text;
 const own=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k);
 // Only extension settings are saved here. Never save, reload, or edit chat messages.
 export function setupBackgroundDefaults({settings,characters,readFiles,pick}) {
-    let timer,epoch=0,stoppedScope='',lastScope='';
+    let timer,epoch=0,stoppedScope='',lastScope='',lastResult='';
     const avatars=()=>characters().map(c=>c.avatar).sort();
     const chatKey=()=>{const ctx=getContext(),id=ctx.getCurrentChatId?.();return id?JSON.stringify([ctx.groupId!=null?`group:${ctx.groupId}`:`character:${ctx.characters?.[ctx.characterId]?.avatar||''}`,String(id)]):'';};
     const scope=()=>JSON.stringify([chatKey(),avatars()]);
-    const report=text=>{if(status)status.textContent=text;};
+    const report=text=>{if(status)status.textContent=text;lastResult=text;window.dispatchEvent(new Event('ig-background-default-status'));};
     function cancel(){clearTimeout(timer);epoch++;}
     function manual(file){cancel();stoppedScope=scope();const key=chatKey();if(key&&typeof file==='string'&&file){Object.defineProperty(settings().backgroundChatChoices||={},key,{value:file,writable:true,enumerable:true,configurable:true});rememberBackgroundChoice(settings(),file);saveSettingsDebounced();}report('Manual background choice kept for this chat.');}
     async function apply(token,expected){
@@ -21,11 +21,11 @@ export function setupBackgroundDefaults({settings,characters,readFiles,pick}) {
             const s=settings(),key=chatKey(),saved=s.backgroundRestoreChat&&own(s.backgroundChatChoices,key)?s.backgroundChatChoices[key]:'';
             const choice=files.includes(saved)?{file:saved,reason:'saved chat background'}:chooseBackgroundDefault(files,s,avatars());
             if(!choice){report('No matching default or shared linked background.');return;}
-            if(!valid())return;pick(choice.file,{automatic:true,isCurrent:valid});report(`Loaded ${choice.file} (${choice.reason}).`);
+            if(!valid())return;pick(choice.file,{automatic:true,isCurrent:valid});report(`Requested ${choice.file} (${choice.reason}).`);
         }catch(error){report(error.message);console.warn('[ImmersiveGroups] Background default:',error.message);}
     }
     function schedule(){
-        cancel();const current=scope();if(current!==lastScope){lastScope=current;stoppedScope='';}
+        cancel();const current=scope();if(current!==lastScope){lastScope=current;stoppedScope='';lastResult='';window.dispatchEvent(new Event('ig-background-default-status'));}
         if(!settings().backgroundAutoLoad||!chatKey()||!avatars().length)return;
         const token=epoch,delay=Math.max(0,Math.min(10000,Number(settings().backgroundAutoDelay)||0));
         timer=setTimeout(()=>apply(token,current),delay);
@@ -64,12 +64,15 @@ export function setupBackgroundDefaults({settings,characters,readFiles,pick}) {
         const actions=el('div');actions.className='ig-tool-actions';for(const [label,direction] of [['↑',-1],['↓',1],['Delete',0]]){const button=el('button',label);button.type='button';button.className='menu_button';button.setAttribute('aria-label',`${label==='Delete'?'Delete':direction<0?'Move up':'Move down'} ${rule.label||rule.file}`);button.disabled=direction<0?index===0:direction>0?index===rules.length-1:false;button.addEventListener('click',()=>{if(direction){[rules[index],rules[index+direction]]=[rules[index+direction],rules[index]];}else rules.splice(index,1);saveSettingsDebounced();renderRules();});actions.append(button);}row.append(actions);list.append(row);
     }}
     async function load(){try{files=await readFiles();for(const select of [fallback,file]){const previous=select===fallback?settings().backgroundGlobalDefault:select.value;select.replaceChildren(new Option(select===fallback?'None — use linked backgrounds':'Choose background',''),...files.map(f=>new Option(f,f)));select.value=previous||'';}report(`${files.length} backgrounds available.`);}catch(error){report(error.message);}}
-    enabled.addEventListener('change',()=>{settings().backgroundAutoLoad=enabled.checked;syncLoading();saveSettingsDebounced();schedule();});
+    enabled.addEventListener('change',()=>{settings().backgroundAutoLoad=enabled.checked;syncLoading();saveSettingsDebounced();schedule();window.dispatchEvent(new Event('ig-background-default-status'));});
     delay.addEventListener('change',()=>{const value=Number(delay.value);settings().backgroundAutoDelay=Number.isFinite(value)?Math.max(0,Math.min(10000,value)):1000;delay.value=settings().backgroundAutoDelay;saveSettingsDebounced();schedule();});
     restore.addEventListener('change',()=>{settings().backgroundRestoreChat=restore.checked;saveSettingsDebounced();});
     fallback.addEventListener('change',()=>{settings().backgroundGlobalDefault=fallback.value;saveSettingsDebounced();});
     refresh.addEventListener('click',load);section.addEventListener('toggle',()=>{if(section.open&&!files.length)load();});
     forget.addEventListener('click',()=>{const key=chatKey();if(key)delete settings().backgroundChatChoices?.[key];saveSettingsDebounced();report('Saved choice forgotten. A linked fallback may still select the same background.');});
     add.addEventListener('click',()=>{const selected=[...members.querySelectorAll('input:checked')].map(n=>n.value);if(!file.value||!selected.length){report('Choose a background and at least one character.');return;}if(match.value==='character'&&selected.length!==1){report('A single-character rule needs exactly one selected character.');return;}(settings().backgroundDefaultRules||=[]).push({label:title.value.trim(),file:file.value,characters:selected,match:match.value,enabled:true});saveSettingsDebounced();renderRules();report('Default rule added.');});
-    refreshCharacters();schedule();return {cancel,manual,schedule};
+    const summary=()=>!settings().backgroundAutoLoad?'Off':chat_metadata?.custom_background?'Blocked by chat background lock':!chatKey()?'Open a chat':'On';
+    const setEnabled=value=>{if(enabled.checked!==Boolean(value)){enabled.checked=Boolean(value);enabled.dispatchEvent(new Event('change',{bubbles:true}));}};
+    const openSettings=()=>{const outer=document.getElementById('rm_extensions_block');if(outer&&getComputedStyle(outer).display==='none')document.querySelector('#extensions-settings-button > .drawer-toggle')?.click();const tab=document.getElementById('ig-tab-backgrounds'),drawer=document.querySelector('.prome-vn-settings .inline-drawer-content');if(drawer&&getComputedStyle(drawer).display==='none')drawer.previousElementSibling?.click();tab?.click();section.open=true;section.scrollIntoView({block:'nearest'});enabled.focus({preventScroll:true});};
+    refreshCharacters();schedule();return {cancel,manual,schedule,summary,detail:()=>lastResult,setEnabled,openSettings};
 }

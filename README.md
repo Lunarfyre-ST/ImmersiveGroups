@@ -8,7 +8,7 @@ Started as a modification of PromeVN. [See credits below](#credits-and-origins).
 
 You can change outfits and backgrounds yourself, or let the model choose them as the story moves along. There are also plenty of ways to adjust how the scene looks: character heights, sprite spacing, button colors, transitions and separate PC/mobile layouts.
 
-**Current version: 0.4.0** — expression management, shared outfit groups, character settings in the library, and clearer scene controls. [Release notes](docs/RELEASE_0.4.0.md).
+**Current version: 0.4.1** — mobile layout and library improvements, clearer background memory controls, and easier transfer results. [Release notes](docs/RELEASE_0.4.1.md).
 
 [Previews](#-previews) · [Install](#-install) · [First steps](#-start-with-a-chat) · [Import / export](#-import-and-export) · [Automation](#-let-the-model-change-the-scene) · [Credits](#credits-and-origins)
 

@@ -837,3 +837,8 @@ body.ig-smooth-speaker-focus :is(#visual-novel-wrapper,#ig-mobile-sprites,#expre
 .ig-recent-hidden{display:none!important}
 .ig-settings-shell [data-prome-stage-setting=heightReferenceMode]{width:100%;max-width:100%;min-width:0}
 .ig-settings-shell #prome-profile-reset-all{white-space:normal;max-width:100%;min-width:0}
+
+@media(hover:none) and (pointer:coarse){
+ .ig-floating-panel header button,.ig-floating-panel .menu_button{min-width:44px;min-height:44px;box-sizing:border-box}
+}
+.ig-media-memory{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.ig-media-memory > button:first-child{white-space:normal;overflow-wrap:anywhere}

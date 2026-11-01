@@ -31,5 +31,5 @@ module.exports=async(context,url)=>{
  await page.waitForFunction(()=>document.querySelector('.ig-motion-exit'));
  await measure();
  await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>!document.querySelector('.ig-motion-exit-viewport,.ig-motion-exit'));
- assert.equal(await page.evaluate(()=>ImmersiveGroups.version),'0.4.0');await page.close();
+ assert.equal(await page.evaluate(()=>ImmersiveGroups.version),'0.4.1');await page.close();
 };

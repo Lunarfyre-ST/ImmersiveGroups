@@ -217,3 +217,19 @@
  .ig-unified-library .ig-library-results-scroll > .local-image-modal-content{overflow:visible;flex:none}
  .ig-unified-library > .local-image-modal-header{max-height:25dvh;overflow-y:auto}
 }
+
+/* Phone-sized controls and compact cards retain all desktop editing actions. */
+.ig-library-edit > summary{cursor:pointer;padding:8px 0;font-weight:600}
+.ig-library-description label{display:grid;gap:5px}
+.ig-library-draft-notice{margin:4px 12px;color:inherit}
+.ig-transfer-status-wrap{position:sticky;bottom:0;z-index:1;background:var(--SmartThemeBlurTintColor,#252933)}
+.ig-transfer-status-wrap .ig-transfer-status{position:static}
+.ig-transfer-status-wrap > button{margin:0 12px 8px}
+@media(max-width:550px){
+ .ig-transfer-status[data-kind=success][data-expanded=false]{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+ .ig-transfer-status-wrap > button:not([hidden]){display:inline-flex}
+}
+@media(min-width:551px){.ig-transfer-status-wrap > button{display:none}}
+@media(hover:none) and (pointer:coarse){
+ .ig-unified-library .menu_button,.ig-transfer-dialog .menu_button,.ig-library-edit > summary{min-height:44px}
+}
