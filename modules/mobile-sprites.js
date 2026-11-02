@@ -44,6 +44,9 @@ export function syncMobileSprites(characters, folderFor, changed) {
             const image = new Image();
             await new Promise((resolve, reject) => { const timer = setTimeout(() => reject(new Error('Sprite load timed out')),15000); image.onload = () => {clearTimeout(timer);resolve();}; image.onerror = () => {clearTimeout(timer);reject(new Error('Sprite failed to load'));}; image.src = url.href; });
             if (!mobileSpritesActive() || jobs.get(c.avatar) !== job || scope !== nextScope) return;
+            // Native classification can finish while this older sprite is loading,
+            // even when the native image does not produce a DOM change.
+            if ((expressions.lastExpression?.[folder.split('/')[0]] || 'neutral') !== expression) { changed(); return; }
             let holder = mobileSprite(c);
             if (!holder) { holder = document.createElement('div'); holder.className = 'expression-holder'; holder.id = `ig-expression-${c.avatar}`; holder.dataset.avatar = c.avatar; holder.append(document.createElement('img')); wrapper.append(holder); }
             const img = holder.querySelector('img');
