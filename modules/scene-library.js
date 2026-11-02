@@ -15,6 +15,7 @@ import { setOutfitLock } from './outfit-catalog.js';
 import { reviewExpression, editExpression } from './expression-files.js';
 import { saveSettingsDebounced } from '../../../../../script.js';
 import { getExpressionsList } from '../../../expressions/index.js';
+import { expressionImageKey, expressionImagePercent } from './expression-scale-model.js';
 
 export function setupSceneLibrary(services){
     const characters=()=>getContext().characters?.filter(c=>c?.avatar)||[];
@@ -66,6 +67,8 @@ export function setupSceneLibrary(services){
         discover:avatar=>{const c=characters().find(c=>c.avatar===avatar);if(!c)throw new Error('Choose a character.');return discoverOutfits(c,active().has(avatar)?services.currentFolder(c):c.name,true);},
         importFolders:(avatar,files)=>{const c=characters().find(c=>c.avatar===avatar);if(!c)throw new Error('Choose a character.');return importFolderNames(c,files,active().has(avatar)?services.currentFolder(c):c.name);},
         updateBackground,chooseBackground:pickBackground,scanFolders:files=>scanOutfitFolders(characters(),files),uploadSprites:async(folder,...args)=>{folder=spriteFolder(folder);try{return await uploadOutfitImages(folder,...args);}finally{assets.delete(folder);await inspectOutfit(folder);changed();}},
+        getExpressionImageScale:(avatar,folder,src)=>expressionImagePercent(extension_settings[extensionName].expressionImageScales,expressionImageKey(avatar,folder,src,location.href)),
+        setExpressionImageScale:(avatar,folder,src,value)=>{const key=expressionImageKey(avatar,spriteFolder(folder),src,location.href),percent=Number(value);if(!characters().some(c=>c.avatar===avatar)||!key)throw new Error('Choose an available character and expression image.');if(value===''||!Number.isFinite(percent)||percent<1||percent>400)throw new Error('Enter a scale from 1% to 400%.');const s=extension_settings[extensionName],map=s.expressionImageScales&&typeof s.expressionImageScales==='object'&&!Array.isArray(s.expressionImageScales)?s.expressionImageScales:(s.expressionImageScales={});if(percent===100)delete map[key];else Object.defineProperty(map,key,{value:percent,writable:true,enumerable:true,configurable:true});saveSettingsDebounced();changed();},
         getExpressionLabels:async()=>{const labels=await getExpressionsList();if(!Array.isArray(labels)||!labels.length)throw new Error('Expression names could not be loaded. Try again after opening SillyTavern’s expressions settings.');return labels;},
         reviewExpression,editExpression:async(ticket,file)=>{try{return await editExpression(ticket,file);}finally{assets.delete(ticket.folder);await inspectOutfit(ticket.folder);changed();}},
         previewOutfit:async folder=>(await inspectOutfit(folder)).src,outfitExpressions:async folder=>(await inspectOutfit(folder)).expressions||[]

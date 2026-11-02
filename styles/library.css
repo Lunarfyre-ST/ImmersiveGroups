@@ -233,3 +233,4 @@
 @media(hover:none) and (pointer:coarse){
  .ig-unified-library .menu_button,.ig-transfer-dialog .menu_button,.ig-library-edit > summary{min-height:44px}
 }
+.ig-expression-image-scale{display:grid;gap:4px}.ig-expression-image-scale label{display:grid;gap:4px}.ig-expression-image-scale input{width:100%;min-width:0}.ig-expression-image-scale small:empty{display:none}

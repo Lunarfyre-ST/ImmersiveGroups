@@ -122,6 +122,7 @@ export const defaultSettings = {
     spriteSpacingPercent: 100,
     outfitFolders: {},
     outfitCatalog: {},
+    expressionImageScales: {},
     outfitDiscoveryDone: {},
     autoDiscoverOutfits: false,
     hideBasicOutfit: false,

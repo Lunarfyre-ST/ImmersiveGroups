@@ -7,6 +7,7 @@ import { extensionName } from '../constants.js';
 import { bounded, heightFactor, tallestHeight, migrateHeightSettings, migrateFineTuning, REFERENCE_HEIGHT_CM, withOutfitHeight, sharedHeightProfile, resetAllFineTuning } from './height-model.js';
 import { sceneCharacters, visibleCharacters } from './scene-visibility.js';
 import { diagnostic } from './diagnostics.js';
+import { expressionImageKey, expressionImageFactor } from './expression-scale-model.js';
 export { bounded } from './height-model.js';
 
 const owns=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k);
@@ -52,6 +53,11 @@ export function spriteProfileFactor(node){
     if(!config().enableHeightProfiles)return 1;
     const character=characterFor(node);if(!character)return 1;
     return heightFactor(effectiveProfile(character),activeReference());
+}
+export function spriteExpressionFactor(node){
+    const character=characterFor(node),image=node.querySelector('img[src]');if(!character||!image)return 1;
+    const src=image.getAttribute('src'),folder=packFromSource(src);
+    return expressionImageFactor(config().expressionImageScales,expressionImageKey(character.avatar,folder,src,window.location.href));
 }
 export function spriteProfileOffset(node){const c=characterFor(node);return c?bounded(profileFor(c.avatar).offsetY,-1000,1000,0):0;}
 function scopeKey(){const c=getContext();return c.groupId!=null?`group:${c.groupId}`:`solo:${c.characters?.[c.characterId]?.avatar||''}`;}
