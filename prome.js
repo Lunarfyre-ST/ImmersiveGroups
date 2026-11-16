@@ -123,8 +123,10 @@ async function loadSettings() {
 	}
 
 	// Add a expression override for the user sprite
-	if (extension_settings[extensionName].enableUserSprite && extension_settings[extensionName].userSprite.length > 0) {
+	if (extension_settings[extensionName].enableUserSprite && extension_settings[extensionName].userSprite?.length > 0) {
 		const userSpritePack = extension_settings[extensionName].userSprite;
+		// Native Expressions creates this list lazily; it may not exist yet.
+		if (!Array.isArray(extension_settings.expressionOverrides)) extension_settings.expressionOverrides = [];
 		const exists = await spritePackExists(userSpritePack);
 
 		if (exists) {
@@ -403,7 +405,9 @@ async function initializeSceneUI() {
 			}
 		}
 	});
-	eventSource.on(event_types.GENERATE_AFTER_COMBINE_PROMPTS, () => {
+	// Re-add after prompt assembly, and again when a generation ends or stops
+	// early, so a failed generation cannot leave the placeholder removed.
+	const restoreUserSpriteMember = () => {
 		if (!extension_settings[extensionName].enableUserSprite) return;
 
 		const context = getContext();
@@ -414,7 +418,9 @@ async function initializeSceneUI() {
 				group.members.push("prome-user");
 			}
 		}
-	});
+	};
+	for (const name of ["GENERATE_AFTER_COMBINE_PROMPTS", "GENERATION_ENDED", "GENERATION_STOPPED"])
+		if (event_types[name]) eventSource.on(event_types[name], restoreUserSpriteMember);
 
 	$(window).on("resize", async () => {
 		await emulateSpritesDebounce();

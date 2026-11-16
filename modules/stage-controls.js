@@ -3,7 +3,7 @@ import { diagnosticOperation } from './diagnostics.js';
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
 import { cancelSceneFade, fadeSceneSwap } from './scene-animations.js';
 import { layoutSettings, editingLayout, writeLayoutSetting } from './responsive.js';
-import { mobileSpritesActive, mobileSprite, syncMobileSprites } from './mobile-sprites.js';
+import { mobileSpritesActive, mobileSprite, syncMobileSprites, watchNativeExpressions, nativeExpression, expressionRoot } from './mobile-sprites.js';
 import { setupBackgrounds, refreshBackgrounds, backgroundSceneContext } from './scene-backgrounds.js';
 import { seedOutfits, rememberOutfit, rememberNativeOutfits, outfitOptions, catalogFor, setOutfitLock, onCatalogChange, discoverOutfits, automaticOutfitAllowed, sceneOutfitContext, outfitFolderAllowed, displayedOutfitAllowed, repairOutfitOwnership } from './outfit-catalog.js';
 import { setupOutfitEditor, openOutfitEditor } from './outfit-editor.js';
@@ -95,6 +95,23 @@ function preload(src) {
         image.src = src;
     });
 }
+// Native solo chats only classify messages for folders already in the native
+// sprite list; group chats load a new folder themselves. Native's own outfit
+// controls load the folder first, so do the same through the public expression
+// call. The exact displayed file is requested, so the image does not change.
+function primeNativeFolder(key, folder, sprite) {
+    if (typeof expressions.sendExpressionCall !== 'function') return;
+    const fileName = String(sprite.path).split('/').pop().split('?')[0];
+    void (async () => {
+        // A label native does not know would make it search a fallback sprite
+        // for this file and warn; let native choose its own image instead.
+        const labels = typeof expressions.getExpressionsList === 'function' ? await expressions.getExpressionsList() : [];
+        const known = Array.isArray(labels) && labels.includes(sprite.label);
+        // Skip if the chat became a group or another outfit change won meanwhile.
+        if (getContext().groupId != null || extension_settings.expressionOverrides?.find(e => e.name === key)?.path !== folder) return;
+        await expressions.sendExpressionCall(folder, sprite.label, { force: true, vnMode: false, ...(known ? { overrideSpriteFile: fileName } : {}) });
+    })().catch(error => console.warn('[ImmersiveGroups] Native expression refresh:', error?.message || error));
+}
 export async function changeOutfit(avatar, requestedFolder, { source = 'manual', chatId = null, groupId = null, allowDuringGeneration = false, isCurrent = () => true } = {}) {
     const trace = diagnosticOperation('outfit.change', { source });
     let outcome = 'cancelled', committed = false;
@@ -110,11 +127,20 @@ export async function changeOutfit(avatar, requestedFolder, { source = 'manual',
     if (!img) throw new Error('No sprite is displayed for this character yet. Enable Character Expressions first.');
     cancelSceneFade(img, 'superseded');
     const scope = currentScope(), job = Symbol(); outfitJobs.set(avatar, job);
-    const response = await fetch(`/api/sprites/get?name=${encodeURIComponent(folder)}`);
-    if (!response.ok) throw new Error(`Could not read outfit folder (${response.status})`);
-    const sprites = await response.json();
+    // A stalled request must not leave the card loading forever.
+    const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 15000);
+    let sprites;
+    try {
+        const response = await fetch(`/api/sprites/get?name=${encodeURIComponent(folder)}`, { signal: controller.signal });
+        if (!response.ok) throw new Error(`Could not read outfit folder (${response.status})`);
+        sprites = await response.json();
+    } catch (error) { throw controller.signal.aborted ? new Error('Reading the outfit folder timed out') : error; }
+    finally { clearTimeout(timer); }
     if (!Array.isArray(sprites)) throw new Error('Invalid sprite list');
-    const sprite = chooseOutfitSprite(sprites, img.getAttribute('data-expression') || img.title || 'neutral');
+    // Prefer the latest classifier result over a displayed image that may not
+    // have caught up with it yet.
+    const previousFolder = currentFolder(character);
+    const sprite = chooseOutfitSprite(sprites, nativeExpression(previousFolder) || img.getAttribute('data-expression') || img.title || 'neutral');
     if (!sprite) throw new Error('This folder has no sprites');
     const url = new URL(sprite.path, window.location.href);
     if (url.origin !== window.location.origin || !url.pathname.startsWith('/characters/')) throw new Error('Invalid sprite image path');
@@ -131,7 +157,9 @@ export async function changeOutfit(avatar, requestedFolder, { source = 'manual',
         const override = extension_settings.expressionOverrides.find(e => e.name === key);
         if (override) override.path = folder;
         else extension_settings.expressionOverrides.push({ name: key, path: folder });
-        if (expressions.lastExpression && typeof expressions.lastExpression === 'object') expressions.lastExpression[folder.split('/')[0]] = sprite.label;
+        // Seed a new folder root only. Within the same root the native value is
+        // the latest classification and must not be replaced by an older label.
+        if (expressions.lastExpression && typeof expressions.lastExpression === 'object' && (expressionRoot(folder) !== expressionRoot(previousFolder) || !nativeExpression(folder))) expressions.lastExpression[expressionRoot(folder)] = sprite.label;
         img.setAttribute('src', sprite.path);
         committed = true;
         trace.step({ outcome: 'applied', committed: true });
@@ -149,6 +177,7 @@ export async function changeOutfit(avatar, requestedFolder, { source = 'manual',
         applyScale(node);
         refreshStageControls();
     }, valid);
+    if (result && getContext().groupId == null) primeNativeFolder(overrideKey(character), folder, sprite);
     outcome = result ? 'applied' : 'cancelled';
     return result;
     } catch (error) { outcome = 'failed'; throw error; }
@@ -405,6 +434,8 @@ export function setupStageControls() {
     get('prome-stage-shared').addEventListener('change',schedule);
     onCatalogChange(schedule);bindSettings();setupSettingsDependencies();
     for(const name of ['CHAT_CHANGED','GROUP_UPDATED','CHARACTER_MESSAGE_RENDERED','MESSAGE_SWIPED','MESSAGE_DELETED','GENERATION_STARTED','GENERATION_ENDED','GROUP_MEMBER_DRAFTED','SETTINGS_UPDATED'])if(event_types[name])eventSource.on(event_types[name],schedule);
+    const expressionSignature=()=>JSON.stringify(stageCharacters().map(c=>[c.avatar,nativeExpression(activeFolder(c))]));
+    for(const name of ['GENERATION_STARTED','MESSAGE_RECEIVED','CHARACTER_MESSAGE_RENDERED','MESSAGE_SWIPED','MESSAGE_EDITED','GENERATION_ENDED','GENERATION_STOPPED'])if(event_types[name])eventSource.on(event_types[name],()=>watchNativeExpressions(expressionSignature,schedule));
     if(event_types.CHAT_CHANGED)eventSource.on(event_types.CHAT_CHANGED,()=>{rememberNativeOutfits();window.dispatchEvent(new Event('ig-close-scene-panels'));autoDiscover().catch(error=>console.warn('[Prome] Outfit discovery',error));});
     if(event_types.SETTINGS_UPDATED)eventSource.on(event_types.SETTINGS_UPDATED,rememberNativeOutfits);
     document.addEventListener('click',event=>{if(event.target.closest?.('#expression_override_button'))queueMicrotask(rememberNativeOutfits);},true);

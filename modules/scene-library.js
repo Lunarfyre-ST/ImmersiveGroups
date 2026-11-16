@@ -16,6 +16,7 @@ import { reviewExpression, editExpression } from './expression-files.js';
 import { saveSettingsDebounced } from '../../../../../script.js';
 import { getExpressionsList } from '../../../expressions/index.js';
 import { expressionImageKey, expressionImagePercent } from './expression-scale-model.js';
+import { forgetMobileSpriteFolder } from './mobile-sprites.js';
 
 export function setupSceneLibrary(services){
     const characters=()=>getContext().characters?.filter(c=>c?.avatar)||[];
@@ -46,11 +47,11 @@ export function setupSceneLibrary(services){
         saveGroup:patch=>{const result=saveBindingGroup(extension_settings[extensionName],patch);saveSettingsDebounced();window.dispatchEvent(new Event('ig-binding-groups-change'));changed();return result;},
         removeGroup:id=>{removeBindingGroup(extension_settings[extensionName],id);saveSettingsDebounced();window.dispatchEvent(new Event('ig-binding-groups-change'));changed();},
         discardBackground,relinkBackground:relinkBackgroundEntry,
-        refresh:force=>{if(force){assets.clear();changed();}return force?readBackgrounds():ensureBackgrounds();},
-        refreshOutfit:async folder=>{folder=spriteFolder(folder);assets.delete(folder);const result=await inspectOutfit(folder);if(result.imageState==='error')throw new Error('The sprite folder could not be refreshed.');return result.expressions;},
+        refresh:force=>{if(force){assets.clear();forgetMobileSpriteFolder();changed();}return force?readBackgrounds():ensureBackgrounds();},
+        refreshOutfit:async folder=>{folder=spriteFolder(folder);assets.delete(folder);forgetMobileSpriteFolder(folder);const result=await inspectOutfit(folder);if(result.imageState==='error')throw new Error('The sprite folder could not be refreshed.');return result.expressions;},
         nativeRefreshGuard:()=>{const scope=nativeScope(),select=document.getElementById('expression_api'),value=select?.value;return ()=>scope===nativeScope()&&select===document.getElementById('expression_api')&&select?.value===value;},
         refreshNativeExpressions:(isCurrent=()=>true)=>{if(!isCurrent())return 'Folder rescanned. Native refresh skipped because the view or chat changed.';if(isGenerating())return 'Folder rescanned. Finish generation before refreshing native expression choices.';const select=document.getElementById('expression_api');if(!select||!select.value)return 'Folder rescanned. Native expression refresh is unavailable in this SillyTavern version.';select.dispatchEvent(new Event('change',{bubbles:true}));return 'Folder rescanned and native expression choices refreshed.';},
-        checkOutfitImages:async(force=false)=>{if(force)assets.clear();const folders=[...new Set(getEntries().filter(e=>e.kind==='outfit').map(e=>e.folder))];let index=0;async function worker(){while(index<folders.length)await inspectOutfit(folders[index++]);}await Promise.all([worker(),worker(),worker()]);},
+        checkOutfitImages:async(force=false)=>{if(force){assets.clear();forgetMobileSpriteFolder();}const folders=[...new Set(getEntries().filter(e=>e.kind==='outfit').map(e=>e.folder))];let index=0;async function worker(){while(index<folders.length)await inspectOutfit(folders[index++]);}await Promise.all([worker(),worker(),worker()]);},
         getColors:avatar=>({...catalogFor(avatar).colors}),setColors:setCharacterColors,
         getCharacterSettings:avatar=>({...characterHeightSettings(avatar),locked:Boolean(catalogFor(avatar).locked)}),
         updateCharacterSettings:(avatar,patch,layout)=>{if(!characters().some(c=>c.avatar===avatar))throw new Error('Character is no longer available.');if(typeof patch.locked==='boolean')setOutfitLock(avatar,patch.locked);if(['heightCm','fineTuneOffset','offsetY'].some(key=>Object.hasOwn(patch,key)))updateCharacterHeight(avatar,patch,layout);changed();},
@@ -66,11 +67,11 @@ export function setupSceneLibrary(services){
         addOutfit:(avatar,folder,label)=>{const c=characters().find(c=>c.avatar===avatar);if(!c||!validFolder(folder))throw new Error('Choose a character and enter a valid sprite folder.');const added=rememberOutfit(c,folder,{label,explicit:true});if(!added&&label)editOutfit(avatar,folder,{label});},
         discover:avatar=>{const c=characters().find(c=>c.avatar===avatar);if(!c)throw new Error('Choose a character.');return discoverOutfits(c,active().has(avatar)?services.currentFolder(c):c.name,true);},
         importFolders:(avatar,files)=>{const c=characters().find(c=>c.avatar===avatar);if(!c)throw new Error('Choose a character.');return importFolderNames(c,files,active().has(avatar)?services.currentFolder(c):c.name);},
-        updateBackground,chooseBackground:pickBackground,scanFolders:files=>scanOutfitFolders(characters(),files),uploadSprites:async(folder,...args)=>{folder=spriteFolder(folder);try{return await uploadOutfitImages(folder,...args);}finally{assets.delete(folder);await inspectOutfit(folder);changed();}},
+        updateBackground,chooseBackground:pickBackground,scanFolders:files=>scanOutfitFolders(characters(),files),uploadSprites:async(folder,...args)=>{folder=spriteFolder(folder);try{return await uploadOutfitImages(folder,...args);}finally{assets.delete(folder);forgetMobileSpriteFolder(folder);await inspectOutfit(folder);changed();}},
         getExpressionImageScale:(avatar,folder,src)=>expressionImagePercent(extension_settings[extensionName].expressionImageScales,expressionImageKey(avatar,folder,src,location.href)),
         setExpressionImageScale:(avatar,folder,src,value)=>{const key=expressionImageKey(avatar,spriteFolder(folder),src,location.href),percent=Number(value);if(!characters().some(c=>c.avatar===avatar)||!key)throw new Error('Choose an available character and expression image.');if(value===''||!Number.isFinite(percent)||percent<1||percent>400)throw new Error('Enter a scale from 1% to 400%.');const s=extension_settings[extensionName],map=s.expressionImageScales&&typeof s.expressionImageScales==='object'&&!Array.isArray(s.expressionImageScales)?s.expressionImageScales:(s.expressionImageScales={});if(percent===100)delete map[key];else Object.defineProperty(map,key,{value:percent,writable:true,enumerable:true,configurable:true});saveSettingsDebounced();changed();},
         getExpressionLabels:async()=>{const labels=await getExpressionsList();if(!Array.isArray(labels)||!labels.length)throw new Error('Expression names could not be loaded. Try again after opening SillyTavern’s expressions settings.');return labels;},
-        reviewExpression,editExpression:async(ticket,file)=>{try{return await editExpression(ticket,file);}finally{assets.delete(ticket.folder);await inspectOutfit(ticket.folder);changed();}},
+        reviewExpression,editExpression:async(ticket,file)=>{try{return await editExpression(ticket,file);}finally{assets.delete(ticket.folder);forgetMobileSpriteFolder(ticket.folder);await inspectOutfit(ticket.folder);changed();}},
         previewOutfit:async folder=>(await inspectOutfit(folder)).src,outfitExpressions:async folder=>(await inspectOutfit(folder)).expressions||[]
     });
     window.ImmersiveGroupsSceneLibrary=api;

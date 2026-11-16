@@ -26,6 +26,9 @@ function getChatAvatar(mes) {
 	if (!mes.is_user) {
 		if (mes.force_avatar) {
 			avatarImg = mes.force_avatar;
+		} else if (context.groupId != null && mes.original_avatar) {
+			// Group messages belong to their own speaker, not the last drafted character.
+			avatarImg = getThumbnailUrl("avatar", mes.original_avatar);
 		} else if (!context.characters?.[this_chid]) {
 			avatarImg = system_avatar;
 		} else {

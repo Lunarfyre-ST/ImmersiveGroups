@@ -9,7 +9,7 @@ import { isGroupChat } from "../utils.js";
 
 /* Sprite Scale Functions */
 export function applySpriteScale() {
-	if (extension_settings[extensionName].scaleSprites === (null || undefined)) {
+	if (extension_settings[extensionName].scaleSprites == null) {
 		console.debug(
 			`[${extensionName}] scaleSprites returned null or undefined.`,
 		);

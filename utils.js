@@ -123,7 +123,8 @@ export function getGroupIndex() {
  */
 export function isGroupChat() {
 	const context = getContext();
-	return context.groupId !== null;
+	// Match the scene modules: an undefined group ID is a solo chat too.
+	return context.groupId != null;
 }
 
 /**

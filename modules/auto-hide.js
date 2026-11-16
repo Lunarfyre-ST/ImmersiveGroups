@@ -13,9 +13,7 @@ import { updateSpriteLayers } from "./stage-controls.js";
 import { layoutSettings } from './responsive.js';
 
 export function applyAutoHideSprites() {
-	if (
-		extension_settings[extensionName].autoHideSprites === (null || undefined)
-	) {
+	if (extension_settings[extensionName].autoHideSprites == null) {
 		console.debug(
 			`[${extensionName}] autoHideSprites returned null or undefined.`,
 		);

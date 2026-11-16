@@ -81,9 +81,14 @@ function shakeListenerPreconditions() {
  * @param {number} maxAttempts - The maximum number of attempts to wait for the element
  * @returns {void}
  */
-function waitForElement(selector, callback, maxAttempts = 50) {
+// One pending wait per purpose (key): a newer request replaces an older one so
+// repeated chat mutations cannot stack polling timers for a missing sprite.
+const elementWaits = new Map();
+function waitForElement(selector, callback, { key = selector, maxAttempts = 50, onGiveUp = () => {} } = {}) {
 	let element = $(selector);
 	let attempts = 0;
+	const previous = elementWaits.get(key);
+	if (previous) { clearInterval(previous.interval); elementWaits.delete(key); previous.onGiveUp(); }
 
 	if (element.length) {
 		callback(element);
@@ -96,9 +101,12 @@ function waitForElement(selector, callback, maxAttempts = 50) {
 
 		if (element.length > 0 || attempts >= maxAttempts) {
 			clearInterval(interval);
+			if (elementWaits.get(key)?.interval === interval) elementWaits.delete(key);
 			if (element.length > 0) callback(element);
+			else onGiveUp();
 		}
 	}, 100);
+	elementWaits.set(key, { interval, onGiveUp });
 }
 
 // Apply focus class to the sprite
@@ -145,13 +153,13 @@ function applyZoom() {
 			// Focus the sprite and defocus the rest
 			sprite.addClass("prome-sprite-focus");
 			visualNovelWrapperSprites.not(sprite).removeClass("prome-sprite-focus");
-		});
+		}, { key: "zoom" });
 	}
 
 	return waitForElement("#expression-holder", (sprite) => {
 		sprite.addClass("prome-sprite-focus");
 		promeUserSprite.removeClass("prome-sprite-focus");
-	});
+	}, { key: "zoom" });
 }
 
 // Apply defocus class to the sprites
@@ -192,6 +200,7 @@ async function emulateGroupSprites() {
 
 			waitForElement(spriteSelector, (sprite) => {
 				if (!extension_settings[extensionName]?.emulateSprites) return;
+				// Keyed by selector: one wait per emulated character.
 
 				const expressionImage = sprite.find("img")[0];
 				if (expressionImage) {
@@ -226,7 +235,7 @@ async function emulateSoloSprites() {
 		);
 
 		waitForElement("#expression-holder", (sprite) => {
-			if (!extension_settings[extensionName].emulateSprites) {
+			if (!extension_settings[extensionName]?.emulateSprites) {
 				sprite.children("img").attr("src", "");
 				sprite.css("display", "none");
 			} else {
@@ -303,7 +312,7 @@ async function applyShake() {
 				sprite.addClass("prome-sprite-shake");
 				allSprites.not(sprite).removeClass("prome-sprite-shake");
 				resolve();
-			});
+			}, { key: "shake", onGiveUp: resolve });
 		});
 	}
 
@@ -312,7 +321,7 @@ async function applyShake() {
 		waitForElement(targetSelector, (sprite) => {
 			sprite.addClass("prome-sprite-shake");
 			resolve();
-		});
+		}, { key: "shake", onGiveUp: resolve });
 	});
 }
 
@@ -335,41 +344,43 @@ export function stopShake() {
 			if (targetSelector) {
 				waitForElement(targetSelector, (sprite) => {
 					sprite.removeClass("prome-sprite-shake");
-				});
+				}, { key: "stopShake" });
 			}
 		} else {
 			// Solo Chat Logic
 			waitForElement(targetSelector, (sprite) => {
 				sprite.removeClass("prome-sprite-shake");
-			});
+			}, { key: "stopShake" });
 		}
 	};
 
-	const isStreamingDone =
-		streamingProcessor &&
-		!streamingProcessor.isStopped &&
+	// A newer rendered message replaces the previous wait.
+	clearInterval(stopShakeTimers.interval);
+	clearTimeout(stopShakeTimers.timeout);
+
+	const isStreamingDone = () =>
+		!streamingProcessor ||
+		streamingProcessor.isStopped ||
 		streamingProcessor.isFinished;
 
-	if (isStreamingDone) {
+	// Nothing is streaming (or it already ended): stop now instead of polling.
+	if (isStreamingDone()) {
 		applyStopShake();
 		return;
 	}
 
-	const checkInterval = setInterval(() => {
-		const nowDone =
-			streamingProcessor &&
-			!streamingProcessor.isStopped &&
-			streamingProcessor.isFinished;
-
-		if (nowDone) {
-			clearInterval(checkInterval);
+	stopShakeTimers.interval = setInterval(() => {
+		if (isStreamingDone()) {
+			clearInterval(stopShakeTimers.interval);
+			clearTimeout(stopShakeTimers.timeout);
 			applyStopShake();
 		}
 	}, 100);
 
 	// cleanup JIC
-	setTimeout(() => {
-		clearInterval(checkInterval);
+	stopShakeTimers.timeout = setTimeout(() => {
+		clearInterval(stopShakeTimers.interval);
 		applyStopShake();
 	}, 10000);
 }
+const stopShakeTimers = { interval: 0, timeout: 0 };

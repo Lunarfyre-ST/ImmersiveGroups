@@ -8,7 +8,7 @@ import {
 	eventSource,
 	event_types,
 } from "../../../../../script.js";
-import { getGroupIndex, spritePackExists } from "../utils.js";
+import { getGroupIndex, getSpriteList, spritePackExists } from "../utils.js";
 import { loadMovingUIState } from "../../../../power-user.js";
 import { dragElement } from "../../../../RossAscends-mods.js";
 import { sendExpressionCall } from "../../../expressions/index.js";
@@ -16,6 +16,8 @@ import { emulateSpritesDebounce } from "../listeners.js";
 
 function setSpritePack(spritePack) {
 	if (spritePack.length === 0) return;
+	// Native Expressions creates this list lazily; it may not exist on a fresh install.
+	if (!Array.isArray(extension_settings.expressionOverrides)) extension_settings.expressionOverrides = [];
 
 	const existingOverrideIndex =
 		extension_settings.expressionOverrides.findIndex(
@@ -33,9 +35,7 @@ function setSpritePack(spritePack) {
 }
 
 export function applyUserSprite() {
-	if (
-		extension_settings[extensionName].enableUserSprite === (null || undefined)
-	) {
+	if (extension_settings[extensionName].enableUserSprite == null) {
 		console.debug(
 			`[${extensionName}] enableUserSprite returned null or undefined.`,
 		);
@@ -55,7 +55,14 @@ export function applyUserSprite() {
  *
  */
 export async function handleUserSprite() {
-	if (!extension_settings[extensionName].enableUserSprite) return;
+	if (!extension_settings[extensionName].enableUserSprite) {
+		// Disabling must also drop the placeholder member it added earlier.
+		const groupIndex = getGroupIndex();
+		const group = groupIndex !== -1 ? getContext().groups[groupIndex] : null;
+		if (group?.members?.includes("prome-user")) group.members = group.members.filter((x) => x !== "prome-user");
+		$("#expression-prome-user").addClass("displayNone");
+		return;
+	}
 
 	const exists = await spritePackExists(
 		extension_settings[extensionName].userSprite,
@@ -102,7 +109,7 @@ export async function handleUserSprite() {
 		if (promeExpression.length === 0) {
 			const html = `<div id="expression-prome-user" class="expression-holder displayNone">
 					<div id="expression-prome-userheader" class="fa-solid fa-grip drag-grabber"></div>
-					<img id="expression-image" class="" src=""/>
+					<img id="expression-prome-user-image" class="" src=""/>
 				</div>`;
 
 			expressionHolder.append(html);
@@ -122,33 +129,23 @@ export async function handleUserSprite() {
 export async function applyUserSpriteAttributes() {
 	if (!extension_settings[extensionName].enableUserSprite) return;
 
-	const exists = await spritePackExists(
-		extension_settings[extensionName].userSprite,
-	);
-	if (!exists) return;
+	const userSprite = extension_settings[extensionName].userSprite;
+	if (!userSprite) return;
+	const { sprites, err } = await getSpriteList(userSprite);
+	if (err || !Array.isArray(sprites) || !sprites.length) return;
 
 	const groupIndex = getGroupIndex();
-	let originalExpression = "";
 
-	if (extension_settings[extensionName].enableUserSprite) {
-		// Update the User Sprite
-		const originalSrc = $("#expression-prome-user").children("img").attr("src");
+	// Keep the displayed label, using the server's real file (any extension or
+	// "-2"/".alt" variant suffix) instead of guessing "<label>.png".
+	const image = $("#expression-prome-user").children("img");
+	const fileName = decodeURIComponent(String(image.attr("src") || "").split("?")[0].split("/").pop() || "");
+	const stem = fileName.replace(/\.[^.]+$/, "").toLowerCase();
+	const shown = stem.match(/^(.+?)(?:[-.].*?)?$/)?.[1] || "";
+	const sprite = sprites.find((s) => s.label === shown) || sprites.find((s) => s.label === "neutral") || sprites[0];
+	const originalExpression = sprite?.label || "neutral";
+	if (sprite?.path && image.attr("src") !== sprite.path) image.attr("src", sprite.path);
 
-		originalExpression = "neutral";
-		if (originalSrc !== undefined) {
-			const srcData = originalSrc.split("/").pop();
-			if (srcData.length > 0) originalExpression = srcData.split(".")[0];
-		}
-
-		$("#expression-prome-user")
-			.children("img")
-			.attr(
-				"src",
-				`/characters/${extension_settings[extensionName].userSprite}/${originalExpression}.png`,
-			);
-	}
-
-	console.log(originalExpression);
 	if (groupIndex !== -1) {
 		// Group Chat
 		await sendExpressionCall(
@@ -160,21 +157,24 @@ export async function applyUserSpriteAttributes() {
 
 export function onUserSprite_Click(event) {
 	const value = Boolean($(event.target).prop("checked"));
-	if (value) {
-		spritePackExists(
-			extension_settings[extensionName].userSprite,
-		).then((exists) => {
-			if (!exists) {
-				toastr.error(
-					`Sprite Pack "${extension_settings[extensionName].userSprite}" could not be found.`,
-					`User Sprite Pack Not Found`,
-				);
-				$(event.target).prop("checked", false);
-				return;
-			}
-			updateUserSpriteSetting(value);
-		});
+	if (!value) {
+		// Turning the feature off needs no sprite-pack check.
+		updateUserSpriteSetting(false);
+		return;
 	}
+	spritePackExists(
+		extension_settings[extensionName].userSprite,
+	).then((exists) => {
+		if (!exists) {
+			toastr.error(
+				`Sprite Pack "${extension_settings[extensionName].userSprite}" could not be found.`,
+				`User Sprite Pack Not Found`,
+			);
+			$(event.target).prop("checked", false);
+			return;
+		}
+		updateUserSpriteSetting(value);
+	});
 
 	function updateUserSpriteSetting(isEnabled) {
 		extension_settings[extensionName].enableUserSprite = isEnabled;

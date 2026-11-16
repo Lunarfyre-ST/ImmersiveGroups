@@ -40,7 +40,10 @@ async function start() {
     for(const [index,result] of results.entries())if(result.status==='rejected'){
         runtime.errors.push(String(result.reason?.message||result.reason));showProblem(`${index===0?'Gallery':'Scene controls'} could not start: ${result.reason?.message||result.reason}`);
     }
-    const transfers=(await import('./modules/character-transfer-controls.js')).setupCharacterTransfers();
+    // Transfers are optional: a failure here must not mark started components as failed.
+    let transfers=null;
+    try{transfers=(await import('./modules/character-transfer-controls.js')).setupCharacterTransfers();runtime.components.transfers=true;}
+    catch(error){runtime.errors.push(String(error?.message||error));showProblem(`Transfers could not start: ${error?.message||error}`);}
     runtime.status=runtime.errors.length?'partial':'ready';
     globalThis.ImmersiveGroups=Object.freeze({version:runtime.version,diagnosticsProtocol:1,motionDiagnosticsProtocol:runtime.components.scene?1:0,automation:sceneAutomation,transfers,getStatus:()=>JSON.parse(JSON.stringify(runtime)),getSceneContext:async()=>{
         const stage=runtime.components.scene?await import('./modules/stage-controls.js'):null;
