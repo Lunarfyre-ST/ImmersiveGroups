@@ -49,3 +49,10 @@ export function setupResponsive() {
         setLayoutMode(mode.value);
     });
 }
+/** Resizes that change only the height (mobile toolbars hiding, the on-screen keyboard) are not layout changes; call `fn` only when the width changes. */
+export function onWidthResize(fn) {
+    let width = window.innerWidth;
+    const listener = event => { const next = window.innerWidth; if (next === width) return; width = next; fn(event); };
+    window.addEventListener('resize', listener);
+    return () => window.removeEventListener('resize', listener);
+}

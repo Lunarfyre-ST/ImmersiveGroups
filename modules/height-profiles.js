@@ -123,5 +123,7 @@ export function setupHeightProfiles(applyScale){
     window.addEventListener('ig-editor-layout-change',()=>refreshProfileEditor(true));
     window.addEventListener('ig-layout-change',()=>{applyScale();refreshProfileEditor();});
     window.addEventListener('resize',applyScale.bind(null,null));window.visualViewport?.addEventListener('resize',applyScale.bind(null,null));
+    // Mobile sprite fitting needs each loaded image's height.
+    document.addEventListener('load',event=>{if(event.target instanceof HTMLImageElement&&event.target.closest('#ig-mobile-sprites'))applyScale();},true);
     refreshProfileEditor(true);applyScale();
 }

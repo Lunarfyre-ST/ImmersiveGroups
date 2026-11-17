@@ -7,6 +7,8 @@
     left: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
+
+    height: 100dvh !important;
     z-index: 99999 !important;
     pointer-events: none;
 }
@@ -22,11 +24,16 @@
     left: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
+
+    height: 100dvh !important;
     background: rgba(0, 0, 0, 0.8);
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
     z-index: 99999 !important;
+    /* SillyTavern uses viewport-fit=cover: keep modals clear of notches and the home bar. */
+    box-sizing: border-box;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
 
 /* Modal Container */
@@ -37,6 +44,8 @@
     width: 90%;
     max-width: 900px;
     max-height: 85vh;
+
+    max-height: min(85dvh, 100%);
     display: flex;
     flex-direction: column;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
@@ -570,6 +579,8 @@
     .local-image-modal {
         width: 95%;
         max-height: 90vh;
+
+        max-height: min(90dvh, 100%);
         margin: 10px;
     }
 
@@ -1041,3 +1052,56 @@
 .ig-image-bindings legend { padding:0 6px; }
 .ig-image-bindings > small { display:block; line-height:1.45; opacity:.8; }
 .ig-image-bindings .ig-binding-hint { padding:8px; margin-top:8px; background:#b895681a; border-inline-start:3px solid #b89568; }
+
+/* Shared folder gallery: button tiles, details panel, selection and upload feedback. */
+.ig-folder-gallery { position: relative; }
+.ig-folder-gallery.ig-folder-has-details { max-width: 1120px; }
+.ig-folder-gallery button.local-image-item { display: block; width: 100%; padding: 0; margin: 0; background: rgba(0,0,0,0.2); color: inherit; font: inherit; text-align: inherit; }
+.ig-folder-gallery .local-image-item:focus-visible, .ig-folder-gallery .group-member-header:focus-visible { outline: 2px solid var(--SmartThemeQuoteColor, #4a9eff); outline-offset: 2px; }
+.ig-folder-gallery .local-image-item.unassigned { border-style: dashed; border-color: rgba(255,255,255,0.18); }
+.ig-folder-gallery .local-image-item.current, .ig-folder-gallery .local-image-item.picked { border-color: var(--SmartThemeQuoteColor, #4a9eff); border-style: solid; box-shadow: 0 0 0 2px var(--SmartThemeQuoteColor, #4a9eff) inset; }
+.ig-unnamed-badge { position: absolute; left: 6px; bottom: 6px; padding: 1px 6px; border-radius: 999px; background: rgba(0,0,0,0.75); color: #ddd; font-size: 10px; }
+.ig-pick-check { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.6); color: transparent; font-size: 13px; }
+.local-image-item.picked .ig-pick-check { background: var(--SmartThemeQuoteColor, #4a9eff); color: #fff; }
+.ig-folder-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ig-folder-toolbar input[type=search] { flex: 1 1 220px; min-width: 0; }
+.ig-folder-toolbar select { flex: 0 1 auto; width: auto; }
+.ig-folder-bulk, .ig-folder-notice { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 20px; border-bottom: 1px solid var(--SmartThemeBorderColor, #333); color: var(--SmartThemeBodyColor, #fff); font-size: 0.9em; }
+.ig-folder-bulk > span { margin-right: auto; }
+.ig-folder-notice .menu_button { margin: 0; padding: 2px 10px; }
+.ig-folder-body { display: flex; flex: 1; min-height: 0; }
+.ig-folder-body > .local-image-modal-content { min-width: 0; }
+.ig-folder-details { flex: 0 0 300px; display: flex; flex-direction: column; gap: 8px; padding: 14px; overflow-y: auto; border-left: 1px solid var(--SmartThemeBorderColor, #333); color: var(--SmartThemeBodyColor, #fff); }
+.ig-folder-details form, .ig-folder-details label { display: flex; flex-direction: column; gap: 4px; }
+.ig-folder-details form { gap: 8px; }
+.ig-folder-details-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ig-folder-details-heading h4 { margin: 0; }
+.ig-folder-details-preview { padding: 0; border: 1px solid var(--SmartThemeBorderColor, #333); border-radius: 8px; overflow: hidden; background: rgba(0,0,0,0.3); cursor: zoom-in; }
+.ig-folder-details-preview img { display: block; width: 100%; max-height: 220px; object-fit: contain; }
+.ig-folder-details-file { opacity: 0.7; overflow-wrap: anywhere; }
+.ig-folder-details code { overflow-wrap: anywhere; }
+.ig-folder-details-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
+.ig-folder-warning { color: #f0c36b; }
+.ig-danger-button { color: #ff8a8a !important; }
+.ig-folder-gallery button.group-member-header { width: 100%; background: none; border: 0; color: inherit; font: inherit; text-align: left; }
+.ig-folder-gallery .group-section-header small { opacity: 0.65; margin-left: auto; }
+.ig-folder-drop { position: absolute; inset: 0; display: grid; place-items: center; border: 3px dashed var(--SmartThemeQuoteColor, #4a9eff); border-radius: 10px; background: rgba(0,0,0,0.6); color: #fff; font-size: 1.2em; pointer-events: none; z-index: 3; }
+@media (max-width: 768px) {
+    .ig-folder-body { position: relative; }
+    .ig-folder-details { position: absolute; left: 0; right: 0; bottom: 0; max-height: 70%; border-left: 0; border-top: 1px solid var(--SmartThemeBorderColor, #333); background: var(--SmartThemeBlurTintColor, #1a1a1a); box-shadow: 0 -8px 24px rgba(0,0,0,0.5); z-index: 2; }
+    .ig-folder-details-preview img { max-height: 140px; }
+    .ig-folder-bulk, .ig-folder-notice { padding: 8px 12px; }
+}
+@media (hover: none) and (pointer: coarse) {
+    .ig-folder-toolbar select, .ig-folder-bulk .menu_button, .ig-folder-details .menu_button { min-height: 44px; }
+    .ig-pick-check { width: 28px; height: 28px; }
+}
+
+/* Notched phones (SillyTavern uses viewport-fit=cover): keep fixed controls clear of the notch and home bar. */
+.local-image-floating-button, .local-image-floating-panel { right: calc(0.5rem + env(safe-area-inset-right, 0px)); }
+.local-image-lightbox { box-sizing: border-box; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+.lightbox-close { top: calc(20px + env(safe-area-inset-top, 0px)); right: calc(20px + env(safe-area-inset-right, 0px)); }
+/* Phones: keep tile captions readable (at least 11px). */
+@media (max-width: 768px) {
+    .assignment-desc, .local-image-item-small .assignment-name, .ig-unnamed-badge { font-size: 11px; }
+}

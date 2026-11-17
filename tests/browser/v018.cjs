@@ -8,11 +8,11 @@ module.exports=async function verifyBackgroundContext(context,url){
  assert.equal((await scene.locator('[data-scene-preview]').textContent()).includes('::background "town.jpg"::'),false);assert.equal((await scene.locator('[data-scene-preview]').textContent()).includes('::background "forest.jpg"::'),false);assert.match(await scene.locator('[data-scene-background-status]').textContent(),/not used as a fallback/);
  // Edit real library controls; prompt/preview must update without a chat reload.
  await scene.locator('[data-scene-background-library]').click();await page.waitForSelector('.ig-unified-library');
- const forest=page.locator('[data-library-kind=background]').filter({has:page.locator('strong',{hasText:'forest.jpg'})});await forest.locator('details').evaluate(n=>n.open=true);
+ const forest=page.locator('[data-library-kind=background]').filter({has:page.locator('strong',{hasText:'forest.jpg'})});await forest.locator('details.ig-library-bindings').evaluate(n=>n.open=true);
  await forest.locator('details label').filter({hasText:'Alex'}).locator('input').check();await page.waitForFunction(()=>document.querySelector('[data-scene-background-status]').textContent.startsWith('0 backgrounds'));
  await forest.locator('details label').filter({hasText:'Bea'}).locator('input').check();await forest.locator('details label').filter({hasText:'Cedar'}).locator('input').check();
  await forest.getByRole('textbox',{name:'Scene description for forest.jpg',exact:true}).fill('A quiet forest clearing beside a river.');
- const town=page.locator('[data-library-kind=background]').filter({has:page.locator('strong',{hasText:'town.jpg'})});await town.locator('details').evaluate(n=>n.open=true);await town.locator('details label').filter({hasText:'Bea'}).locator('input').check();
+ const town=page.locator('[data-library-kind=background]').filter({has:page.locator('strong',{hasText:'town.jpg'})});await town.locator('details.ig-library-bindings').evaluate(n=>n.open=true);await town.locator('details.ig-library-bindings label').filter({hasText:'Bea'}).locator('input').check();
  await page.locator('.ig-unified-library > .local-image-modal-header').getByRole('button',{name:'Close',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-scene-background-status]').textContent.startsWith('1 background'));
  await page.waitForFunction(()=>document.querySelector('[data-scene-preview]').textContent.includes('A quiet forest clearing beside a river.'));
  let prompt=await page.evaluate(()=>prompts['ImmersiveGroups.Scene'].prompt);assert.ok(prompt.includes('::background "forest.jpg"::'));assert.equal(prompt.includes('::background "town.jpg"::'),false);assert.ok(prompt.includes('A quiet forest clearing beside a river.'));

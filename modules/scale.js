@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Scene subsystem derived from Prome by Bronya-Rand / Prometheus; modified for ImmersiveGroups, 2026-10-15. See CREDITS.md.
-import { layoutSettings } from './responsive.js';
+import { layoutSettings, mobileLayout } from './responsive.js';
 import { spriteProfileFactor, spriteProfileOffset, spriteExpressionFactor } from './height-profiles.js';
 import { extensionName, defaultSettings } from "../constants.js";
 import { extension_settings } from "../../../../extensions.js";
 import { saveSettingsDebounced } from "../../../../../script.js";
 import { isGroupChat } from "../utils.js";
+import { mobileFitFactor } from "./mobile-fit-model.js";
 
 /* Sprite Scale Functions */
 export function applySpriteScale() {
@@ -76,12 +77,22 @@ export function applyScale(target = null) {
     const layoutScale = Math.min(600, Math.max(1, Number(layout.layoutSpriteScale) || 100)) / 100;
     const enabled = Boolean(extension_settings[extensionName].enableVN_UI && (extension_settings[extensionName].scaleSprites || extension_settings[extensionName].enableHeightProfiles || layoutScale !== 1 || [...document.querySelectorAll('#visual-novel-wrapper > .expression-holder, #ig-mobile-sprites > .expression-holder, #expression-wrapper .expression-holder')].some(d=>spriteExpressionFactor(d)!==1)));
     document.body.classList.toggle('spriteScale', enabled);
+	const s = extension_settings[extensionName], vn = Boolean(s.enableVN_UI);
+	const base = s.scaleSprites ? s.maxSpriteScale : 1;
+	const rawScale = d => base * layoutScale * spriteProfileFactor(d) * (vn ? spriteExpressionFactor(d) : 1);
+	const offsetFor = d => vn ? (Number(layout.spriteOffsetY) || 0) + spriteProfileOffset(d) : 0;
+	// Mobile sprites grow upward from the screen bottom; keep the tallest inside the visible area.
+	// Solo mobile sprites use the same rule so a character looks the same in solo and group chats.
+	const fitSelector = isGroupChat() ? '#ig-mobile-sprites > .expression-holder' : mobileLayout() ? '#expression-wrapper .expression-holder' : '';
+	const mobileHolders = enabled && fitSelector ? [...document.querySelectorAll(fitSelector)] : [];
+	const fitted = new Set(mobileHolders);
+	const fit = mobileFitFactor(mobileHolders.map(d => { const img = d.querySelector('img'); return { height: img?.offsetHeight ? d.offsetHeight - img.offsetTop : 0, scale: rawScale(d), offsetY: offsetFor(d) }; }), window.visualViewport?.height || window.innerHeight);
+	document.body.classList.toggle('ig-mobile-sprites-fitted', fit < 1);
 	// loop through all divs
 	for (const d of sprites) {
-        const base = extension_settings[extensionName].scaleSprites ? extension_settings[extensionName].maxSpriteScale : 1;
-        const value = String(base * layoutScale * spriteProfileFactor(d) * (extension_settings[extensionName].enableVN_UI?spriteExpressionFactor(d):1));
-        const y=extension_settings[extensionName].enableVN_UI?(Number(layout.spriteOffsetY)||0)+spriteProfileOffset(d):0;
-        d.classList.toggle('ig-sprite-position',Boolean(extension_settings[extensionName].enableVN_UI));
+        const value = String(rawScale(d) * (fitted.has(d) ? fit : 1));
+        const y = offsetFor(d);
+        d.classList.toggle('ig-sprite-position', vn);
         if(d.style.getPropertyValue('--ig-sprite-y')!==`${y}px`)d.style.setProperty('--ig-sprite-y',`${y}px`);
         if (d.style.getPropertyValue('--prome-sprite-scale') !== value) d.style.setProperty('--prome-sprite-scale', value);
 		if (enabled) {

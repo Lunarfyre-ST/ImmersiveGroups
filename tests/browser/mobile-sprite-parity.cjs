@@ -18,23 +18,27 @@ module.exports=async(context,url)=>{
   await page.evaluate(()=>{ctx.extensionSettings.ImmersiveGroups.mobileLayoutSettings.heightReferenceMode='visible';scale.applyScale();const image=document.querySelector('#expression-holder img');image.className='expression';image.src='/characters/Alex/outfit1/neutral.png';});
   assert.equal(await page.evaluate(()=>JSON.stringify([ctx.extensionSettings.ImmersiveGroups.heightProfiles,ctx.extensionSettings.ImmersiveGroups.mobileHeightProfiles])===savedHeightProfiles),true);
   await page.waitForFunction(()=>document.querySelector('#expression-holder img').naturalWidth>0);
-  const group=await page.evaluate(()=>{const h=document.getElementById('ig-expression-alex.png'),r=h.querySelector('img').getBoundingClientRect();return {height:r.height,width:r.width,factor:Number(h.style.getPropertyValue('--prome-sprite-scale')),fit:getComputedStyle(h.querySelector('img')).objectFit};});
+  const group=await page.evaluate(()=>{const h=document.getElementById('ig-expression-alex.png'),r=h.querySelector('img').getBoundingClientRect();return {height:r.height,width:r.width,factor:Number(h.style.getPropertyValue('--prome-sprite-scale')),top:r.top,fit:getComputedStyle(h.querySelector('img')).objectFit};});
   await page.evaluate(()=>{ctx.groupId=null;emit('CHAT_CHANGED');});
   await page.waitForFunction(()=>!document.body.classList.contains('ig-mobile-group')&&Number(document.getElementById('expression-holder').style.getPropertyValue('--prome-sprite-scale'))===1);
-  const solo=await page.evaluate(()=>{const h=document.getElementById('expression-holder'),r=h.querySelector('img').getBoundingClientRect();return {height:r.height,width:r.width,factor:Number(h.style.getPropertyValue('--prome-sprite-scale')),fit:getComputedStyle(h.querySelector('img')).objectFit};});
+  const solo=await page.evaluate(()=>{const h=document.getElementById('expression-holder'),r=h.querySelector('img').getBoundingClientRect();return {height:r.height,width:r.width,factor:Number(h.style.getPropertyValue('--prome-sprite-scale')),top:r.top,fit:getComputedStyle(h.querySelector('img')).objectFit};});
   assert.equal(group.fit,solo.fit);
   assert.equal(group.factor,1);assert.equal(solo.factor,1);
   assert.ok(Math.abs(group.height-solo.height)<1,`Image ${width}x${height}: group ${JSON.stringify(group)}, solo ${JSON.stringify(solo)}`);
   assert.ok(Math.abs(group.width-solo.width)<1,`Image ${width}x${height}: group ${JSON.stringify(group)}, solo ${JSON.stringify(solo)}`);
   // Non-default fit and per-character corrections must be shared between the
   // same character's solo and group renders without changing stored values.
+  await page.evaluate(()=>{window.igScaled=h=>{const f=Number(h?.style.getPropertyValue('--prome-sprite-scale'));return Math.abs(f-1.29375)<1e-8||(document.body.classList.contains('ig-mobile-sprites-fitted')&&f>1&&f<1.29375);};});
   await page.evaluate(()=>{ctx.groupId='g';const s=ctx.extensionSettings.ImmersiveGroups;s.mobileLayoutSettings.layoutSpriteScale=115;s.mobileHeightProfiles['alex.png'].fineTuneOffset=12.5;emit('CHAT_CHANGED');});
-  await page.waitForFunction(()=>document.body.classList.contains('ig-mobile-group')&&Math.abs(Number(document.getElementById('ig-expression-alex.png')?.style.getPropertyValue('--prome-sprite-scale'))-1.29375)<1e-8);
-  const adjustedGroup=await page.evaluate(()=>{const h=document.getElementById('ig-expression-alex.png'),r=h.querySelector('img').getBoundingClientRect();return {height:r.height,width:r.width,factor:Number(h.style.getPropertyValue('--prome-sprite-scale')),fit:getComputedStyle(h.querySelector('img')).objectFit};});
+  await page.waitForFunction(()=>document.body.classList.contains('ig-mobile-group')&&window.igScaled(document.getElementById('ig-expression-alex.png')));
+  const adjustedGroup=await page.evaluate(()=>{const h=document.getElementById('ig-expression-alex.png'),r=h.querySelector('img').getBoundingClientRect();return {height:r.height,width:r.width,factor:Number(h.style.getPropertyValue('--prome-sprite-scale')),top:r.top,fit:getComputedStyle(h.querySelector('img')).objectFit};});
   await page.evaluate(()=>{ctx.groupId=null;emit('CHAT_CHANGED');});
-  await page.waitForFunction(()=>!document.body.classList.contains('ig-mobile-group')&&Math.abs(Number(document.getElementById('expression-holder').style.getPropertyValue('--prome-sprite-scale'))-1.29375)<1e-8);
-  const adjustedSolo=await page.evaluate(()=>{const h=document.getElementById('expression-holder'),r=h.querySelector('img').getBoundingClientRect();return {height:r.height,width:r.width,factor:Number(h.style.getPropertyValue('--prome-sprite-scale'))};});
-  assert.ok(Math.abs(adjustedGroup.factor-1.29375)<1e-8);assert.equal(adjustedSolo.factor,adjustedGroup.factor);
+  await page.waitForFunction(()=>!document.body.classList.contains('ig-mobile-group')&&window.igScaled(document.getElementById('expression-holder')));
+  const adjustedSolo=await page.evaluate(()=>{const h=document.getElementById('expression-holder'),r=h.querySelector('img').getBoundingClientRect();return {height:r.height,width:r.width,top:r.top,factor:Number(h.style.getPropertyValue('--prome-sprite-scale'))};});
+  // 1.15 x 1.125 = 1.29375, fitted down only when the sprite would pass the top of the screen.
+  for(const r of [adjustedGroup,adjustedSolo])assert.ok(r.factor>1&&r.factor<=1.29375+1e-8&&r.top>=-1,JSON.stringify(r));
+  if(!await page.evaluate(()=>document.body.classList.contains('ig-mobile-sprites-fitted')))assert.ok(Math.abs(adjustedGroup.factor-1.29375)<1e-8);
+  assert.ok(Math.abs(adjustedSolo.factor-adjustedGroup.factor)<1e-6);
   assert.ok(Math.abs(adjustedGroup.height-adjustedSolo.height)<1);assert.ok(Math.abs(adjustedGroup.width-adjustedSolo.width)<1);
   assert.equal(await page.evaluate(()=>ctx.extensionSettings.ImmersiveGroups.mobileHeightProfiles['alex.png'].fineTuneOffset),12.5);
   assert.equal(await page.evaluate(()=>JSON.stringify(ctx.chat)===beforeChat),true);

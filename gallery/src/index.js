@@ -321,6 +321,32 @@ function updateImageDescription(charName, imageName, description) {
  * @param {string} charName - Character name
  * @param {string} imageName - Name to unassign
  */
+/** Restores one saved assignment object exactly (used by Undo after removing a name). */
+function restoreAssignment(owner, imageName, value) {
+    const settings = gallerySettingsRoot(SillyTavern.getContext());
+    let map;
+    if (owner === GENERAL_KEY) map = settings.generalAssignments ||= {};
+    else {
+        settings.assignments ||= {};
+        if (!Object.hasOwn(settings.assignments, owner)) Object.defineProperty(settings.assignments, owner, { value: {}, writable: true, enumerable: true, configurable: true });
+        map = settings.assignments[owner];
+    }
+    if (!value || typeof value !== 'object' || typeof value.path !== 'string') return;
+    Object.defineProperty(map, imageName, { value: structuredClone(value), writable: true, enumerable: true, configurable: true });
+    saveSettings();
+}
+
+/** Renames/describes an assigned image while keeping availability, bindings and aliases. */
+function saveImageDetails(owner, currentName, { name, description }) {
+    const settings = getSettings(), old = getCharacterAssignments(owner)[currentName];
+    const info = typeof old === 'string' ? { path: old } : old;
+    if (!info || typeof info.path !== 'string') throw new Error('This image name no longer exists.');
+    saveCatalogEntry(settings, { gallery: owner, name: currentName, path: info.path, description: info.description || '', presetBindings: info.presetBindings || [] }, {
+        name, description, availability: info.availability || 'inherit', characterBindings: info.characterBindings || [], groupBindings: info.groupBindings || [], requireAllCharacters: info.requireAllCharacters === true, presetBindings: info.presetBindings || [],
+    });
+    saveSettings();
+}
+
 function unassignImage(charName, imageName) {
     const context = SillyTavern.getContext();
     const settings = gallerySettingsRoot(context);
@@ -772,6 +798,8 @@ function openGallery() {
                 unassignImage(charName, name);
                 if(viewToken===galleryViewToken)openGallery();
             }}
+            onRestore={(name, value) => { restoreAssignment(charName, name, value); if(viewToken===galleryViewToken)openGallery(); }}
+            onSaveDetails={(name, patch) => { saveImageDetails(charName, name, patch); if(viewToken===galleryViewToken)openGallery(); }}
             onUpdateDescription={(name, description) => {
                 updateImageDescription(charName, name, description);
                 if(viewToken===galleryViewToken)openGallery();
@@ -821,6 +849,8 @@ function openGeneralGallery() {
             customPrompts={getCustomPrompts()}
             onAssign={(name, path, description) => { assignImage(GENERAL_KEY, name, path, description); if(viewToken===galleryViewToken)openGeneralGallery(); }}
             onUnassign={(name) => { unassignImage(GENERAL_KEY, name); if(viewToken===galleryViewToken)openGeneralGallery(); }}
+            onRestore={(name, value) => { restoreAssignment(GENERAL_KEY, name, value); if(viewToken===galleryViewToken)openGeneralGallery(); }}
+            onSaveDetails={(name, patch) => { saveImageDetails(GENERAL_KEY, name, patch); if(viewToken===galleryViewToken)openGeneralGallery(); }}
             onUpdateDescription={(name, description) => { updateImageDescription(GENERAL_KEY, name, description); if(viewToken===galleryViewToken)openGeneralGallery(); }}
             onSaveSettings={(settings) => { saveCharacterSettings(GENERAL_KEY, settings); if(viewToken===galleryViewToken)openGeneralGallery(); }}
         />
@@ -869,6 +899,8 @@ function openPersonaGallery() {
                 unassignImage(personaName, name);
                 if(viewToken===galleryViewToken)openPersonaGallery();
             }}
+            onRestore={(name, value) => { restoreAssignment(personaName, name, value); if(viewToken===galleryViewToken)openPersonaGallery(); }}
+            onSaveDetails={(name, patch) => { saveImageDetails(personaName, name, patch); if(viewToken===galleryViewToken)openPersonaGallery(); }}
             onUpdateDescription={(name, description) => {
                 updateImageDescription(personaName, name, description);
                 if(viewToken===galleryViewToken)openPersonaGallery();
@@ -957,6 +989,8 @@ function openGroupGallery() {
                 unassignImage(group.name, name);
                 if(viewToken===galleryViewToken)openGroupGallery();
             }}
+            onRestoreGroup={(name, value) => { restoreAssignment(group.name, name, value); if(viewToken===galleryViewToken)openGroupGallery(); }}
+            onSaveGroupDetails={(name, patch) => { saveImageDetails(group.name, name, patch); if(viewToken===galleryViewToken)openGroupGallery(); }}
             onUpdateGroupDescription={(name, description) => {
                 updateImageDescription(group.name, name, description);
                 if(viewToken===galleryViewToken)openGroupGallery();
@@ -1122,7 +1156,7 @@ function availableQuickImages() {
     return catalogEntries(getSettings(),generalImageFiles).filter(entry=>availableInChat(entry,ctx));
 }
 function mountImageMenu(container) {
-    return mountQuickImageMenu(container,{readEntries:availableQuickImages,readContext:()=>SillyTavern.getContext(),send:sendAsNarrator,
+    return mountQuickImageMenu(container,{readEntries:availableQuickImages,readContext:()=>SillyTavern.getContext(),readRecent:()=>currentDisplayPolicy().lastShown,send:sendAsNarrator,
         openLibrary:view=>{window.dispatchEvent(new Event('ig-close-scene-panels'));floatingPanelExpanded=false;closeFloatingPanel();openGalleryStudio(view);},
         openGeneral:()=>{window.dispatchEvent(new Event('ig-close-scene-panels'));floatingPanelExpanded=false;closeFloatingPanel();openGeneralGallery();},
         openSettings:()=>{window.dispatchEvent(new Event('ig-close-scene-panels'));floatingPanelExpanded=false;closeFloatingPanel();openExtensionSettings();}});
@@ -1406,7 +1440,7 @@ function installExtensionSettings() {
 function openGalleryStudio(options={}) {
     const token=++galleryViewToken;
     const type=['outfit','background','image','group'].includes(options?.type)?options.type:'all';
-    const initialView={type,character:typeof options?.character==='string'?options.character:'',search:'',gallery:'',description:'all',visibility:'all',outfitImages:'all',backgrounds:'all',backgroundAvailability:'all',...(type!=='all'?{currentOnly:false}:{})};
+    const initialView={type,character:typeof options?.character==='string'?options.character:'',search:typeof options?.search==='string'?options.search.slice(0,200):'',gallery:typeof options?.gallery==='string'?options.gallery:'',description:'all',visibility:'all',outfitImages:'all',backgrounds:'all',backgroundAvailability:'all',...(type!=='all'?{currentOnly:false}:{})};
     window.dispatchEvent(new Event('ig-close-scene-panels'));
     closeShortcutSettings();
     if(!galleryContainer){galleryContainer=document.createElement('div');galleryContainer.id='local-image-gallery-root';document.body.appendChild(galleryContainer);galleryRoot=createRoot(galleryContainer);}
@@ -1420,7 +1454,7 @@ function openGalleryFolder(entity) {
     if(group&&entity===group.name){openGroupGallery();return;}
     if(entity===getCurrentPersonaName()){openPersonaGallery();return;}
     if(!galleryContainer){galleryContainer=document.createElement('div');galleryContainer.id='local-image-gallery-root';document.body.appendChild(galleryContainer);galleryRoot=createRoot(galleryContainer);}
-    galleryRoot.render(<Gallery key={entity} characterName={entity} assignments={getCharacterAssignments(entity)} characterSettings={getCharacterSettings(entity)} customPrompts={getCustomPrompts()} onClose={closeGallery} onOpenGeneral={openGeneralGallery} onOpenExtensionSettings={openExtensionSettings} onOpenLibrary={openGalleryStudio} onAssign={(name,path,description)=>{assignImage(entity,name,path,description);if(viewToken===galleryViewToken)openGalleryFolder(entity);}} onUnassign={name=>{unassignImage(entity,name);if(viewToken===galleryViewToken)openGalleryFolder(entity);}} onUpdateDescription={(name,description)=>{updateImageDescription(entity,name,description);if(viewToken===galleryViewToken)openGalleryFolder(entity);}} onSaveSettings={settings=>saveCharacterSettings(entity,settings)} />);
+    galleryRoot.render(<Gallery key={entity} characterName={entity} assignments={getCharacterAssignments(entity)} characterSettings={getCharacterSettings(entity)} customPrompts={getCustomPrompts()} onClose={closeGallery} onOpenGeneral={openGeneralGallery} onOpenExtensionSettings={openExtensionSettings} onOpenLibrary={openGalleryStudio} onAssign={(name,path,description)=>{assignImage(entity,name,path,description);if(viewToken===galleryViewToken)openGalleryFolder(entity);}} onUnassign={name=>{unassignImage(entity,name);if(viewToken===galleryViewToken)openGalleryFolder(entity);}} onRestore={(name,value)=>{restoreAssignment(entity,name,value);if(viewToken===galleryViewToken)openGalleryFolder(entity);}} onSaveDetails={(name,patch)=>{saveImageDetails(entity,name,patch);if(viewToken===galleryViewToken)openGalleryFolder(entity);}} onUpdateDescription={(name,description)=>{updateImageDescription(entity,name,description);if(viewToken===galleryViewToken)openGalleryFolder(entity);}} onSaveSettings={settings=>saveCharacterSettings(entity,settings)} />);
 }
 function gallerySceneContext() {
     const ctx=SillyTavern.getContext(),policy=currentDisplayPolicy();

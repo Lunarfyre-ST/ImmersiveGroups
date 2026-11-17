@@ -3,6 +3,7 @@ import { diagnostic, diagnosticOperation } from './diagnostics.js';
 import { extension_settings, getContext } from '../../../../extensions.js';
 import { extensionName, defaultSettings } from '../constants.js';
 import { motionOptions } from './motion-model.js';
+import { onWidthResize } from './responsive.js';
 
 const running = new WeakMap(), active = new Set(), backgroundDiagnostics = new WeakMap();
 // Called immediately after the native selection handler. Its synchronous style
@@ -113,7 +114,8 @@ export function setupSceneAnimations() {
     if (installed) return; installed = true;
     const cancelAll = reason => () => { for (const job of [...active]) job.cancel(reason); };
     window.addEventListener('ig-layout-change', cancelAll('layout_changed'));
-    window.addEventListener('resize', cancelAll('viewport_changed'));
+    // Mobile toolbars and the keyboard change only the height; those must not cancel running animations.
+    onWidthResize(cancelAll('viewport_changed'));
     document.getElementById('prome-enable-vn')?.addEventListener('change', cancelAll('disabled_scene'));
     window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', cancelAll('motion_changed'));
     const context = getContext();

@@ -18,7 +18,7 @@
 .ig-live-tuning [data-live-toggles] > label { display:flex; flex-direction:row; align-items:flex-start; gap:8px; }
 .ig-live-tuning [data-live-toggles] > label > input { flex:none; margin-top:3px; }
 .ig-live-tuning [data-live-toggles] > label > span { flex:1; min-width:0; }
-.ig-unified-library { width:min(1200px,96vw); height:min(1000px,92dvh); max-width:96vw; max-height:92dvh; display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+.ig-unified-library { width:min(1200px,96vw,100%); height:min(1000px,92dvh,100%); max-width:min(96vw,100%); max-height:min(92dvh,100%); display:flex; flex-direction:column; min-height:0; overflow:hidden; }
 .ig-library-main { display:flex; flex-direction:column; flex:1; min-height:0; }
 .ig-library-results-scroll { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
 /* ST themes often constrain menu_button width. Scope natural button sizing to
@@ -114,11 +114,11 @@
 .ig-library-bindings > small { display:block; font-size:11px; opacity:.75; }
 .ig-unified-library .ig-gallery-editor-layer { z-index:5; }
 @media(max-width:600px) {
- .ig-unified-library { width:96vw; height:94dvh; max-height:94dvh; }
+ .ig-unified-library { width:min(96vw,100%); height:min(94dvh,100%); max-height:min(94dvh,100%); }
  .ig-library-toolbar { padding:10px; }
  .ig-library-types { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; }
- .ig-library-types > button { display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0; gap:3px; padding:7px 3px; font-size:clamp(9px,2.7vw,12px); overflow-wrap:normal; white-space:nowrap; }
- .ig-library-types > button small { margin-left:0; font-size:10px; }
+ .ig-library-types > button { display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0; gap:3px; padding:7px 3px; font-size:clamp(11px,2.9vw,12px); overflow-wrap:normal; white-space:nowrap; }
+ .ig-library-types > button small { margin-left:0; font-size:11px; }
  .ig-library-filter-row > label { flex:1 1 135px; }
  .ig-library-filter-row select { width:100%; }
  .ig-unified-library .local-image-modal-content { padding:10px; }
@@ -131,7 +131,7 @@
  .ig-unified-library .menu_button { font-size:12px; padding:6px 8px; }
 }
 @media(max-height:600px) {
- .ig-unified-library { height:96dvh; max-height:96dvh; }
+ .ig-unified-library { height:min(96dvh,100%); max-height:min(96dvh,100%); }
  .ig-unified-library > .local-image-modal-header { padding:8px 10px; }
  .ig-unified-library > .local-image-modal-header small { display:none; }
  .ig-library-toolbar { padding:6px 10px; }
@@ -234,3 +234,19 @@
  .ig-unified-library .menu_button,.ig-transfer-dialog .menu_button,.ig-library-edit > summary{min-height:44px}
 }
 .ig-expression-image-scale{display:grid;gap:4px}.ig-expression-image-scale label{display:grid;gap:4px}.ig-expression-image-scale input{width:100%;min-width:0}.ig-expression-image-scale small:empty{display:none}
+/* Manage menu keeps rarely used library actions out of the main toolbar. */
+.ig-library-manage { position:relative; }
+.ig-library-manage > summary { list-style:none; cursor:pointer; margin:0; }
+.ig-library-manage > summary::-webkit-details-marker { display:none; }
+.ig-library-manage[open] > summary { filter:brightness(1.2); }
+.ig-library-manage-menu { position:absolute; z-index:5; top:calc(100% + 4px); left:0; display:flex; flex-direction:column; align-items:stretch; gap:4px; min-width:200px; padding:6px; border:1px solid var(--SmartThemeBorderColor,#333); border-radius:8px; background:var(--SmartThemeBlurTintColor,#1a1a1a); box-shadow:0 8px 24px rgba(0,0,0,.45); }
+.ig-library-manage-menu > .menu_button { justify-content:flex-start; margin:0; }
+.ig-library-more { display:flex; margin:14px auto 4px; }
+@media(max-width:600px){ .ig-library-manage-menu { left:auto; right:0; } }
+@media(hover:none) and (pointer:coarse){ .ig-library-manage-menu > .menu_button, .ig-library-manage > summary { min-height:44px; } }
+.ig-quick-recent { display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin:4px 0; }
+.ig-quick-recent[hidden] { display:none; }
+.ig-quick-recent > small { opacity:.7; margin-inline-end:4px; }
+.ig-quick-chip { margin:0; padding:2px 8px; min-height:26px; font-size:12px; max-width:12em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ig-quick-chip[aria-pressed=true] { outline:1px solid var(--SmartThemeQuoteColor,#4a9eff); }
+@media(hover:none) and (pointer:coarse){ .ig-quick-chip { min-height:36px; } }

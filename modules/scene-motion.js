@@ -5,7 +5,7 @@ import { MOTION_EFFECTS, motionOptions, motionFrames } from './motion-model.js';
 import { fadeExpressionChange, cancelExpressionFade } from './scene-animations.js';
 import { diagnostic, diagnosticOperation } from './diagnostics.js';
 import { visibleCharacters } from './scene-visibility.js';
-import { mobileLayout } from './responsive.js';
+import { mobileLayout, onWidthResize } from './responsive.js';
 import { backgroundPaintFrames } from './background-motion-model.js';
 
 const selector='#visual-novel-wrapper > .expression-holder img, #ig-mobile-sprites > .expression-holder img, #expression-wrapper .expression-holder img';
@@ -33,6 +33,7 @@ function animate(node,id,frames,{loop=false,preview=false,exiting=false,cleanup=
     const trace=diagnosticOperation('animation.motion',fields);
     const map=jobs.get(node)||new Map();jobs.set(node,map);
     const epoch=scope(),animations=[],job={node,id,preview,configuration:JSON.stringify(config),cancel(reason='superseded',outcome='cancelled'){if(job.done)return;job.done=true;trace.finish({outcome,reason});for(const animation of animations)animation.cancel();cleanup();active.delete(job);if(map.get(id)===job)map.delete(id);}};
+    job.animations=animations;
     try{
         const timing={duration:config.duration,iterations:loop?Infinity:1,direction:loop?'alternate':'normal',easing:'ease-in-out',fill:'none'};
         const play=(keyframes,options)=>{const animation=node.animate(keyframes,options);void animation.finished.catch(()=>{});animations.push(animation);};
@@ -112,8 +113,9 @@ function syncBackground(){
     let frames=motionFrames('backgroundPan',{...config,vertical,horizontal:mobile&&!vertical});
     if(mobile)frames=mobileBackgroundFrames(node,src,frames);
     const paintKey=mobile?JSON.stringify(frames):'';
-    const running=jobs.get(node)?.get('backgroundPan');if(running&&running.paintKey!==paintKey)running.cancel('settings_changed');
-    if(!jobs.get(node)?.has('backgroundPan')){const cleanup=mobile?()=>{}:containMotionViewport(node,'ig-motion-background-viewport'),job=animate(node,'backgroundPan',frames,{loop:true,cleanup});if(job){job.panAxis=panAxis;job.paintKey=paintKey;}}
+    // A new viewport height repaints the pan in place instead of restarting it.
+    const running=jobs.get(node)?.get('backgroundPan');let resumeAt=null;if(running&&running.paintKey!==paintKey){if(running.panAxis===panAxis)resumeAt=running.animations?.[0]?.currentTime??null;running.cancel('settings_changed');}
+    if(!jobs.get(node)?.has('backgroundPan')){const cleanup=mobile?()=>{}:containMotionViewport(node,'ig-motion-background-viewport'),job=animate(node,'backgroundPan',frames,{loop:true,cleanup});if(job){job.panAxis=panAxis;job.paintKey=paintKey;if(resumeAt!=null)for(const animation of job.animations)animation.currentTime=resumeAt;}}
 }
 function sync(){
     frame=0;const nextScope=scope();
@@ -187,7 +189,7 @@ export function setupSceneMotion(){
     const watchBackground=()=>{const node=document.getElementById('bg1');if(node===backgroundObserver?.node)return;backgroundObserver?.observer.disconnect();if(node){const observer=new MutationObserver(schedule);observer.observe(node,{attributes:true,attributeFilter:['style','class']});backgroundObserver={node,observer};}};
     new MutationObserver(watchBackground).observe(document.body,{childList:true});watchBackground();
     const restart=event=>{const reason=({'ig-layout-change':'layout_changed',resize:'viewport_changed',visibilitychange:'visibility_changed',change:'motion_changed'})[event?.type]||'unknown';if(event?.type==='ig-layout-change'){schedule();return;}diagnostic('motion.lifecycle',{stage:'restart',reason});stop(false,true,reason);suppressExits=true;schedule();};
-    window.addEventListener('ig-layout-change',restart);window.addEventListener('resize',restart);
+    window.addEventListener('ig-layout-change',restart);onWidthResize(restart);window.addEventListener('resize',()=>schedule());
     document.addEventListener('visibilitychange',restart);window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',restart);
     document.getElementById('prome-enable-vn')?.addEventListener('change',restart);
     document.addEventListener('load',event=>{if(event.target instanceof HTMLImageElement&&event.target.matches(selector))schedule();},true);
